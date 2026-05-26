@@ -1,0 +1,61 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: Zał. nr 3 część 2 UKOŃCZONA\ni Zał. nr 2a UKOŃCZONY]) --> B
+
+    subgraph ETAP1 [Etap 1: Przygotowanie dziennika]
+        B[Dziekanat tworzy Zał. nr 6\nna podstawie danych\nz Zał. nr 1 i Zał. nr 2a] --> C
+        C[Student otrzymuje\npusty dziennik\npraktyki zawodowej] --> D
+        D([Część 1 UKOŃCZONA])
+    end
+
+    D --> E
+
+    subgraph ETAP2 [Etap 2: Codzienny wpis studenta]
+        E[Student wpisuje\nnumer dnia, datę\ni opis wykonywanych prac] --> F
+        F[Student wpisuje numery\nefektów uczenia się\nz Zał. nr 2a] --> G
+        G{Wpis zgodny\nz harmonogramem\nz Zał. nr 2a?} --> |Nie| H
+        G --> |Tak| I
+        H[Student koryguje\nwpis zgodnie\nz harmonogramem] --> F
+        I[Osoba nadzorująca\ndanego dnia podpisuje\nwpis w dzienniku] --> J
+        J{Ostatni dzień\npraktyki?} --> |Nie - kolejny dzień| E
+        J --> |Tak| K
+        K([Część 2 UKOŃCZONA])
+    end
+
+    K --> L
+
+    subgraph ETAP3 [Etap 3: Potwierdzenie opiekuna firmowego]
+        L[Opiekun firmowy weryfikuje\nkompletność wszystkich\nwpisów w dzienniku] --> M
+        M{Dziennik\nkompletny?} --> |Nie| N
+        M --> |Tak| O
+        N[Opiekun firmowy wskazuje\nbrakujące lub błędne\nwpisy studentowi] --> E
+        O[Opiekun firmowy podpisuje\nkażdą stronę\ndziennika] --> P
+        P([Część 3 UKOŃCZONA])
+    end
+
+    P --> Q
+
+    subgraph ETAP4 [Etap 4: Dołączenie załączników]
+        Q[Student kompletuje\ni dołącza dodatkowe\nprace jako załączniki] --> R
+        R[Student wpisuje wykaz\ndołączonych załączników\nna początku dziennika] --> S
+        S{Wykaz załączników\nzgodny z zawartością?} --> |Nie| Q
+        S --> |Tak| T
+        T([Część 4 UKOŃCZONA])
+    end
+
+    T --> U
+    U([Zał. nr 6 UKOŃCZONY\nMożliwe tworzenie Zał. nr 4,\nZał. nr 7 oraz dokończenie\nZał. nr 3 etap 3 i 4])
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style D fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style K fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style P fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style T fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style U fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style G fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style J fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style M fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style S fill:#fff8e1,stroke:#f9a825,color:#6d4c00

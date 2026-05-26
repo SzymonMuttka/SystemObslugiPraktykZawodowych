@@ -1,0 +1,285 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="F61C2786-E389-DBBE-EC23-811E78C0E270" name="praktyka">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>7C6250ED-395D-7D2B-8455-345FBC2E5896</importedID>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="id" id="41F2691B-D211-EB6B-F304-D36DCE752BE6">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>04E356E6-6013-2D82-CBF5-FD99E2C810DA</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="student_id" id="B9E77910-1477-6B57-0B57-AFAA425FC3AA">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>A5342272-18A7-ECB8-E2DA-B4721A63F1EE</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="23607A68-BD0F-9718-C86D-307C7A8A19C2" referredColumn="D4CA6A6E-29C4-9725-3290-369DC2B7BF94"/>
+</associations>
+</Column>
+<Column name="firma_id" id="C0F1ADDD-A605-83CA-E0D1-A79A151851AB">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>0CB9223A-6B97-A7C3-204C-9D8BEE5305D9</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="84124940-FAB6-FCAB-8AEF-19E03A955E87" referredColumn="18297AAC-6992-F1D7-A671-855C8D8A6DA9"/>
+</associations>
+</Column>
+<Column name="opiekun_firmowy_id" id="15B1CFB5-250D-C785-6FA4-556B74C9496D">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>F5744A14-CF93-8444-F84B-DF5F0260BAC5</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="EF3C4C29-BFD0-99F3-1F26-34A181FBEDE1" referredColumn="D4CA6A6E-29C4-9725-3290-369DC2B7BF94"/>
+</associations>
+</Column>
+<Column name="opiekun_uczelniany_id" id="2AAA59B3-C6EF-EED8-6F9E-886F2939F550">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>2BBBB333-70BF-AA80-5AE7-5A86560CE0BB</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="3A40D26F-0DCA-15EE-76EE-38CBA099B5B0" referredColumn="D4CA6A6E-29C4-9725-3290-369DC2B7BF94"/>
+</associations>
+</Column>
+<Column name="sciezka" id="2BC4565D-ABEF-5806-4F76-08715E3DC1F2">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>A6FFBF13-F5E2-43B7-2C57-1C1CAD247927</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="status" id="AB8A566A-A055-1893-07F0-DE5F70B81894">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>FA36E57F-7992-DD80-2206-682E9862B6A9</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
+<usesDefaultValue>true</usesDefaultValue>
+<defaultValue>&apos;pending&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="data_rozpoczecia" id="2627BF91-9605-5392-B8DB-5D8887D9C224">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>8338AEBD-01D9-5A9C-C3F0-FEAF98FAE838</importedID>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="data_zakonczenia" id="9A4FD2A7-4F56-1F57-5A5F-12587F613342">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>0339BCEB-306B-B9F9-7EC4-F6EF18051469</importedID>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="liczba_dni_roboczych" id="84E03A68-39BD-C2A2-A5F5-24D854927701">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>97788B8B-D364-2DD2-AA29-7B6319CAB70E</importedID>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<usesDefaultValue>true</usesDefaultValue>
+<defaultValue>120</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="liczba_godzin" id="87DC991E-6D42-4B0D-D16D-168B28231959">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>F9067F68-48E0-0341-DC2E-573E0070B7E3</importedID>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<usesDefaultValue>true</usesDefaultValue>
+<defaultValue>960</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="rok_akademicki" id="4F5BB35A-F654-36F9-C39C-BD4EE8F279C6">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>6C96A1F5-FE0F-6945-8155-96A9AFF0D223</importedID>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="utworzono" id="3EF30E9F-17A2-82CE-F7E4-D51F9BEB7514">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>8BD1A94C-2AD7-696B-918A-A4D3840B62B7</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
+<usesDefaultValue>true</usesDefaultValue>
+<defaultValue>datetime(&apos;now&apos;)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="zaktualizowano" id="E6698C91-F8D3-A003-7280-34D9A46BF8F5">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>899C6BF8-53AC-3DF6-F101-4E70E0025E66</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
+<usesDefaultValue>true</usesDefaultValue>
+<defaultValue>datetime(&apos;now&apos;)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="E3F4BB82-A098-614F-CE0C-7911F8CB9D51" name="praktyka__IDX">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>2D599658-054E-FF41-B1C5-8D86CC572932</importedID>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="41F2691B-D211-EB6B-F304-D36DCE752BE6"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="E644F2E0-03EB-CD62-104C-FCAA7B744E45" name="idx_praktyka_student">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>02A02545-3F7E-4AD6-EABE-BF33291F51C8</importedID>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="B9E77910-1477-6B57-0B57-AFAA425FC3AA"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="89244B8E-FA12-F594-8C97-50CE28125E58" name="idx_praktyka_firma">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>EAA71460-F99B-9DBB-56FA-7DB453BA1A1E</importedID>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="C0F1ADDD-A605-83CA-E0D1-A79A151851AB"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="726D9416-C93C-A0B9-C0A9-FDFE5CF0F0D6" name="praktyka_uzytkownik_FK">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:29:15 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="15B1CFB5-250D-C785-6FA4-556B74C9496D"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="DED2393D-730B-93BB-ED24-09C0A2720083" name="praktyka_uzytkownik_FKv2">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:29:31 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="2AAA59B3-C6EF-EED8-6F9E-886F2939F550"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="E963D096-BC43-FE85-C552-468097E89289" name="praktyka_firma_FK">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:30:48 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="C0F1ADDD-A605-83CA-E0D1-A79A151851AB"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="F4B2C8FD-321B-8B82-E102-B3104C08AED0" name="praktyka_uzytkownik_FKv3">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:30:59 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="B9E77910-1477-6B57-0B57-AFAA425FC3AA"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

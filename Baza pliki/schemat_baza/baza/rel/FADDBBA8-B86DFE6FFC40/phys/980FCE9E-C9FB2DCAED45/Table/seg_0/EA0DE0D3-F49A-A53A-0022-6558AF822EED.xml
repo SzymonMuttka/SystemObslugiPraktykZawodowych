@@ -1,0 +1,72 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<TableProxySqlServerv2k5 class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.TableProxySqlServerv2k5" name="efekt_uczenia_dokumentu" directorySegmentName="seg_0" id="EA0DE0D3-F49A-A53A-0022-6558AF822EED">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:33 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<database>DB_NULLELEMENT</database>
+<schema>4A709FBA-C416-1568-DA5D-D80FD79C0D85</schema>
+<columnProxies>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="status" id="16F43915-2147-0DA4-A49C-EE8A5D68CF73">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="oceniono" id="2D181A72-F0D6-E795-9617-4D885B3399A5">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="ocenione_przez" id="62500AD7-BE5B-0470-54DA-70EB759BCFA4">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="id" id="7E15A647-6F4E-02D5-2C0A-5112055EC641">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="dokument_id" id="B1536D3E-0121-67EB-6A09-7E4FC953C430">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="brakujace_elementy" id="E4697676-793E-745C-1B49-32DB5D93F043">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="efekt_uczenia_id" id="ECF96D85-BCD4-5007-8A5E-4A5DC0271B41">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+</columnProxies>
+<foreignKeys>
+<ForeignKey class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.FKProxySqlServerv2k5" name="efekt_uczenia_dokumentu_dokument_FK" id="9B6F5D22-F77D-1885-F061-BE56D4C037D7">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:37:19 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ForeignKey>
+<ForeignKey class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.FKProxySqlServerv2k5" name="efekt_uczenia_dokumentu_efekt_uczenia_FK" id="EE4640C4-E137-B33A-51A3-02F5AA76267E">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:25:04 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ForeignKey>
+</foreignKeys>
+<primaryKeys>
+<PrimaryKey class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.PKProxySqlServerv2k5" name="efekt_uczenia_dokumentu__IDX" id="D34DE5B4-02A6-E828-76C1-0279B206AC64">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<clustered>true</clustered>
+</PrimaryKey>
+</primaryKeys>
+<uniqueKeys>
+<UniqueKey class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.UniqueProxySqlServerv2k5" name="efekt_uczenia_dokumentu_UK0" id="4A108732-D364-73CA-5A4E-94A7135325CD">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</UniqueKey>
+</uniqueKeys>
+</TableProxySqlServerv2k5>

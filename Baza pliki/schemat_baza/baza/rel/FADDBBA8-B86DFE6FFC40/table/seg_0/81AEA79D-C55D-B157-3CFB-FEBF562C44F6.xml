@@ -1,0 +1,104 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="81AEA79D-C55D-B157-3CFB-FEBF562C44F6" name="zaleznosc_dokumentow">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>F16AB3CF-2627-C31A-7DB9-FAD7E8C59B24</importedID>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="id" id="C4141999-7D90-A93A-2553-1A0D0264C413">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>00913792-E2D3-491B-6BF7-7AF5AF0D5361</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="typ_dokumentu_id" id="96E89EBA-ADEE-0548-9BBD-F72E57982A14">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>963D7294-54FD-7483-B43E-897275906B1A</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="B0C3EE4A-9034-4894-3123-3D5BF1905234" referredColumn="06EC42A2-402C-5991-330C-A779E26A9901"/>
+</associations>
+</Column>
+<Column name="wymaga_typu_id" id="C787595E-D3B6-C597-F93E-C4F2044E42FB">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>2577DF0C-60CF-9D22-3A72-19C0EB20C832</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="BE8C2350-F39D-E652-7E69-58F7F1BEBC9E" referredColumn="06EC42A2-402C-5991-330C-A779E26A9901"/>
+</associations>
+</Column>
+<Column name="wymagany_status" id="F44A5B8B-7237-5888-6D63-1C37B34956F7">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>23534396-CB31-9B68-8DDC-5C0ED1E54484</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
+<usesDefaultValue>true</usesDefaultValue>
+<defaultValue>&apos;completed&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="40CFE4A6-918B-BAC5-EACE-B8ECAD4B27C6" name="zaleznosc_dokumentow__IDX">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>9D2AA285-1822-1603-C989-FD626DBF8EFC</importedID>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="C4141999-7D90-A93A-2553-1A0D0264C413"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="515A694B-5E90-0478-F32C-3A18F08BC3F0" name="zaleznosc_dokumentow_typ_dokumentu_FK">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 09:01:16 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="96E89EBA-ADEE-0548-9BBD-F72E57982A14"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="C1ED080D-87D5-B78D-6B3A-A8F9B28344EE" name="zaleznosc_dokumentow_typ_dokumentu_FKv2">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 09:01:21 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="C787595E-D3B6-C597-F93E-C4F2044E42FB"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

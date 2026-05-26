@@ -1,0 +1,60 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<TableProxySqlServerv2k5 class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.TableProxySqlServerv2k5" name="plik_dokumentu" directorySegmentName="seg_0" id="D06EFA54-8024-C0FF-88BE-B54DB849BF63">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<database>DB_NULLELEMENT</database>
+<schema>ED2A30C5-6085-2EE7-59CB-EC3D5C9B3648</schema>
+<columnProxies>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="id" id="170734BF-6D10-A8E4-C097-C0DFEB0C85EA">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="sciezka_pliku" id="318D9C4A-4EF5-82D4-E15C-5E84FD884CED">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="dokument_id" id="3FED6BDA-6B0F-E0F0-5972-3FC4B0477BB6">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="jest_aktualny" id="4223BB9C-2930-C0A2-5E31-5BE17B09801B">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<defaultValue>1</defaultValue>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="rozmiar_pliku" id="55FDA968-FEE7-045F-AD37-342CC4019E59">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="typ_pliku" id="730E6DB5-6A4A-6173-8548-DBA94242D4A4">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="wygenerowano_przez" id="DCE6FEFB-4FAE-07E1-A1EE-F08E0AE838FA">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="wygenerowano" id="FD9BDAB0-1D42-4B7C-D616-D8D9C4EB039D">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<defaultValue>datetime(&apos;now&apos;)</defaultValue>
+</ColumnProxy>
+</columnProxies>
+<primaryKeys>
+<PrimaryKey class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.PKProxySqlServerv2k5" name="plik_dokumentu__IDX" id="52544732-4257-5579-C1B6-6647AF6BA8EB">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<clustered>true</clustered>
+</PrimaryKey>
+</primaryKeys>
+</TableProxySqlServerv2k5>

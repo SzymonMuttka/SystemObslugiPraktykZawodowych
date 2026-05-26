@@ -1,0 +1,49 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    ST([Student])
+    OF([Opiekun firmowy])
+    OU([Opiekun uczelniany])
+    DZ([Dziekanat])
+    DY([Dyrektor IIS])
+    KO([Komisja ds. praktyk])
+
+    subgraph SYS [System zarządzania praktykami zawodowymi]
+        P1[Zarządzanie\nużytkownikami\ni praktykami]
+        P2[Zarządzanie\ndokumentami]
+        P3[Podpisywanie\ni weryfikacja]
+        P4[Generowanie\ni archiwizacja]
+    end
+
+    ST -->|dane osobowe,\nnumer albumu| P1
+    OF -->|dane firmy,\ndane opiekuna| P1
+    DZ -->|przypisanie opiekunów,\nuruchomienie praktyki| P1
+
+    ST -->|wypełnienie dokumentów,\nsprawozdania, dziennik| P2
+    OF -->|oświadczenie,\nharmonogram, oceny| P2
+    OU -->|harmonogram,\nopinie, oceny| P2
+    DZ -->|tworzenie dokumentów,\ndane porozumienia| P2
+    DY -->|decyzje,\nzatwierdzenia| P2
+    KO -->|pytania komisji,\noceny cząstkowe| P2
+
+    P1 -->|dane praktyki\ni użytkowników| P2
+    P2 -->|dokumenty\ndo podpisu| P3
+
+    ST -->|podpis| P3
+    OF -->|podpisy| P3
+    OU -->|podpisy| P3
+    DZ -->|odesłanie\ndo poprawki| P3
+    DY -->|podpis| P3
+    KO -->|podpisy protokołu| P3
+
+    P3 -->|zatwierdzone\ndokumenty| P4
+
+    P4 -->|pobieranie\ndokumentów PDF / DOCX| ST
+    P4 -->|pobieranie\ndokumentów PDF / DOCX| OF
+    P4 -->|pobieranie\ndokumentów PDF / DOCX| OU
+    P4 -->|pobieranie\ndokumentów PDF / DOCX| DZ
+    P4 -->|pobieranie\ndokumentów PDF / DOCX| DY
+    P4 -->|wyniki ankiet\nzbiorcze| DZ
+    P4 -->|protokół zaliczenia| KO

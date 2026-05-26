@@ -1,0 +1,40 @@
+---
+config:
+  theme: dark
+---
+sequenceDiagram
+    participant Student
+    participant System as Backend (Flask)
+    participant DB as Baza JSON
+    participant Opiekun as Opiekun Uczelniany
+
+    %% 1. Student wysyła dokument
+    Student->>System: Wyślij dziennik do zatwierdzenia
+
+    %% 2. Walidacja danych
+    System->>DB: Pobierz dane dziennika
+    DB-->>System: Dane dziennika
+
+    System->>System: Walidacja kompletności danych
+
+    alt Dane niekompletne
+        System-->>Student: Błąd - brak wymaganych danych
+    else Dane poprawne
+        %% 3. Aktualizacja statusu i powiadomienie
+        System->>DB: Zapisz status = "submitted"
+        System->>Opiekun: Powiadomienie o nowym dzienniku
+
+        %% 4. Decyzja opiekuna
+        Opiekun->>System: Przegląd dziennika
+
+        alt Odrzucenie
+            Opiekun->>System: Odrzuć + uwagi
+            System->>DB: Zapisz status = "correction"
+            System->>DB: Zapisz uwagi
+            System-->>Student: Informacja o poprawkach
+        else Zatwierdzenie
+            Opiekun->>System: Zatwierdź dokument
+            System->>DB: Zapisz status = "approved"
+            System-->>Student: Informacja o zatwierdzeniu
+        end
+    end

@@ -1,0 +1,95 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<TableProxySqlServerv2k5 class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.TableProxySqlServerv2k5" name="historia_dokumentu" directorySegmentName="seg_0" id="2CB9771D-A4FA-68CD-1C37-1AC2A4039964">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:33 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<database>DB_NULLELEMENT</database>
+<schema>A98761BC-5C5F-0CF7-70CE-E342625C1E38</schema>
+<columnProxies>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="utworzono" id="035626B5-ECF3-F0C9-FB2A-6EA3AAAF6131">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<defaultValue>datetime(&apos;now&apos;)</defaultValue>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="id" id="21AB55DD-B87E-B879-128B-BF1593B5089B">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="nowy_etap" id="37B1141E-A03C-552F-2C8F-C5A9551F8AC4">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="uzytkownik_id" id="433EA0AD-E141-E381-7284-9211A5644B35">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="akcja" id="62915FBB-0610-2CB4-6018-EF18B10974E1">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="stary_status" id="70E521DA-4088-27C9-4DE0-AEE2C15FF463">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="komentarz" id="94267D30-AE65-107A-4DAB-8566E7F2AF07">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="nowy_status" id="A68461D5-0718-0CC8-4A2F-5C0A5AA96E44">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="stary_etap" id="DAB0C9D6-FEB3-13AF-E792-714A3B979781">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.ColumnProxySqlServerv2k12" name="dokument_id" id="FF99EE91-4557-E68F-49FB-01AAA7BEEDB1">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ColumnProxy>
+</columnProxies>
+<indexProxies>
+<IndexProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.IndexProxySqlServerv2k12" name="idx_historia_dokument" id="029B296C-3723-1A86-467A-E519943E32A4">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<recomputeStatistics>ON</recomputeStatistics>
+</IndexProxy>
+<IndexProxy class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k12.IndexProxySqlServerv2k12" name="idx_historia_uzytkownik" id="6B04EA6C-F97A-D2EA-6517-E0FD01C30557">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<recomputeStatistics>ON</recomputeStatistics>
+</IndexProxy>
+</indexProxies>
+<foreignKeys>
+<ForeignKey class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.FKProxySqlServerv2k5" name="historia_dokumentu_uzytkownik_FK" id="206C8601-81FF-D865-8582-9F2FCBC98FF1">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:39:42 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ForeignKey>
+<ForeignKey class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.FKProxySqlServerv2k5" name="historia_dokumentu_dokument_FK" id="99D903F3-7D11-8F46-A50A-C9B50AE260D1">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:39:29 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+</ForeignKey>
+</foreignKeys>
+<primaryKeys>
+<PrimaryKey class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.PKProxySqlServerv2k5" name="historia_dokumentu__IDX" id="4738942B-3F9C-DFFC-FFA3-C3736F4D01C8">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<clustered>true</clustered>
+</PrimaryKey>
+</primaryKeys>
+</TableProxySqlServerv2k5>

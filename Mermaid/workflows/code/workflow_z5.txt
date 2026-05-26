@@ -1,0 +1,44 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: Praktyka zakończona\nZał. nr 3 UKOŃCZONY]) --> B
+
+    subgraph ETAP1 [Etap 1: Wypełnienie ankiety]
+        B[Dziekanat udostępnia\nZał. nr 5 studentowi\npo zakończeniu praktyki] --> C
+        C[Student anonimowo zaznacza\nodpowiedzi dla każdego\nz 14 pytań] --> D
+        D[Student opcjonalnie\nwpisuje dodatkowe uwagi\no przebiegu praktyki] --> E
+        E{Wszystkie 14 pytań\nzaznaczone?} --> |Nie| C
+        E --> |Tak| F
+        F([Część 1 UKOŃCZONA])
+    end
+
+    F --> G
+
+    subgraph ETAP2 [Etap 2: Przekazanie ankiety]
+        G[Student anonimowo\nprzesyła wypełnioną\nankietę do systemu] --> H
+        H{System weryfikuje\nkompletność ankiety} --> |Niekompletna| C
+        H --> |Kompletna| I
+        I[System rejestruje ankietę\nbez danych identyfikujących\nstudenta] --> J
+        J([Część 2 UKOŃCZONA])
+    end
+
+    J --> K
+
+    subgraph ETAP3 [Etap 3: Analiza zbiorcza]
+        K[System agreguje wyniki\nwszystkich ankiet\nz danego roku akademickiego] --> L
+        L[Administracja i opiekun uczelniany\nmają dostęp wyłącznie\ndo wyników zbiorczych] --> M
+        M{Wyniki wskazują\nna problemy?} --> |Tak| N
+        M --> |Nie| O
+        N[Administracja podejmuje\ndziałania naprawcze\ndla kolejnych praktyk] --> O
+        O([Zał. nr 5 UKOŃCZONY])
+    end
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style F fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style J fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style O fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style E fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style H fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style M fill:#fff8e1,stroke:#f9a825,color:#6d4c00

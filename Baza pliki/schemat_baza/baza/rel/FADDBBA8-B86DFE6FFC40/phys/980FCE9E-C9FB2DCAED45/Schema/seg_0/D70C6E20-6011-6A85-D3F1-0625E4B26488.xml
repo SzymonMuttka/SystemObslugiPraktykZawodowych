@@ -1,0 +1,8 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<SchemaSqlServerv2k5 class="oracle.dbtools.crest.model.design.storage.sqlserver.v2k5.SchemaSqlServerv2k5" name="SCHEMA9" directorySegmentName="seg_0" id="D70C6E20-6011-6A85-D3F1-0625E4B26488">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:27 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<database>DB_NULLELEMENT</database>
+</SchemaSqlServerv2k5>

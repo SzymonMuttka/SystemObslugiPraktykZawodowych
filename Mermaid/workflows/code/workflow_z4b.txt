@@ -1,0 +1,58 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: Student ubiega się\no zaliczenie praktyki\nna podstawie zatrudnienia / stażu]) --> B
+
+    subgraph ETAP1 [Etap 1: Wypełnienie wniosku przez studenta]
+        B[Student wypełnia dane\ni uzasadnienie wniosku\nw Zał. nr 4b] --> C
+        C[Student kompletuje\nwymagane załączniki:\numowa o pracę / staż,\nopis stanowiska,\nzakres obowiązków,\nzaświadczenie CEIDG / KRS] --> D
+        D{Wszystkie wymagane\ndokumenty skompletowane?} --> |Nie| C
+        D --> |Tak| E
+        E[Student podpisuje\nZał. nr 4b] --> F
+        F([Część 1 UKOŃCZONA])
+    end
+
+    F --> G
+
+    subgraph ETAP2 [Etap 2: Opinia komisji]
+        G[Komisja ds. praktyk\nweryfikuje złożoną\ndokumentację studenta] --> H
+        H{Dokumentacja\nkompletna i wystarczająca?} --> |Nie| I
+        H --> |Tak| J
+        I[Komisja informuje studenta\no brakach w dokumentacji] --> C
+        J[Komisja formułuje\nopinię o wniosku] --> K
+        K{Opinia\npozytywna?} --> |Nie| L
+        K --> |Tak| M
+        L[Komisja odrzuca wniosek\nStudent wraca do\nścieżki standardowej] --> Z
+        M[Przewodniczący Komisji\npodpisuje Zał. nr 4b] --> N
+        N([Część 2 UKOŃCZONA])
+    end
+
+    N --> O
+
+    subgraph ETAP3 [Etap 3: Decyzja dyrektora]
+        O[Dokument trafia do\nDyrektora Instytutu] --> P
+        P{Dyrektor wydaje\ndecyzję} --> |Odmowa| Q
+        P --> |Zaliczenie częściowe| R
+        P --> |Zaliczenie pełne| S
+        Q[Dyrektor nie wyraża zgody\nStudent wraca do\nścieżki standardowej] --> Z
+        R[Dyrektor wskazuje efekty\ndo dodatkowego zaliczenia\ni podpisuje] --> T
+        S[Dyrektor wyraża\npełną zgodę\ni podpisuje] --> T
+        T([Część 3 UKOŃCZONA])
+    end
+
+    T --> U
+    U([Zał. nr 4b UKOŃCZONY\nMożliwe tworzenie\nZał. nr 4a])
+    Z([Wniosek ODRZUCONY\nStudent realizuje\npraktykę standardowo])
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style F fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style N fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style T fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style U fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style Z fill:#ffebee,stroke:#c62828,color:#7f0000
+    style D fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style H fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style K fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style P fill:#fff8e1,stroke:#f9a825,color:#6d4c00

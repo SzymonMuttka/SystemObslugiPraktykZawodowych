@@ -1,0 +1,16 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<FKIndexAssociation class="oracle.dbtools.crest.model.design.relational.FKIndexAssociation" directorySegmentName="seg_0" id="77A893EB-6568-63FC-D2E1-470CD61997EA" containerWithKeyObject="2CB9771D-A4FA-68CD-1C37-1AC2A4039964" localFKIndex="99D903F3-7D11-8F46-A50A-C9B50AE260D1" name="historia_dokumentu_dokument_FK">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:39:29 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<referredTableLongName>dokument</referredTableLongName>
+<deleteRule>NO ACTION</deleteRule>
+<referredTableID>EF6AFDA2-716A-DA16-4754-6FF8F55DFD08</referredTableID>
+<keyObject>4E70A9C5-7D69-1063-3F08-E306427E44DC</keyObject>
+<referredKeyID>4E70A9C5-7D69-1063-3F08-E306427E44DC</referredKeyID>
+<mandatory>true</mandatory>
+<refColNames>id</refColNames>
+<transferable>true</transferable>
+<rely>false</rely>
+<columnDependencyConstraintGenerateInDDL>true</columnDependencyConstraintGenerateInDDL>
+</FKIndexAssociation>

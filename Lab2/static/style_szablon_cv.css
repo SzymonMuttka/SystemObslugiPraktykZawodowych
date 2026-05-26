@@ -1,0 +1,124 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    background-color: #ffffff;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+nav a {
+    text-decoration: none;
+    color: #0077cc;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+nav a:hover {
+    color: #005fa3;
+}
+
+nav p {
+    color: #999;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ddd;
+}
+
+h1 {
+    text-align: center;
+    margin: 40px 0 20px 0;
+    color: #222;
+}
+
+.cv-container {
+    max-width: 800px;
+    margin: 0 auto 30px auto;
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.cv-container h1 {
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.cv-container h2 {
+    color: #0077cc;
+    margin-bottom: 15px;
+}
+
+.cv-container h3 {
+    margin-top: 25px;
+    margin-bottom: 10px;
+    color: #222;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.cv-container a {
+    color: #0077cc;
+    text-decoration: none;
+}
+
+.cv-container a:hover {
+    text-decoration: underline;
+}
+
+.cv-container ul {
+    margin-left: 20px;
+}
+
+.cv-container li {
+    margin: 5px 0;
+    color: #555;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.cv-container p {
+    color: #444;
+}
+
+form {
+    max-width: 800px;
+    margin: 0 auto 50px auto;
+    display: flex;
+    justify-content: center;
+}
+
+button {
+    padding: 12px 20px;
+    background-color: #0077cc;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+button:hover {
+    background-color: #005fa3;
+}
+
+button:active {
+    transform: scale(0.98);
+}

@@ -1,0 +1,36 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: Zał. nr 6 UKOŃCZONY\ni Zał. nr 2a UKOŃCZONY]) --> B
+
+    subgraph ETAP1 [Etap 1: Potwierdzenie opiekuna firmowego]
+        B[Dziekanat tworzy Zał. nr 4\nna podstawie danych\nz Zał. nr 2a] --> C
+        C[Opiekun firmowy zaznacza\nuzyskanie / nie uzyskanie\nkażdego efektu uczenia się] --> D
+        D{Wszystkie efekty\nzaznaczone?} --> |Nie| C
+        D --> |Tak| E
+        E[Opiekun firmowy\npodpisuje Zał. nr 4] --> F
+        F([Część 1 UKOŃCZONA])
+    end
+
+    F --> G
+
+    subgraph ETAP2 [Etap 2: Opinia opiekuna uczelnianego]
+        G[Opiekun uczelniany\nweryfikuje oceny\nopiekuna firmowego] --> H
+        H{Oceny są\nwiarygodne?} --> |Nie - wymaga wyjaśnień| I
+        H --> |Tak| J
+        I[Opiekun uczelniany\nkonsultuje z opiekunem\nfirmowym rozbieżności] --> C
+        J[Opiekun uczelniany\nwpisuje opinię\ni podpisuje Zał. nr 4] --> K
+        K([Część 2 UKOŃCZONA])
+    end
+
+    K --> L
+    L([Zał. nr 4 UKOŃCZONY\nOdblokowana ocena uczelniana\nw Zał. nr 3])
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style F fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style K fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style L fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style D fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style H fill:#fff8e1,stroke:#f9a825,color:#6d4c00

@@ -1,0 +1,41 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: Zał. nr 4b UKOŃCZONY]) --> B
+
+    subgraph ETAP1 [Etap 1: Przygotowanie dokumentu]
+        B[Dziekanat tworzy Zał. nr 4a\nna podstawie danych\nz Zał. nr 4b] --> C
+        C[Przewodniczący Komisji\nds. praktyk zaznacza\nuzyskanie / częściowe uzyskanie\n/ nie uzyskanie każdego efektu] --> D
+        D{Wszystkie efekty\nzaznaczone?} --> |Nie| C
+        D --> |Tak| E
+    end
+
+    E --> F
+
+    subgraph ETAP2 [Etap 2: Weryfikacja komisji]
+        F{Czy wszystkie efekty\nuzyskane w pełni?} --> |Tak| G
+        F --> |Nie - częściowe\nlub brak uzyskania| H
+        H[Komisja określa\nbrakujące elementy\ndo uzupełnienia] --> I
+        I[Komisja wpisuje\nwymagane uzupełnienia\ndla efektów częściowych] --> G
+        G[Przewodniczący Komisji\npodpisuje Zał. nr 4a] --> J
+        J([Część 1 UKOŃCZONA])
+    end
+
+    J --> K
+
+    subgraph ETAP3 [Etap 3: Decyzja dyrektora]
+        K[Dokument trafia do\nDyrektora Instytutu\ndo wglądu] --> L
+        L{Dyrektor zatwierdza\nwynik komisji?} --> |Nie| M
+        L --> |Tak| N
+        M[Dyrektor odsyła\ndokument do\nponownej weryfikacji] --> C
+        N([Zał. nr 4a UKOŃCZONY\nMożliwe tworzenie\nZał. nr 7a])
+    end
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style J fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style N fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style D fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style F fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style L fill:#fff8e1,stroke:#f9a825,color:#6d4c00

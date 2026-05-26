@@ -1,0 +1,66 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: Zał. nr 4a UKOŃCZONY]) --> B
+
+    subgraph ETAP1 [Etap 1: Przygotowanie sprawozdania]
+        B[Dziekanat tworzy Zał. nr 7a\nna podstawie danych\nz konta studenta] --> C
+        C[Student wypełnia\ncharakterystykę\nmiejsca pracy] --> D
+        D[Student opisuje i analizuje\nnajważniejsze wykonywane\nprace zawodowe / stażowe] --> E
+        E[Student dokonuje szczegółowej\nsaooceny nabytych kompetencji\ni efektów uczenia się\nz Zał. nr 4a] --> F
+        F{Wszystkie trzy\nsekcje wypełnione?} --> |Nie| C
+        F --> |Tak| G
+        G([Część 1 UKOŃCZONA])
+    end
+
+    G --> H
+
+    subgraph ETAP2 [Etap 2: Weryfikacja własna studenta]
+        H[Student weryfikuje\nspójność sprawozdania\nz dokumentacją złożoną\nw Zał. nr 4b] --> I
+        I{Sprawozdanie\nspójne z Zał. nr 4b?} --> |Nie| J
+        I --> |Tak| K
+        J[Student koryguje\nniespójne fragmenty\nsprawozdania] --> H
+        K([Część 2 UKOŃCZONA])
+    end
+
+    K --> L
+
+    subgraph ETAP3 [Etap 3: Podpisanie przez studenta]
+        L[Student podpisuje\nZał. nr 7a\ni składa do systemu] --> M
+        M([Część 3 UKOŃCZONA])
+    end
+
+    M --> N
+
+    subgraph ETAP4 [Etap 4: Podpis przełożonego lub opiekuna uczelnianego]
+        N[Sprawozdanie trafia do\nbezpośredniego przełożonego\nlub opiekuna uczelnianego] --> O
+        O{Kto podpisuje\nsprawozdanie?} --> |Bezpośredni\nprzełożony| P
+        O --> |Opiekun\nuczelniany| R
+        P[Bezpośredni przełożony\nweryfikuje zgodność\nsprawozdania z pracą studenta] --> Q
+        Q{Sprawozdanie\nzgodne z rzeczywistością?} --> |Nie| S
+        Q --> |Tak| T
+        R[Opiekun uczelniany\nweryfikuje sprawozdanie\nna podstawie Zał. nr 4a] --> U
+        U{Sprawozdanie\nwystarczające?} --> |Nie| V
+        U --> |Tak| T
+        S[Przełożony informuje studenta\no konieczności\nuzupełnienia] --> C
+        V[Opiekun uczelniany\ninformuje studenta\no konieczności uzupełnienia] --> C
+        T[Przełożony lub opiekun\nuczelniany podpisuje\nZał. nr 7a] --> W
+        W([Część 4 UKOŃCZONA])
+    end
+
+    W --> X
+    X([Zał. nr 7a UKOŃCZONY\nMożliwe tworzenie\nZał. nr 8])
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style G fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style K fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style M fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style W fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style X fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style F fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style I fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style O fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style Q fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style U fill:#fff8e1,stroke:#f9a825,color:#6d4c00

@@ -1,0 +1,17 @@
+==============================
+CV - Adam Schab
+==============================
+
+Stanowisko: C Developer
+
+Email: 21278@student.ans-elblag.pl
+GitHub: https://github.com/SzymonMuttka
+
+Umiejętności:
+- C
+- FORTRAN
+- JAVA
+- PYTHON
+
+Doświadczenie:
+opis projektow

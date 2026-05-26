@@ -1,0 +1,50 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: Zał. nr 6 UKOŃCZONY]) --> B
+
+    subgraph ETAP1 [Etap 1: Przygotowanie sprawozdania]
+        B[Dziekanat tworzy Zał. nr 7\nna podstawie danych\nz Zał. nr 1 i konta studenta] --> C
+        C[Student wypełnia\ncharakterystykę miejsca\nodbywania praktyki] --> D
+        D[Student opisuje i analizuje\nnajważniejsze wykonywane\nprace z Zał. nr 6] --> E
+        E[Student dokonuje samooceny\nnabytych kompetencji\ni efektów uczenia się\nz Zał. nr 2a] --> F
+        F{Wszystkie trzy\nsekcje wypełnione?} --> |Nie| C
+        F --> |Tak| G
+        G([Część 1 UKOŃCZONA])
+    end
+
+    G --> H
+
+    subgraph ETAP2 [Etap 2: Weryfikacja własna studenta]
+        H[Student weryfikuje\nspójność sprawozdania\nz wpisami w Zał. nr 6] --> I
+        I{Sprawozdanie\nspójne z Zał. nr 6?} --> |Nie| J
+        I --> |Tak| K
+        J[Student koryguje\nniespójne fragmenty\nsprawozdania] --> H
+        K([Część 2 UKOŃCZONA])
+    end
+
+    K --> L
+
+    subgraph ETAP3 [Etap 3: Podpisanie i złożenie]
+        L[Student podpisuje\nZał. nr 7\ni składa do systemu] --> M
+        M[Opiekun uczelniany\notrzymuje Zał. nr 7\ndo wglądu] --> N
+        N{Sprawozdanie\nwystarczające do\noceny?} --> |Nie| O
+        N --> |Tak| P
+        O[Opiekun uczelniany\ninformuje studenta\no konieczności uzupełnienia] --> C
+        P[Opiekun uczelniany\nna podstawie Zał. nr 7\nwystawia ocenę w Zał. nr 3] --> Q
+        Q([Część 3 UKOŃCZONA])
+    end
+
+    Q --> R
+    R([Zał. nr 7 UKOŃCZONY\nOdblokowana ocena sprawozdania\nw Zał. nr 3 etap 4])
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style G fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style K fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style Q fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style R fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style F fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style I fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style N fill:#fff8e1,stroke:#f9a825,color:#6d4c00

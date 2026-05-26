@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <title>Moje zainteresowania</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_zainteresowania.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="/">Strona główna</a>
+        <p> | </p>
+        <a href="/zainteresowania">Moje zainteresowania</a>
+        <p> | </p>
+        <a href="/kontakt">Kontakt ze mną</a>
+        <p> | </p>
+        <a href="/generator">Formularz CV</a>
+    </nav>
+    <hr />
+    <h1>Moje zainteresowania</h1>
+    <ol class="main-list">
+        <li class="main-list-li">Motorsport, głównie:</li>
+        <ul class="secondary-list">
+            <li class="secondary-list-li">Formuła 1/2/3</li>
+            <li class="secondary-list-li">Indycar</li>
+            <li class="secondary-list-li">WEC</li>
+        </ul>
+        <li class="main-list-li">Gry komputerowe, głównie:</li>
+            <ul class="secondary-list">
+                <li class="secondary-list-li">Seria Metal Gear Solid</li>
+                <li class="secondary-list-li">Counter-Strike 2</li>
+                <li class="secondary-list-li">Symulatory (od ETS2 po Assetto Corsa)</li>
+            </ul>
+        <li class="main-list-li">Muzyka, głównie gatunki:</li>
+            <ul class="secondary-list">
+                <li class="secondary-list-li">Nightcore</li>
+                <li class="secondary-list-li">Eurobeat</li>
+            </ul>
+        <li class="main-list-li">Programowanie, głównie w C</li>
+    </ol>
+</body>
+</html>

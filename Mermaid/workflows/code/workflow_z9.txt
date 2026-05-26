@@ -1,0 +1,56 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: Student znalazł\nmiejsce praktyki zawodowej]) --> B
+
+    subgraph ETAP1 [Etap 1: Wypełnienie oświadczenia]
+        B[Student dostarcza dane\nfirmy do systemu:\nnazwa, adres, dane\nopiekuna firmowego] --> C
+        C[System prefilluje\ndane studenta\nz konta] --> D
+        D[Opiekun firmowy wypełnia\nmiejscowość i datę\noświadczenia] --> E
+        E[Opiekun firmowy wypełnia\ndane zakładowego opiekuna:\nimię, nazwisko, stanowisko,\ntelefon, e-mail] --> F
+        F[Opiekun firmowy wypełnia\ndane osoby upoważnionej\ndo podpisania porozumienia] --> G
+        G[Opiekun firmowy wypełnia\ntermin odbywania\npraktyki od / do] --> H
+        H{Wszystkie wymagane\npola wypełnione?} --> |Nie| D
+        H --> |Tak| I
+        I([Część 1 UKOŃCZONA])
+    end
+
+    I --> J
+
+    subgraph ETAP2 [Etap 2: Podpisanie oświadczenia]
+        J[Osoba upoważniona\ndo reprezentacji firmy\nskłada podpis\ni przybija pieczęć] --> K
+        K{Podpis i pieczęć\nzłożone?} --> |Nie| J
+        K --> |Tak| L
+        L([Część 2 UKOŃCZONA])
+    end
+
+    L --> M
+
+    subgraph ETAP3 [Etap 3: Weryfikacja przez dziekanat]
+        M[Dziekanat otrzymuje\nZał. nr 9 do weryfikacji] --> N
+        N{Dane firmy zgodne\nz wymogami uczelni?} --> |Nie| O
+        N --> |Tak| P
+        O{Czy braki\nmożliwe do uzupełnienia?} --> |Nie - firma\nniezaakceptowana| Q
+        O --> |Tak| R
+        R[Dziekanat informuje studenta\no konieczności uzupełnienia\ndanych przez firmę] --> D
+        Q[Dziekanat odrzuca\noświadczenie\nStudent szuka nowego\nmiejsca praktyki] --> Z
+        P[Dziekanat akceptuje\nZał. nr 9] --> S
+        S([Część 3 UKOŃCZONA])
+    end
+
+    S --> T
+    T([Zał. nr 9 UKOŃCZONY\nMożliwe tworzenie\nZał. nr 1])
+    Z([Oświadczenie ODRZUCONE\nStudent wraca do\nposzukiwania miejsca praktyki])
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style I fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style L fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style S fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style T fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style Z fill:#ffebee,stroke:#c62828,color:#7f0000
+    style H fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style K fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style N fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style O fill:#fff8e1,stroke:#f9a825,color:#6d4c00

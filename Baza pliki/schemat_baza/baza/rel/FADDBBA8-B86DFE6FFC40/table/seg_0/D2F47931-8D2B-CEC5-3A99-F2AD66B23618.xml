@@ -1,0 +1,148 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="D2F47931-8D2B-CEC5-3A99-F2AD66B23618" name="pytanie_komisji">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:33 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>61572813-4B32-E8A5-19E9-3147F852E83B</importedID>
+<ordsAlias>ocena_pytania_komisji</ordsAlias>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="id" id="CB4FB37B-6FDB-FCB0-EF71-94C0C1B1D07C">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>C497F651-5B83-B98A-AF9C-07F2992BC25D</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="dokument_id" id="1CE6B0EE-91A7-3FF2-22C5-FA3BBBF6EC27">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:43:20 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="8E625954-2136-7163-C25D-CA55D81C9B1D" referredColumn="E8923E12-E11E-34AF-DA99-F1BFC0EABE88"/>
+</associations>
+</Column>
+<Column name="nr_pytania" id="C72CD2C6-88D8-04EF-ABD3-113C31B85533">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:42:31 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="tresc_pytania" id="5F4EAF79-0AA4-A863-0CBA-C7437B9BADC7">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:42:31 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="czlonek_id" id="707413F7-A3DF-120E-7611-4A4C20224656">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>CCB0E4CF-1149-25FA-D1FC-D79B6C3DAACA</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="B3C2E70A-019D-2174-5C63-C3B791FC9954" referredColumn="D4CA6A6E-29C4-9725-3290-369DC2B7BF94"/>
+</associations>
+</Column>
+<Column name="wartosc_oceny" id="F2E4133C-9EDC-2E16-4949-B414A97397FE">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>62994895-032E-2D0A-E750-42669AD27C19</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="oceniono" id="CBF6EDDC-946E-3AFC-7B78-32B0C1D58D04">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>E95C0B60-54DE-474C-F61A-E143212CB8BF</importedID>
+<use>0</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
+<usesDefaultValue>true</usesDefaultValue>
+<defaultValue>datetime(&apos;now&apos;)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="E608E5EC-ABC7-0087-47AB-ADE28CF79B34" name="pytanie_komisji__IDX">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<importedID>E44988F9-CDF1-0EB3-7D40-CE64A9698579</importedID>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="CB4FB37B-6FDB-FCB0-EF71-94C0C1B1D07C"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="CE82154B-4D4B-452C-8044-B3580FFE0C22" name="pytanie_komisji__UN">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:44:55 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Unique Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="1CE6B0EE-91A7-3FF2-22C5-FA3BBBF6EC27"/>
+<colUsage columnID="C72CD2C6-88D8-04EF-ABD3-113C31B85533"/>
+<colUsage columnID="707413F7-A3DF-120E-7611-4A4C20224656"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="39B735CA-5389-C955-5731-9B2D91F2D52F" name="pytanie_komisji_uzytkownik_FK">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:54:48 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="707413F7-A3DF-120E-7611-4A4C20224656"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="47302173-B53B-756A-B808-1D30590D1871" name="pytanie_komisji_dokument_FK">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:43:20 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="1CE6B0EE-91A7-3FF2-22C5-FA3BBBF6EC27"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

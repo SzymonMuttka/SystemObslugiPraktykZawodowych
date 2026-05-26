@@ -1,0 +1,13 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<OSDM_Design class="oracle.dbtools.crest.model.design.Design" name="baza" id="662B69C7-DE84-F8AD-916A-608CE42F9A04" version="3.5">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:17 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<capitalNames>false</capitalNames>
+<designId>662B69C7-DE84-F8AD-916A-608CE42F9A04</designId>
+<usedDesignStorageDescriptors>
+<designDescr class="oracle.dbtools.crest.model.design.Design$DesignStorageDesc" id="723BFA3F-ABAD-5734-4213-10108B73384C">
+<designStoragePath>C:\baza_sqlite</designStoragePath>
+</designDescr>
+</usedDesignStorageDescriptors>
+</OSDM_Design>

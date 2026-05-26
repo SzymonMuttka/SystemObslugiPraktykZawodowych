@@ -1,0 +1,125 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="FE699296-1E69-A844-F301-2650552CBB87" name="dane_dokumentu">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:36:07 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<ordsAlias>table_28</ordsAlias>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="id" id="DD9DCF2E-C0E4-9867-A4DD-8A1E166C1200">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:36:54 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="dokument_id" id="9D9AAC58-543E-6065-17C5-312DCA84C7A9">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:37:38 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="38C36697-2257-FA52-CC87-9D00D8DDD5ED" referredColumn="E8923E12-E11E-34AF-DA99-F1BFC0EABE88"/>
+</associations>
+</Column>
+<Column name="klucz" id="9593D32B-75CD-A9C9-3ACA-323323277679">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:36:54 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="wartosc" id="6571F132-70E9-9597-0192-82284A886E23">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:36:54 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="wypelnione_przez" id="1DFED720-C9A5-B716-1D65-07C4D4AD675F">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:38:23 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="9E924FF3-636C-7223-093C-D6B9DC9C4498" referredColumn="D4CA6A6E-29C4-9725-3290-369DC2B7BF94"/>
+</associations>
+</Column>
+<Column name="wypelniono" id="9C59D211-3D57-211D-894D-8AB9561FE6CD">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:36:54 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="811864D6-FF85-88EB-800D-E598EF986467" name="dane_dokumentu_PK">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:36:54 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="DD9DCF2E-C0E4-9867-A4DD-8A1E166C1200"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="9B71F20B-2368-8E31-541A-F19BDADD7ED6" name="dane_dokumentu__UN">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:39:10 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Unique Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="9D9AAC58-543E-6065-17C5-312DCA84C7A9"/>
+<colUsage columnID="9593D32B-75CD-A9C9-3ACA-323323277679"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="8A3FE4AE-15F9-AC76-F63D-C224D88E8F35" name="dane_dokumentu_dokument_FK">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:37:37 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="9D9AAC58-543E-6065-17C5-312DCA84C7A9"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="8A0ED0C6-8571-D3C1-C0E8-7602A840EA39" name="dane_dokumentu_uzytkownik_FK">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-05-26 03:38:23 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="1DFED720-C9A5-B716-1D65-07C4D4AD675F"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

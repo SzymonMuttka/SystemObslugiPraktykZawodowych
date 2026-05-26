@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <title>Szablon CV</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_szablon_cv.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="/">Strona główna</a>
+        <p> | </p>
+        <a href="/zainteresowania">Moje zainteresowania</a>
+        <p> | </p>
+        <a href="/kontakt">Kontakt ze mną</a>
+        <p> | </p>
+        <a href="/generator">Formularz CV</a>
+    </nav>
+    <hr />
+    <h1>Formularz CV</h1><br>
+    <div class="cv-container">
+        <h1>{{ cv.fullname }}</h1>
+        <h2>{{ cv.position }}</h2>
+        <p>Email: {{ cv.email }} | GitHub: <a href="{{ cv.github }}">{{ cv.github }}</a></p>
+
+        <h3>Umiejętności techniczne:</h3>
+        <ul>
+            {% for skill in cv.skills %}
+                <li>{{ skill.strip() }}</li>
+            {% endfor %}
+        </ul>
+
+        <h3>Doświadczenie:</h3>
+        <p>{{ cv.experience }}</p>
+        <h3>Poziom doświadczenia: {{ cv.get_experience_level() }}</h3>
+    </div>
+    <form action="/pobierz_cv" method="POST">
+        <input type="hidden" name="fullname" value="{{ cv.fullname }}">
+        <input type="hidden" name="email" value="{{ cv.email }}">
+        <input type="hidden" name="github" value="{{ cv.github }}">
+        <input type="hidden" name="position" value="{{ cv.position }}">
+        <input type="hidden" name="skills" value="{{ cv.skills | join(',') }}">
+        <input type="hidden" name="experience" value="{{ cv.experience }}">
+    
+        <button type="submit">Pobierz jako tekst</button>
+    </form>
+</body>
+</html>

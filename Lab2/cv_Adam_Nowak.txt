@@ -1,0 +1,14 @@
+==============================
+CV - Adam Nowak
+==============================
+
+Stanowisko: Java Developer
+
+Email: adam_nowak@email.com
+GitHub: https://github.com/AdamNowak
+
+Umiejętności:
+- JAVA
+
+Doświadczenie:
+Example description

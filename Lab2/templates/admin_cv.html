@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <title>Formularze CV</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_admin_cv.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="/">Strona główna</a>
+        <p> | </p>
+        <a href="/zainteresowania">Moje zainteresowania</a>
+        <p> | </p>
+        <a href="/kontakt">Kontakt ze mną</a>
+        <p> | </p>
+        <a href="/generator">Formularz CV</a>
+    </nav>
+    <hr />
+    <h1>Lista kandydatów</h1>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Imię i nazwisko</th>
+            <th>Email</th>
+            <th>GitHub</th>
+            <th>Stanowisko</th>
+            <th>Skills</th>
+            <th>Doświadczenie</th>
+        </tr>
+        {% for cv in cvs %}
+        <tr>
+            <td>{{ cv.id }}</td>
+            <td>{{ cv.fullname }}</td>
+            <td>{{ cv.email }}</td>
+            <td>{{ cv.github }}</td>
+            <td>{{ cv.position }}</td>
+            <td>
+                {% for skill in cv.skills %}
+                    {{ skill }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </td>
+            <td>{{ cv.experience }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

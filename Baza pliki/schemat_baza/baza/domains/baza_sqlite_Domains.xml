@@ -1,0 +1,21 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<DomainFile class="oracle.dbtools.crest.model.design.DomainFileWrapper" fileName="baza_sqlite_Domains">
+<domains>
+<Domain class="oracle.dbtools.crest.model.design.Domain" name="TEXT_0_0_0" id="0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<avTSortOrder>0</avTSortOrder>
+<fileName>baza_sqlite_Domains</fileName>
+<logicalDatatype>LOGDT040</logicalDatatype>
+</Domain>
+<Domain class="oracle.dbtools.crest.model.design.Domain" name="Integer_0_0_0" id="B276B945-9224-0781-4AB0-65960FB4DED7">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<avTSortOrder>0</avTSortOrder>
+<fileName>baza_sqlite_Domains</fileName>
+<logicalDatatype>LOGDT011</logicalDatatype>
+</Domain>
+</domains>
+</DomainFile>

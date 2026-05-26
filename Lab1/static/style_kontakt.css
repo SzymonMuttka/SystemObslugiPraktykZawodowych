@@ -1,0 +1,16 @@
+body {
+    height: 100vh;
+    background-image: linear-gradient(to bottom, white 50%, #C6F7F7);
+}
+
+nav {
+    display: flex;
+    flex-direction: row;
+}
+
+nav p {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-left: 10px;
+    margin-right: 10px;
+}

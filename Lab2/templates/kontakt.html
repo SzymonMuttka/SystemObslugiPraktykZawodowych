@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <title>Kontakt ze mną</title>
+    <link rel="stylesheet" href="static/style_kontakt.css">
+</head>
+<body>
+    <nav>
+        <a href="/">Strona główna</a>
+        <p> | </p>
+        <a href="/zainteresowania">Moje zainteresowania</a>
+        <p> | </p>
+        <a href="/kontakt">Kontakt ze mną</a>
+        <p> | </p>
+        <a href="/generator">Formularz CV</a>
+    </nav>
+    <hr />
+    <h1>Formularz kontaktowy</h1><br>
+    <form action="/api/kontakt" method="POST">
+        <label>Imię:</label>
+        <input type="text" name="imie_uzytkownika"><br />
+        <label>Wiadomość:</label>
+        <textarea name="tresc"></textarea><br />
+        <button type="submit">Wyślij</button>
+    </form>
+</body>
+</html>

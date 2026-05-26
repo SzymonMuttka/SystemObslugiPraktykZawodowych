@@ -1,0 +1,54 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: Zał. nr 1 UKOŃCZONY\ni Zał. nr 2a UKOŃCZONY]) --> B
+
+    subgraph ETAP1 [Etap 1: Skierowanie na praktykę]
+        B[Dziekanat tworzy Zał. nr 3\nna podstawie danych\nz Zał. nr 1 i Zał. nr 2a] --> C
+        C[Dyrektor Instytutu\npodpisuje skierowanie] --> D
+        D([Część 1 UKOŃCZONA\nStudent może rozpocząć praktykę])
+    end
+
+    D --> E
+
+    subgraph ETAP2 [Etap 2: Potwierdzenie rozpoczęcia]
+        E[Opiekun firmowy potwierdza\nzgłoszenie się studenta\nna praktykę i podpisuje] --> F
+        F[Upoważniony pracownik zakładu\npotwierdza odbycie\nszkolenia BHP i podpisuje] --> G
+        G([Część 2 UKOŃCZONA\nStudent może prowadzić\nDziennik - Zał. nr 6])
+    end
+
+    G --> H
+
+    subgraph ETAP3 [Etap 3: Zaświadczenie odbycia]
+        H([Start: Zał. nr 6 UKOŃCZONY]) --> I
+        I[Kierownik zakładu wypełnia\nzaświadczenie odbycia praktyki\nz uwagami i podpisuje] --> J
+        J([Część 3 UKOŃCZONA])
+    end
+
+    J --> K
+
+    subgraph ETAP4 [Etap 4: Ocena praktyki]
+        K[Opiekun firmowy wystawia\nocenę parametryczną\ni opisową oraz podpisuje] --> L
+        L{Zał. nr 4\nUKOŃCZONY?} --> |Nie| L
+        L --> |Tak| M
+        M[Opiekun uczelniany wystawia\nocenę parametryczną\ni opisową oraz podpisuje] --> N
+        N{Zał. nr 7\nUKOŃCZONY?} --> |Nie| N
+        N --> |Tak| O
+        O[Opiekun uczelniany wystawia\nocenę sprawozdania\ni podpisuje] --> P
+        P([Część 4 UKOŃCZONA])
+    end
+
+    P --> Q
+    Q([Zał. nr 3 UKOŃCZONY\nMożliwe tworzenie\nZał. nr 8])
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style D fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style G fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style H fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style J fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style P fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style Q fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style L fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style N fill:#fff8e1,stroke:#f9a825,color:#6d4c00

@@ -1,0 +1,18 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A[Użytkownik próbuje edytować dokument] --> B{Czy użytkownik jest zalogowany?}
+
+    B -->|Nie| C[Przekieruj do logowania]
+    B -->|Tak| D{Czy rola użytkownika to Student?}
+
+    D -->|Nie| E[Tryb podglądu - Read-only]
+    D -->|Tak| F{Czy status dokumentu to Draft lub Rejected?}
+
+    F -->|Nie| E
+    F -->|Tak| G[Udostępnij formularz edycji]
+
+    G --> H[Użytkownik może edytować i zapisać zmiany]
+    E --> I[Użytkownik może tylko przeglądać dokument]

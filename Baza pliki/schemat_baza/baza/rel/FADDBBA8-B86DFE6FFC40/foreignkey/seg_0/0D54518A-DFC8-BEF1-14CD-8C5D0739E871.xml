@@ -1,0 +1,16 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<FKIndexAssociation class="oracle.dbtools.crest.model.design.relational.FKIndexAssociation" directorySegmentName="seg_0" id="0D54518A-DFC8-BEF1-14CD-8C5D0739E871" containerWithKeyObject="EA0DE0D3-F49A-A53A-0022-6558AF822EED" localFKIndex="EE4640C4-E137-B33A-51A3-02F5AA76267E" name="efekt_uczenia_dokumentu_efekt_uczenia_FK">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:25:04 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<referredTableLongName>efekt_uczenia</referredTableLongName>
+<deleteRule>NO ACTION</deleteRule>
+<referredTableID>AE61C0B2-C73F-5B86-8246-737D82789DE6</referredTableID>
+<keyObject>26F2E710-2F76-7942-41A2-53869F6FBC78</keyObject>
+<referredKeyID>26F2E710-2F76-7942-41A2-53869F6FBC78</referredKeyID>
+<mandatory>true</mandatory>
+<refColNames>id</refColNames>
+<transferable>true</transferable>
+<rely>false</rely>
+<columnDependencyConstraintGenerateInDDL>true</columnDependencyConstraintGenerateInDDL>
+</FKIndexAssociation>

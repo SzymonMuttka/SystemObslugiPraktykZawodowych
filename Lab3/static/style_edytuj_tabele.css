@@ -1,0 +1,137 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    background-color: #ffffff;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+nav a {
+    text-decoration: none;
+    color: #0077cc;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+nav a:hover {
+    color: #005fa3;
+}
+
+nav p {
+    color: #999;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ddd;
+}
+
+.content {
+    max-width: 900px;
+    margin: 40px auto;
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+tr:hover {
+    background-color: #f1f7ff;
+}
+
+input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: #0077cc;
+    box-shadow: 0 0 5px rgba(0, 119, 204, 0.3);
+}
+
+td button {
+    margin-right: 5px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+td button:first-child {
+    background-color: #e7f1ff;
+    color: #0077cc;
+}
+
+td button:first-child:hover {
+    background-color: #d0e7ff;
+}
+
+td button:last-child {
+    background-color: #ffe7e7;
+    color: #cc0000;
+}
+
+td button:last-child:hover {
+    background-color: #ffd0d0;
+}
+
+form > button {
+    margin-top: 15px;
+    margin-right: 10px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+form > button[type="button"] {
+    background-color: #e7f1ff;
+    color: #0077cc;
+}
+
+form > button[type="button"]:hover {
+    background-color: #d0e7ff;
+}
+
+form > button[type="submit"] {
+    background-color: #0077cc;
+    color: white;
+}
+
+form > button[type="submit"]:hover {
+    background-color: #005fa3;
+}

@@ -1,0 +1,29 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: Zał. nr 1 UKOŃCZONY\ni Zał. nr 2 UKOŃCZONY]) --> B
+
+    B[Opiekun firmowy wypełnia\ndziały / komórki praktyki\ni planowane dni robocze\noraz przykładowe prace] --> C
+
+    C[Opiekun uczelniany\nweryfikuje harmonogram\nz programem studiów] --> D
+
+    D{Harmonogram\nzgodny z programem?} --> |Nie| B
+    D --> |Tak| E
+
+    E[Opiekun firmowy\npodpisuje Zał. nr 2a] --> F
+
+    F[Opiekun uczelniany\npodpisuje Zał. nr 2a] --> G
+
+    G[Student zapoznaje się\nz harmonogramem\ni podpisuje Zał. nr 2a] --> H
+
+    H{Wszystkie trzy\npodpisy złożone?} --> |Nie| E
+    H --> |Tak| I
+
+    I([Zał. nr 2a UKOŃCZONY\nMożliwe tworzenie\nZał. nr 3])
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style I fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style D fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style H fill:#fff8e1,stroke:#f9a825,color:#6d4c00

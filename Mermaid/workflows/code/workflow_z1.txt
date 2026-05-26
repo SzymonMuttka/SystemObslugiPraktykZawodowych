@@ -1,0 +1,27 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: Student znajduje zakład pracy]) --> B
+
+    B[Zał. nr 9 ukończony\nOpiekun firmowy wypełnia\ni podpisuje oświadczenie] --> C
+
+    C{Dziekanat weryfikuje\nZał. nr 9} --> |Odrzucony| B
+    C --> |Zaakceptowany| D
+
+    D[Dziekanat tworzy\nZał. nr 1 na podstawie\ndanych z Zał. nr 9] --> E
+
+    E[Dyrektor Instytutu\npodpisuje Zał. nr 1\nw imieniu uczelni] --> F
+
+    F[Opiekun firmowy /\nkierownik zakładu\npodpisuje Zał. nr 1] --> G
+
+    G{Obie strony\npodpisały?} --> |Nie| F
+    G --> |Tak| H
+
+    H([Zał. nr 1 UKOŃCZONY\nMożliwe tworzenie\nZał. nr 2a i Zał. nr 3])
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style H fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style C fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style G fill:#fff8e1,stroke:#f9a825,color:#6d4c00

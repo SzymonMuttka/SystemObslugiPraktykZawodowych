@@ -1,0 +1,39 @@
+[
+    {
+        "id": 1,
+        "fullname": "Szymon Muttka",
+        "email": "21278@student.ans-elblag.pl",
+        "github": "https://github.com/SzymonMuttka",
+        "position": "C Developer",
+        "skills": [
+            "C",
+            "JAVA",
+            "PYTHON"
+        ],
+        "experience": "undetailed description"
+    },
+    {
+        "id": 2,
+        "fullname": "test test",
+        "email": "test@test.test",
+        "github": "https://github.com/",
+        "position": "test",
+        "skills": [
+            "TEST",
+            "TEST",
+            "TEST"
+        ],
+        "experience": "test"
+    },
+    {
+        "id": 3,
+        "fullname": "Adam Nowak",
+        "email": "adam_nowak@email.com",
+        "github": "https://github.com/AdamNowak",
+        "position": "Java Developer",
+        "skills": [
+            "JAVA"
+        ],
+        "experience": "Example description"
+    }
+]

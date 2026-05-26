@@ -1,0 +1,16 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<FKIndexAssociation class="oracle.dbtools.crest.model.design.relational.FKIndexAssociation" directorySegmentName="seg_0" id="32DBBF0F-C722-4035-85ED-4DE49FF905B4" containerWithKeyObject="066795B0-3BE5-39E9-1203-407368B0C629" localFKIndex="71596F8C-2EFC-CB4F-E580-07C36F963345" name="uprawnienie_dokumentu_rola_FK">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:59:26 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<referredTableLongName>rola</referredTableLongName>
+<deleteRule>NO ACTION</deleteRule>
+<referredTableID>F80CC7B3-721A-904E-A9F6-63D81E1A76FC</referredTableID>
+<keyObject>2701AA1B-D7F7-7852-6DF2-5D0C7C5FB6D3</keyObject>
+<referredKeyID>2701AA1B-D7F7-7852-6DF2-5D0C7C5FB6D3</referredKeyID>
+<mandatory>true</mandatory>
+<refColNames>id</refColNames>
+<transferable>true</transferable>
+<rely>false</rely>
+<columnDependencyConstraintGenerateInDDL>true</columnDependencyConstraintGenerateInDDL>
+</FKIndexAssociation>

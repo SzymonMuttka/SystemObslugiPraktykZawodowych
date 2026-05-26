@@ -1,0 +1,22 @@
+---
+config:
+  theme: dark
+---
+stateDiagram-v2
+    [*] --> Draft
+
+    Draft --> Submitted: Student wysyła wniosek
+
+    Submitted --> Under_Review: System przekazuje do opiekuna
+
+    %% Decyzja opiekuna
+    Under_Review --> Approved: Zatwierdzenie
+    Under_Review --> Rejected: Odrzucenie + uwagi
+
+    %% Poprawki po odrzuceniu
+    Rejected --> Draft: Student wprowadza poprawki
+
+    %% Finalizacja
+    Approved --> Closed: Zakończenie procesu
+
+    Closed --> [*]

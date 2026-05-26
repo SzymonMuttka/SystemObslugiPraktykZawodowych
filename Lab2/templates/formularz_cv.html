@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <title>Formularz CV</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_formularz_cv.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="/">Strona główna</a>
+        <p> | </p>
+        <a href="/zainteresowania">Moje zainteresowania</a>
+        <p> | </p>
+        <a href="/kontakt">Kontakt ze mną</a>
+        <p> | </p>
+        <a href="/generator">Formularz CV</a>
+    </nav>
+    <hr />
+    <h1>Formularz CV</h1><br>
+    <form action="/generator" method="POST">
+        <label>Imię i nazwisko:</label>
+        <input type="text" name="fullname"><br />
+        <label>Email:</label>
+        <input type="text" name="email"><br />
+        <label>Link do GitHub:</label>
+        <input type="text" name="github"><br />
+        <label>Stanowisko:</label>
+        <input name="position"><br />
+        <label>Technologie:</label>
+        <textarea name="skills"></textarea><br />
+        <label>Opis ostatnich projektów:</label>
+        <textarea name="experience"></textarea><br />
+        <button type="submit">Wyślij</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,67 @@
+---
+config:
+  theme: dark
+---
+flowchart TD
+    A([Start: ścieżka standardowa:\nZał. nr 3 UKOŃCZONY,\nZał. nr 4 UKOŃCZONY,\nZał. nr 7 UKOŃCZONY\nlub ścieżka alternatywna:\nZał. nr 4a UKOŃCZONY,\nZał. nr 7a UKOŃCZONY]) --> B
+
+    subgraph ETAP1 [Etap 1: Przygotowanie protokołu]
+        B[Dziekanat tworzy Zał. nr 8\nna podstawie danych\nz wszystkich poprzednich\ndokumentów] --> C
+        C[System automatycznie\nprefilluje oceny U i Z\nz Zał. nr 3] --> D
+        D[Administracja wpisuje\nskład komisji\ni datę zaliczenia] --> E
+        E([Część 1 UKOŃCZONA])
+    end
+
+    E --> F
+
+    subgraph ETAP2 [Etap 2: Posiedzenie komisji]
+        F[Komisja zadaje studentowi\npytania i mini zadania\nzawodowe] --> G
+        G[Każdy członek komisji\nwystawia oceny cząstkowe\ndla każdego pytania] --> H
+        H{Wszystkie pytania\nocenione?} --> |Nie| G
+        H --> |Tak| I
+        I[System automatycznie\nwylicza łączną ocenę E\njako średnią cząstkowych] --> J
+        J([Część 2 UKOŃCZONA])
+    end
+
+    J --> K
+
+    subgraph ETAP3 [Etap 3: Wystawienie oceny końcowej]
+        K[Opiekun uczelniany\nwpisuje ocenę S\nza sprawozdanie z Zał. nr 7] --> L
+        L[System automatycznie\nwylicza ocenę końcową K\nwg wzoru 0.4E + 0.1S\n+ 0.2U + 0.3Z] --> M
+        M{Ocena końcowa K\nobliczona poprawnie?} --> |Nie| N
+        M --> |Tak| O
+        N[Administracja weryfikuje\ndane wejściowe\ni koryguje błędy] --> K
+        O([Część 3 UKOŃCZONA])
+    end
+
+    O --> P
+
+    subgraph ETAP4 [Etap 4: Podpisanie protokołu]
+        P[Przewodniczący Komisji\nwpisuje ocenę końcową K\ni podpisuje protokół] --> Q
+        Q[Wszyscy członkowie komisji\npodpisują protokół] --> R
+        R{Wszystkie podpisy\nzłożone?} --> |Nie| Q
+        R --> |Tak| S
+        S([Część 4 UKOŃCZONA])
+    end
+
+    S --> T
+
+    subgraph ETAP5 [Etap 5: Archiwizacja]
+        T[Dziekanat archiwizuje\nZał. nr 8 wraz\nz całą dokumentacją\npraktyki zawodowej] --> U
+        U[Ocena K zostaje\nwpisana do systemu\nuczelnianego USOS] --> V
+        V([Część 5 UKOŃCZONA])
+    end
+
+    V --> W
+    W([Zał. nr 8 UKOŃCZONY\nPraktyka zawodowa\nformalnie zaliczona])
+
+    style A fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style E fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style J fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style O fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style S fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style V fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style W fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    style H fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style M fill:#fff8e1,stroke:#f9a825,color:#6d4c00
+    style R fill:#fff8e1,stroke:#f9a825,color:#6d4c00

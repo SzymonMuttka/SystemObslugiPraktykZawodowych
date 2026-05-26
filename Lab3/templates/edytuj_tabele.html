@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <title>Edytuj tabele</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_edytuj_tabele.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="/">Strona główna</a>
+        <p>|</p>
+        <a href="/edytuj_tabele">Edytuj tabele</a>
+    </nav>
+    <hr />
+    <div class="content">
+        <form action="/aktualizuj-wszystko" method="POST">
+            <table>
+                <tbody id="tableBody">
+                    {% for k in kandydaci %}
+                        <tr>
+                            <td>
+                                <input type="text" name="fullname[]" value="{{ k.fullname }}">
+                            </td>
+                            <td>
+                                <input type="email" name="email[]" value="{{ k.email }}">
+                            </td>
+                            <td>
+                                <button type="button" onclick="addAfter(this)">Dodaj wiersz poniżej</button>
+                                <button type="button" onclick="deleteRow(this)">Usuń</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button type="button" onclick="addRow()">Dodaj wiersz na dole</button>
+            <button type="submit">Zapisz zmiany</button>
+        </form>
+    </div>
+    <script>
+        function addRow() {
+            const tableBody = document.getElementById("tableBody");
+
+            const newRow = document.createElement("tr");
+            newRow.innerHTML = `
+                <td><input type="text" name="fullname[]"></td>
+                <td><input type="email" name="email[]"></td>
+                <td>
+                    <button type="button" onclick="addAfter(this)">Dodaj wiersz poniżej</button>
+                    <button type="button" onclick="deleteRow(this)">Usuń</button>
+                </td>
+            `;
+            tableBody.appendChild(newRow);
+        }
+        
+        function addAfter(button) {
+            const currentRow = button.closest("tr");
+            const newRow = document.createElement("tr");
+            newRow.innerHTML = `
+            <td><input type="text" name="fullname[]"></td>
+            <td><input type="email" name="email[]"></td>
+            <td>
+                <button type="button" onclick="addAfter(this)">Dodaj wiersz poniżej</button>
+                <button type="button" onclick="deleteRow(this)">Usuń</button>
+            </td>
+            `;
+            currentRow.after(newRow);
+        }
+
+        function deleteRow(button) {
+            const row = button.closest("tr");
+            row.remove();
+        }
+    </script>
+</body>
+</html>

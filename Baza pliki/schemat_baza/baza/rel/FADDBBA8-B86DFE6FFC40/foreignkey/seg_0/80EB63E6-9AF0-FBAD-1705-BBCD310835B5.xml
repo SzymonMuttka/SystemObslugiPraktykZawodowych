@@ -1,0 +1,16 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<FKIndexAssociation class="oracle.dbtools.crest.model.design.relational.FKIndexAssociation" directorySegmentName="seg_0" id="80EB63E6-9AF0-FBAD-1705-BBCD310835B5" containerWithKeyObject="066795B0-3BE5-39E9-1203-407368B0C629" localFKIndex="B0FB58C8-9C8A-6C4A-C854-9AD023AAC5B6" name="uprawnienie_dokumentu_typ_dokumentu_FK">
+<createdBy>Student</createdBy>
+<createdTime>2026-04-29 08:59:33 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<referredTableLongName>typ_dokumentu</referredTableLongName>
+<deleteRule>NO ACTION</deleteRule>
+<referredTableID>44FF2B6E-C231-47CD-F6AB-3A1CE6C6803B</referredTableID>
+<keyObject>F2F75330-459C-6C7B-CBD4-5F556703FE89</keyObject>
+<referredKeyID>F2F75330-459C-6C7B-CBD4-5F556703FE89</referredKeyID>
+<mandatory>true</mandatory>
+<refColNames>id</refColNames>
+<transferable>true</transferable>
+<rely>false</rely>
+<columnDependencyConstraintGenerateInDDL>true</columnDependencyConstraintGenerateInDDL>
+</FKIndexAssociation>
