@@ -14,7 +14,7 @@ INSERT INTO role (nazwa) VALUES
 -- FIRMY
 -- ============================================================
 
-INSERT INTO firma (nazwa, adres, miasto, osoba_upowazzona_imie_nazwisko, osoba_upowazzona_stanowisko) VALUES
+INSERT INTO firma (nazwa, adres, miasto, osoba_upowazniona_imie_nazwisko, osoba_upowazniona_stanowisko) VALUES
     ('ABC Software Sp. z o.o.', 'ul. Informatyczna 1', 'Elbląg', 'Marek Wiśniewski', 'Prezes Zarządu'),
     ('XYZ Systems S.A.', 'ul. Programistów 15', 'Gdańsk', 'Katarzyna Lewandowska', 'Dyrektor Generalny'),
     ('DevCorp Sp. z o.o.', 'ul. Systemowa 8', 'Olsztyn', 'Tomasz Dąbrowski', 'Kierownik IT');
