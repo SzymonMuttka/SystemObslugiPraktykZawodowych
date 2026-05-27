@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Załącznik 6 — Dziennik praktyki zawodowej{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-header">
+        <h2>Załącznik 6: Dziennik praktyki zawodowej</h2>
+        <p>Formularz dla dziennika praktyk z możliwością dodawania kolejnych wpisów.</p>
+    </div>
+
+    <form method="post" class="document-form">
+        <fieldset class="form-section">
+            <legend>Dane studenta / praktyki</legend>
+
+            <div class="form-group">
+                <label>Imię i nazwisko studenta</label>
+                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Nr indeksu</label>
+                <input type="text" value="{{ nr_indeksu }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Specjalność</label>
+                <input type="text" value="{{ specjalnosc }}" readonly>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Rok akademicki</label>
+                    <input type="text" value="{{ rok_akademicki }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Miejsce odbywania praktyki</label>
+                    <input type="text" value="{{ miejsce_praktyki }}" readonly>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Data rozpoczęcia praktyki</label>
+                    <input type="date" value="{{ data_rozp }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Data zakończenia praktyki</label>
+                    <input type="date" value="{{ data_zak }}" readonly>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="wykaz_zalacznikow">Wykaz załączników</label>
+                <textarea id="wykaz_zalacznikow" name="wykaz_zalacznikow" rows="3" {% if role != 'student' %}readonly{% endif %}>{{ wykaz_zalacznikow }}</textarea>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wykaz dni praktyki</legend>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dzień</th>
+                        <th>Data</th>
+                        <th>Opis wykonywanych prac</th>
+                        <th>Nr efektów uczenia się</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td><input type="number" name="dzien[]" min="1" required {% if role != 'student' %}readonly{% endif %}></td>
+                        <td><input type="date" name="data[]" required {% if role != 'student' %}readonly{% endif %}></td>
+                        <td><input type="text" name="opis[]" required {% if role != 'student' %}readonly{% endif %}></td>
+                        <td><input type="text" name="efekty[]" required {% if role != 'student' %}readonly{% endif %}></td>
+                        <td>
+                            {% if role == 'student' %}
+                            <button type="button" class="dodaj_nowy" onclick="addAfter(this)">Dodaj wiersz poniżej</button>
+                            <button type="button" class="usun" onclick="deleteRow(this)">Usuń</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            {% if role == 'student' %}
+            <button type="button" onclick="addRow()">Dodaj wiersz na dole</button>
+            {% endif %}
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Uwagi opiekuna firmowego</legend>
+            <div class="form-group">
+                <label for="uwagi_opiekuna_firmowego">Uwagi</label>
+                <textarea id="uwagi_opiekuna_firmowego" name="uwagi_opiekuna_firmowego" rows="4" {% if role != 'opiekun_firmowy' %}readonly{% endif %}>{{ uwagi_opiekuna_firmowego }}</textarea>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Zapisz załącznik 6</button>
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function createRow() {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="number" name="dzien[]" min="1" required></td>
+            <td><input type="date" name="data[]" required></td>
+            <td><input type="text" name="opis[]" required></td>
+            <td><input type="text" name="efekty[]" required></td>
+            <td>
+                <button type="button" class="dodaj_nowy" onclick="addAfter(this)">Dodaj wiersz poniżej</button>
+                <button type="button" class="usun" onclick="deleteRow(this)">Usuń</button>
+            </td>
+        `;
+        return row;
+    }
+
+    function addRow() {
+        const tableBody = document.getElementById('tableBody');
+        tableBody.appendChild(createRow());
+    }
+
+    function addAfter(button) {
+        const currentRow = button.closest('tr');
+        currentRow.after(createRow());
+    }
+
+    function deleteRow(button) {
+        if (confirm('Czy na pewno chcesz usunąć ten wiersz?')) {
+            const row = button.closest('tr');
+            row.remove();
+        }
+    }
+</script>
+{% endblock %}

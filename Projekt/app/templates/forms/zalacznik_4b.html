@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Załącznik 4b — Wniosek o zaliczenie efektów{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-header">
+        <h2>Załącznik 4b: Wniosek o zaliczenie efektów uczenia się</h2>
+        <p>Formularz wypełniany przez studenta, komisję i dyrektora instytutu.</p>
+    </div>
+
+    <form method="post" class="document-form">
+        <fieldset class="form-section">
+            <legend>Dane studenta (prefilled)</legend>
+
+            <div class="form-group">
+                <label>Imię i nazwisko studenta</label>
+                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Specjalność</label>
+                <input type="text" value="{{ specjalnosc }}" readonly>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełniane przez studenta</legend>
+
+            <div class="form-group">
+                <label for="nr_indeksu">Numer indeksu</label>
+                <input id="nr_indeksu" name="nr_indeksu" type="text"
+                    {% if role != 'student' %}readonly{% endif %}
+                    value="{{ nr_indeksu }}">
+            </div>
+
+            <div class="form-group">
+                <label for="data_zlozenia">Data</label>
+                <input id="data_zlozenia" name="data_zlozenia" type="date"
+                    value="{{ data_zlozenia }}"
+                    {% if role != 'student' %}readonly{% endif %}>
+            </div>
+
+            <div class="form-group">
+                <label for="uzasadnienie">Uzasadnienie</label>
+                <textarea id="uzasadnienie" name="uzasadnienie" rows="4"
+                    {% if role != 'student' %}readonly{% endif %}>{{ uzasadnienie }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="data_uzasadnienia">Data uzasadnienia</label>
+                <input id="data_uzasadnienia" name="data_uzasadnienia" type="date"
+                    value="{{ data_uzasadnienia }}"
+                    {% if role != 'student' %}readonly{% endif %}>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełniane przez komisję</legend>
+
+            <div class="form-group">
+                <label for="opinia_komisji">Opinia komisji</label>
+                <textarea id="opinia_komisji" name="opinia_komisji" rows="4"
+                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>{{ opinia_komisji }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="data_opinii_komisji">Data opinii komisji</label>
+                <input id="data_opinii_komisji" name="data_opinii_komisji" type="date"
+                    value="{{ data_opinii_komisji }}"
+                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełniane przez dyrektora instytutu</legend>
+
+            <div class="form-group">
+                <label for="decyzja_dyrektora">Decyzja</label>
+                <select id="decyzja_dyrektora" name="decyzja_dyrektora"
+                    {% if role != 'dyrektor' %}disabled{% endif %}>
+                    <option value="">Wybierz</option>
+                    <option value="uznanie" {% if decyzja_dyrektora == 'uznanie' %}selected{% endif %}>Uznanie</option>
+                    <option value="czesciowe_uznanie" {% if decyzja_dyrektora == 'czesciowe_uznanie' %}selected{% endif %}>Częściowe uznanie</option>
+                    <option value="nie_uznanie" {% if decyzja_dyrektora == 'nie_uznanie' %}selected{% endif %}>Nie uznanie</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="data_decyzji_dyrektora">Data decyzji</label>
+                <input id="data_decyzji_dyrektora" name="data_decyzji_dyrektora" type="date"
+                    value="{{ data_decyzji_dyrektora }}"
+                    {% if role != 'dyrektor' %}readonly{% endif %}>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Zapisz załącznik 4b</button>
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Załącznik 3 — Karta praktyki zawodowej{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-header">
+        <h2>Załącznik 3: Karta praktyki zawodowej</h2>
+        <p>Wypełnianie pól zgodnie z przydzieloną rolą.</p>
+    </div>
+
+    <form method="post" class="document-form">
+        <fieldset class="form-section">
+            <legend>Dane z załącznika 1 (prefilled)</legend>
+
+            <div class="form-group">
+                <label>Numer porozumienia</label>
+                <input type="text" value="{{ nr_porozumienia }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Data zawarcia porozumienia</label>
+                <input type="date" value="{{ data_zawarcia }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Nazwa zakładu pracy</label>
+                <input type="text" value="{{ nazwa_zakladu_pracy }}" readonly>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Termin od</label>
+                    <input type="date" value="{{ termin_od }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Termin do</label>
+                    <input type="date" value="{{ termin_do }}" readonly>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Rok akademicki</label>
+                <input type="text" value="{{ rok_akademicki }}" readonly>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Dane studenta (prefilled po numerze indeksu)</legend>
+
+            <div class="form-group">
+                <label>Imię i nazwisko studenta</label>
+                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Forma studiów</label>
+                <input type="text" value="{{ forma_studiow }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Specjalność</label>
+                <input type="text" value="{{ specjalnosc }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Uczelniany opiekun praktyki zawodowej</label>
+                <input type="text" value="{{ uczelniany_opiekun }}" readonly>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełnianie przez dziekanat</legend>
+
+            <div class="form-group">
+                <label for="nr_indeksu">Numer indeksu</label>
+                <input id="nr_indeksu" name="nr_indeksu" type="text"
+                    {% if role != 'dziekanat' %}readonly{% endif %}>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełnianie przez opiekuna firmowego</legend>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="miejscowosc">Miejscowość</label>
+                    <input id="miejscowosc" name="miejscowosc" type="text"
+                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                </div>
+                <div class="form-group">
+                    <label for="data_podpisu_firmowego">Data</label>
+                    <input id="data_podpisu_firmowego" name="data_podpisu_firmowego" type="date"
+                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="uwagi">Uwagi kierownika zakładu</label>
+                <textarea id="uwagi" name="uwagi" rows="4"
+                    {% if role != 'opiekun_firmowy' %}readonly{% endif %}></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ocena_przebiegu_1">Ocena przebiegu praktyki zawodowej 1</label>
+                    <input id="ocena_przebiegu_1" name="ocena_przebiegu_1" type="text"
+                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                </div>
+                <div class="form-group">
+                    <label for="data_przebiegu_1">Data na koniec 1</label>
+                    <input id="data_przebiegu_1" name="data_przebiegu_1" type="date"
+                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełnianie przez opiekuna uczelnianego</legend>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ocena_przebiegu_2">Ocena przebiegu praktyki zawodowej 2</label>
+                    <input id="ocena_przebiegu_2" name="ocena_przebiegu_2" type="text"
+                        {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
+                </div>
+                <div class="form-group">
+                    <label for="data_przebiegu_2">Data na koniec 2</label>
+                    <input id="data_przebiegu_2" name="data_przebiegu_2" type="date"
+                        {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="ocena_sprawozdania">Ocena sprawozdania z praktyki</label>
+                <input id="ocena_sprawozdania" name="ocena_sprawozdania" type="text"
+                    {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
+            </div>
+
+            <div class="form-group">
+                <label for="data_sprawozdania">Data na koniec</label>
+                <input id="data_sprawozdania" name="data_sprawozdania" type="date"
+                    {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Zapisz załącznik 3</button>
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

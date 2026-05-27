@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Załącznik 4a — Potwierdzenie uzyskania efektów{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-header">
+        <h2>Załącznik 4a: Potwierdzenie uzyskania efektów uczenia się</h2>
+        <p>Formularz z numerem indeksu dla dziekanatu i decyzją komisji.</p>
+    </div>
+
+    <form method="post" class="document-form">
+        <fieldset class="form-section">
+            <legend>Dane studenta (prefilled)</legend>
+
+            <div class="form-group">
+                <label>Imię i nazwisko studenta</label>
+                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Specjalność</label>
+                <input type="text" value="{{ specjalnosc }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Ilość godzin praktyk</label>
+                <input type="text" value="{{ ilosc_godzin_praktyk }}" readonly>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełniane przez dziekanat</legend>
+            <div class="form-group">
+                <label for="nr_indeksu">Numer indeksu</label>
+                <input id="nr_indeksu" name="nr_indeksu" type="text"
+                    {% if role != 'dziekanat' %}readonly{% endif %}
+                    value="{{ nr_indeksu }}">
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełniane przez komisję</legend>
+
+            <div class="form-group">
+                <label for="wynik_komisji">Wynik uzyskania efektów</label>
+                <select id="wynik_komisji" name="wynik_komisji"
+                    {% if role != 'czlonek_komisji' %}disabled{% endif %}>
+                    <option value="">Wybierz</option>
+                    <option value="w pelni" {% if wynik_komisji == 'w pelni' %}selected{% endif %}>Uzyskanie w pełni</option>
+                    <option value="czesciowo" {% if wynik_komisji == 'czesciowo' %}selected{% endif %}>Uzyskanie częściowo</option>
+                    <option value="nie" {% if wynik_komisji == 'nie' %}selected{% endif %}>Nie uzyskanie</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="data_wyniku_komisji">Data decyzji komisji</label>
+                <input id="data_wyniku_komisji" name="data_wyniku_komisji" type="date"
+                    value="{{ data_wyniku_komisji }}"
+                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Zapisz załącznik 4a</button>
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

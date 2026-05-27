@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logowanie — System praktyk zawodowych</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>System praktyk zawodowych</h1>
+                <p>Akademia Nauk Stosowanych w Elblągu</p>
+                <p>Instytut Informatyki Stosowanej im. Krzysztofa Brzeskiego</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% if blad %}
+            <div class="alert alert-danger">
+                {{ blad }}
+            </div>
+            {% endif %}
+
+            <div class="login-body">
+                <form method="post" class="local-login-form">
+                    <h2>Logowanie lokalne</h2>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input id="email" name="email" type="email" value="{{ email or '' }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Hasło</label>
+                        <input id="password" name="password" type="password" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Zaloguj się</button>
+                </form>
+
+                <div class="divider">
+                    <span>lub</span>
+                </div>
+
+                <div class="social-login">
+                    <p>Zaloguj się przez Microsoft</p>
+                    <a href="{{ url_for('auth.microsoft_login') }}" class="btn-microsoft">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" width="20" height="20">
+                            <path fill="#f35325" d="M1 1h10v10H1z"/>
+                            <path fill="#81bc06" d="M12 1h10v10H12z"/>
+                            <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+                            <path fill="#ffba08" d="M12 12h10v10H12z"/>
+                        </svg>
+                        Zaloguj się przez Microsoft
+                    </a>
+                </div>
+            </div>
+
+            <div class="login-footer">
+                <p>
+                    <a href="{{ url_for('auth.register') }}">Rejestracja testowa</a>
+                </p>
+                <p>
+                    Dostęp mają wyłącznie użytkownicy z domeną
+                    <strong>@ans-elblag.pl</strong> oraz
+                    <strong>@student.ans-elblag.pl</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

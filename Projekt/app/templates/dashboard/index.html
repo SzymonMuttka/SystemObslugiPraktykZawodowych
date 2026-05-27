@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h2>Witaj, {{ uzytkownik.pelne_imie }}</h2>
+        <p class="dashboard-role">
+            Zalogowano jako:
+            <strong>{{ uzytkownik.rola.nazwa | replace('_', ' ') | title }}</strong>
+        </p>
+    </div>
+
+    {% if uzytkownik.rola.nazwa == 'opiekun_firmowy' and not uzytkownik.firma_id %}
+    <div class="alert alert-info alert-action">
+        <div>
+            <strong>Uzupełnij dane firmy</strong>
+            <p>Aby korzystać z systemu i wypełniać dokumenty praktyk, uzupełnij dane swojej firmy.</p>
+        </div>
+        <a href="{{ url_for('dashboard.profil_firmy') }}" class="btn-primary">
+            Uzupełnij dane firmy
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="dashboard-body">
+        <p>Panel główny jest w trakcie budowy.</p>
+        <p>Twój email: {{ uzytkownik.email }}</p>
+        <p>Twoja rola: {{ uzytkownik.rola.nazwa }}</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Załącznik 8 — Protokół zaliczenia praktyki zawodowej{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-header">
+        <h2>Załącznik 8: Protokół zaliczenia praktyki zawodowej</h2>
+        <p>Formularz z rolami ograniczonymi do dziekanatu, opiekuna uczelnianego i komisji.</p>
+    </div>
+
+    <form method="post" class="document-form">
+        <fieldset class="form-section">
+            <legend>Dane studenta / praktyki</legend>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Numer indeksu</label>
+                    <input type="text" value="{{ nr_indeksu }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Imię i nazwisko studenta</label>
+                    <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Specjalność</label>
+                    <input type="text" value="{{ specjalnosc }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Rok akademicki</label>
+                    <input type="text" value="{{ rok_akademicki }}" readonly>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Miejsce praktyki</label>
+                    <input type="text" value="{{ miejsce_praktyki }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Okres praktyki</label>
+                    <input type="text" value="{{ okres_praktyki }}" readonly>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełniane przez dziekanat</legend>
+            <div class="form-group">
+                <label for="nr_albumu">Nr albumu</label>
+                <input id="nr_albumu" name="nr_albumu" type="text"
+                    value="{{ nr_albumu }}"
+                    {% if role != 'dziekanat' %}readonly{% endif %}>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełniane przez opiekuna uczelnianego</legend>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ocena_sprawozdania_s">Ocena za sprawozdanie S*</label>
+                    <select id="ocena_sprawozdania_s" name="ocena_sprawozdania_s"
+                        {% if role != 'opiekun_uczelniany' %}disabled{% endif %}>
+                        <option value="">Wybierz</option>
+                        <option value="bardzo_dobra" {% if ocena_sprawozdania_s == 'bardzo_dobra' %}selected{% endif %}>Bardzo dobra</option>
+                        <option value="dobra" {% if ocena_sprawozdania_s == 'dobra' %}selected{% endif %}>Dobra</option>
+                        <option value="dostateczna" {% if ocena_sprawozdania_s == 'dostateczna' %}selected{% endif %}>Dostateczna</option>
+                        <option value="niedostateczna" {% if ocena_sprawozdania_s == 'niedostateczna' %}selected{% endif %}>Niedostateczna</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="data_oceny_s">Data oceny S*</label>
+                    <input id="data_oceny_s" name="data_oceny_s" type="date"
+                        value="{{ data_oceny_s }}"
+                        {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Dane prefilled z załącznika 3</legend>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Ocena U*</label>
+                    <input type="text" value="{{ ocena_u }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Ocena Z*</label>
+                    <input type="text" value="{{ ocena_z }}" readonly>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełniane przez komisję</legend>
+            <div class="form-group">
+                <label for="data_zaliczenia">Data zaliczenia</label>
+                <input id="data_zaliczenia" name="data_zaliczenia" type="date"
+                    value="{{ data_zaliczenia }}"
+                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>
+            </div>
+
+            <div class="form-group">
+                <label for="sklad_komisji">Skład komisji</label>
+                <input id="sklad_komisji" name="sklad_komisji" type="text"
+                    value="{{ sklad_komisji }}"
+                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>
+            </div>
+
+            <div class="form-group">
+                <label for="pytania">Pytania / mini zadania zawodowe</label>
+                <textarea id="pytania" name="pytania" rows="4"
+                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>{{ pytania }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="oceny_czastkowe">Ich oceny cząstkowe</label>
+                <textarea id="oceny_czastkowe" name="oceny_czastkowe" rows="4"
+                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>{{ oceny_czastkowe }}</textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ocena_za_mini_zadania_e">Łączna ocena za mini zadania zawodowe E</label>
+                    <input id="ocena_za_mini_zadania_e" name="ocena_za_mini_zadania_e" type="text"
+                        value="{{ ocena_za_mini_zadania_e }}"
+                        {% if role != 'czlonek_komisji' %}readonly{% endif %}>
+                </div>
+                <div class="form-group">
+                    <label for="ocena_koncowa">Ocena końcowa K</label>
+                    <input id="ocena_koncowa" name="ocena_koncowa" type="text"
+                        value="{{ ocena_koncowa }}"
+                        {% if role != 'czlonek_komisji' %}readonly{% endif %}>
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            {% if role in ['dziekanat', 'opiekun_uczelniany', 'czlonek_komisji'] %}
+                <button type="submit" class="btn-primary">Zapisz załącznik 8</button>
+            {% endif %}
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

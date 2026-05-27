@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Załącznik 4 — Potwierdzenie efektów uczenia się{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-header">
+        <h2>Załącznik 4: Potwierdzenie efektów uczenia się</h2>
+        <p>Formularz wypełniany etapowo przez odpowiednie role.</p>
+    </div>
+
+    <form method="post" class="document-form">
+        <fieldset class="form-section">
+            <legend>Dane studenta (prefilled)</legend>
+
+            <div class="form-group">
+                <label>Imię i nazwisko studenta</label>
+                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Specjalność</label>
+                <input type="text" value="{{ specjalnosc }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Ilość godzin praktyki</label>
+                <input type="text" value="{{ ilosc_godzin_praktyk }}" readonly>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełniane przez dziekanat</legend>
+
+            <div class="form-group">
+                <label for="nr_indeksu">Numer indeksu</label>
+                <input id="nr_indeksu" name="nr_indeksu" type="text"
+                    {% if role != 'dziekanat' %}readonly{% endif %}
+                    value="{{ nr_indeksu }}">
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełniane przez opiekuna zakładowego</legend>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="uzyskanie_efektu">Uzyskanie efektu uczenia się</label>
+                    <select id="uzyskanie_efektu" name="uzyskanie_efektu"
+                        {% if role != 'opiekun_firmowy' %}disabled{% endif %}>
+                        <option value="">Wybierz</option>
+                        <option value="tak" {% if uzyskanie_efektu == 'tak' %}selected{% endif %}>Tak</option>
+                        <option value="nie" {% if uzyskanie_efektu == 'nie' %}selected{% endif %}>Nie</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="data_uzyskania">Data na koniec</label>
+                    <input id="data_uzyskania" name="data_uzyskania" type="date"
+                        value="{{ data_uzyskania }}"
+                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Wypełniane przez opiekuna uczelnianego</legend>
+
+            <div class="form-group">
+                <label for="opinia_opiekuna_uczelnianego">Opinia opiekuna uczelnianego</label>
+                <textarea id="opinia_opiekuna_uczelnianego" name="opinia_opiekuna_uczelnianego" rows="4"
+                    {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>{{ opinia_opiekuna_uczelnianego }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="data_opinii">Data opinii</label>
+                <input id="data_opinii" name="data_opinii" type="date"
+                    value="{{ data_opinii }}"
+                    {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Zapisz załącznik 4</button>
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

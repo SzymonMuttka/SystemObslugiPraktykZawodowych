@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rejestracja testowa — System praktyk zawodowych</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Rejestracja testowa</h1>
+                <p>Utwórz konto lokalne do celów testowych.</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="register-form">
+                <div class="form-group">
+                    <label for="imie">Imię</label>
+                    <input id="imie" name="imie" type="text" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="nazwisko">Nazwisko</label>
+                    <input id="nazwisko" name="nazwisko" type="text" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input id="email" name="email" type="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Hasło</label>
+                    <input id="password" name="password" type="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Potwierdź hasło</label>
+                    <input id="confirm_password" name="confirm_password" type="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Rola</label>
+                    <select id="role" name="role" required>
+                        <option value="" disabled selected>Wybierz rolę</option>
+                        {% for rola in roles %}
+                        <option value="{{ rola.nazwa }}">{{ rola.nazwa | replace('_', ' ') | title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Zarejestruj</button>
+                    <a href="{{ url_for('auth.login') }}" class="btn-secondary">Powrót do logowania</a>
+                </div>
+            </form>
+
+            <div class="login-footer">
+                <p>Ta funkcja jest przeznaczona tylko do testów.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

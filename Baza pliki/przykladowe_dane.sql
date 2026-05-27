@@ -25,14 +25,14 @@ INSERT INTO firma (nazwa, adres, miasto, osoba_upowazniona_imie_nazwisko, osoba_
 
 -- Studenci
 INSERT INTO uzytkownik (imie, nazwisko, email, haslo_hash, rola_id, numer_albumu, specjalnosc, forma_studiow, rok_akademicki) VALUES
-    ('Jan', 'Kowalski', 'jan.kowalski@student.ans.edu.pl', 'hash1', 1, '123456', 'Aplikacje internetowe', 'stacjonarne', '2025/2026'),
-    ('Anna', 'Nowak', 'anna.nowak@student.ans.edu.pl', 'hash2', 1, '123457', 'Sieci komputerowe', 'stacjonarne', '2025/2026'),
-    ('Piotr', 'Wiśniewski', 'piotr.wisniewski@student.ans.edu.pl', 'hash3', 1, '123458', 'Aplikacje internetowe', 'niestacjonarne', '2025/2026');
+    ('Jan', 'Kowalski', 'jan.kowalski@student.ans-elblag.pl', 'hash1', 1, '123456', 'Aplikacje internetowe', 'stacjonarne', '2025/2026'),
+    ('Anna', 'Nowak', 'anna.nowak@student.ans-elblag.pl', 'hash2', 1, '123457', 'Sieci komputerowe', 'stacjonarne', '2025/2026'),
+    ('Piotr', 'Wiśniewski', 'piotr.wisniewski@student.ans-elblag.pl', 'hash3', 1, '123458', 'Aplikacje internetowe', 'niestacjonarne', '2025/2026');
 
 -- Opiekunowie uczelniani
 INSERT INTO uzytkownik (imie, nazwisko, email, haslo_hash, rola_id) VALUES
-    ('Krzysztof', 'Brzeski', 'k.brzeski@ans.edu.pl', 'hash4', 2),
-    ('Maria', 'Kowalczyk', 'maria.kowalczyk@ans.edu.pl', 'hash5', 2);
+    ('Krzysztof', 'Brzeski', 'k.brzeski@ans-elblag.pl', 'hash4', 2),
+    ('Maria', 'Kowalczyk', 'maria.kowalczyk@ans-elblag.pl', 'hash5', 2);
 
 -- Opiekunowie firmowi
 INSERT INTO uzytkownik (imie, nazwisko, email, haslo_hash, rola_id, firma_id, telefon, stanowisko) VALUES
@@ -42,16 +42,16 @@ INSERT INTO uzytkownik (imie, nazwisko, email, haslo_hash, rola_id, firma_id, te
 
 -- Dziekanat
 INSERT INTO uzytkownik (imie, nazwisko, email, haslo_hash, rola_id) VALUES
-    ('Ewa', 'Jabłońska', 'dziekanat@ans.edu.pl', 'hash9', 4);
+    ('Ewa', 'Jabłońska', 'dziekanat@ans-elblag.pl', 'hash9', 4);
 
 -- Dyrektor
 INSERT INTO uzytkownik (imie, nazwisko, email, haslo_hash, rola_id) VALUES
-    ('Stanisław', 'Nowicki', 's.nowicki@ans.edu.pl', 'hash10', 5);
+    ('Stanisław', 'Nowicki', 's.nowicki@ans-elblag.pl', 'hash10', 5);
 
 -- Członkowie komisji
 INSERT INTO uzytkownik (imie, nazwisko, email, haslo_hash, rola_id) VALUES
-    ('Tomasz', 'Adamski', 't.adamski@ans.edu.pl', 'hash11', 6),
-    ('Zofia', 'Grabowska', 'z.grabowska@ans.edu.pl', 'hash12', 6);
+    ('Tomasz', 'Adamski', 't.adamski@ans-elblag.pl', 'hash11', 6),
+    ('Zofia', 'Grabowska', 'z.grabowska@ans-elblag.pl', 'hash12', 6);
 
 -- ============================================================
 -- TYPY DOKUMENTÓW
@@ -102,6 +102,26 @@ INSERT INTO efekt_uczenia (numer, opis) VALUES
     (11, 'Przestrzega zasad etyki zawodowej i zgodnie z tymi zasadami korzysta z wiedzy i pomocy doświadczonych kolegów'),
     (12, 'Kontaktując się z osobami spoza branży potrafi zarówno pozyskać od nich niezbędne informacje'),
     (13, 'Dostrzega w praktyce tempo deaktualizacji wiedzy informatycznej oraz skutki działalności informatyków');
+
+-- ============================================================
+-- PYTANIA ANKIETY
+-- ============================================================
+
+INSERT INTO pytanie_ankiety (numer, tresc_pytania) VALUES
+    (1,  'Poznałam/poznałem zasady funkcjonowania instytucji, w której odbywałam/odbywałem praktyki zawodowe.'),
+    (2,  'Poznałam/poznałem strukturę oraz regulamin organizacyjny instytucji, w której odbywałam/odbywałem praktyki zawodowe.'),
+    (3,  'Praktyki zawodowe umożliwiły mi pełną realizację ramowego programu praktyk zawodowych przewidzianego w ramach mojego kierunku studiów.'),
+    (4,  'Podczas praktyk zawodowych zwracano uwagę na przestrzeganie zasad etyki i tajemnicy zawodowej.'),
+    (5,  'Podczas praktyk miałam/miałem możliwość praktycznego zastosowania wiedzy teoretycznej zdobytej na zajęciach.'),
+    (6,  'Praktyki zawodowe przyczyniły się do pogłębienia mojej wiedzy i umiejętności zdobytych w trakcie studiów.'),
+    (7,  'Mogłem liczyć na wsparcie merytoryczne Opiekuna zakładowego praktyk.'),
+    (8,  'Mogłem liczyć na wsparcie merytoryczne Opiekuna uczelnianego praktyk.'),
+    (9,  'Opiekun zakładowy odpowiedzialny za praktyki zawodowe w miejscu ich odbywania potrafił prawidłowo zorganizować ich przebieg.'),
+    (10, 'Podczas praktyk zawodowych miałam/miałem możliwość pozyskiwania materiałów niezbędnych do przygotowania mojej pracy dyplomowej.'),
+    (11, 'Praktyki zawodowe rozwinęły moje umiejętności skutecznego komunikowania się w sytuacjach zawodowych i pracy w zespole.'),
+    (12, 'Praktyki zawodowe nauczyły mnie samodzielności i odpowiedzialności podczas wykonywania pracy.'),
+    (13, 'Liczba godzin realizowana w ramach praktyk zawodowych jest wystarczająca.'),
+    (14, 'Czy po zakończeniu praktyki zawodowej chciałaby/chciałby Pani/Pan współpracować z instytucją, w której Pani/Pan zrealizowała/zrealizował praktykę?');
 
 -- ============================================================
 -- DOKUMENTY - STUDENT 1 (praktyka ukończona, ścieżka standardowa)

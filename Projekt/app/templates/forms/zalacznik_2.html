@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Załącznik 2 — Program praktyki zawodowej{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-header">
+        <h2>Załącznik 2: Program praktyki zawodowej</h2>
+        <p>Ten dokument tworzy dziekanat. Nie wymaga wypełniania pól.</p>
+    </div>
+
+    <form method="post" class="document-form">
+        <p>Po utworzeniu dokumentu będzie dostępny do przeglądu przez studentów i opiekunów.</p>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Utwórz dokument Załącznik 2</button>
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Załącznik 2a — Program i harmonogram praktyki{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-header">
+        <h2>Załącznik 2a: Program i harmonogram praktyki zawodowej</h2>
+        <p>Zapis pól zgodnie z przypisanymi rolami.</p>
+    </div>
+
+    <form method="post" class="document-form">
+        <fieldset class="form-section">
+            <legend>Dane studenta (prefilled)</legend>
+
+            <div class="form-group">
+                <label>Imię i nazwisko studenta</label>
+                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Specjalność</label>
+                <input type="text" value="{{ specjalnosc }}" readonly>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Informacje o miejscu odbywania praktyki</legend>
+
+            <div class="form-group">
+                <label>Miejsce praktyki</label>
+                <input type="text" value="{{ miejsce_praktyki }}" readonly>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Termin od</label>
+                    <input type="date" value="{{ termin_od }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Termin do</label>
+                    <input type="date" value="{{ termin_do }}" readonly>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Dane uzupełniane przez dziekanat</legend>
+
+            <div class="form-group">
+                <label for="nr_indeksu">Numer indeksu</label>
+                <input id="nr_indeksu" name="nr_indeksu" type="text"
+                    {% if current_user.rola.nazwa != 'dziekanat' %}readonly{% endif %}>
+            </div>
+
+            <div class="form-group">
+                <label for="data_uzgodnienia">Data uzgodnienia</label>
+                <input id="data_uzgodnienia" name="data_uzgodnienia" type="date"
+                    value="{{ data_uzgodnienia }}"
+                    {% if current_user.rola.nazwa != 'opiekun_firmowy' and current_user.rola.nazwa != 'dziekanat' %}readonly{% endif %}>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Dane uzupełniane przez opiekuna firmowego</legend>
+
+            <div class="form-group">
+                <label for="przykladowe_prace">Przykładowe prace wykonywane przez praktykanta</label>
+                <textarea id="przykladowe_prace" name="przykladowe_prace" rows="4"
+                    {% if current_user.rola.nazwa != 'opiekun_firmowy' %}readonly{% endif %}></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="dzial_komorka">Dział / komórka</label>
+                <input id="dzial_komorka" name="dzial_komorka" type="text"
+                    {% if current_user.rola.nazwa != 'opiekun_firmowy' %}readonly{% endif %}>
+            </div>
+
+            <div class="form-group">
+                <label for="planowana_liczba_dni">Planowana liczba dni roboczych</label>
+                <input id="planowana_liczba_dni" name="planowana_liczba_dni" type="number"
+                    {% if current_user.rola.nazwa != 'opiekun_firmowy' %}readonly{% endif %}>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Zapisz załącznik 2a</button>
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

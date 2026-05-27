@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}System praktyk zawodowych{% endblock %} — ANS Elbląg</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <nav class="navbar">
+        <div class="navbar-brand">
+            System praktyk zawodowych
+        </div>
+        <div class="navbar-user">
+            <span class="navbar-user-name">
+                {{ current_user.pelne_imie }}
+            </span>
+            <span class="navbar-user-role">
+                {{ current_user.rola.nazwa | replace('_', ' ') | title }}
+            </span>
+            <a href="{{ url_for('auth.logout') }}" class="btn-logout">
+                Wyloguj
+            </a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <span>Akademia Nauk Stosowanych w Elblągu</span>
+        <span>Instytut Informatyki Stosowanej im. Krzysztofa Brzeskiego</span>
+    </footer>
+</body>
+</html>

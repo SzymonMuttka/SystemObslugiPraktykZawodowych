@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Załącznik 7 — Sprawozdanie z praktyki zawodowej{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-header">
+        <h2>Załącznik 7: Sprawozdanie z praktyki zawodowej</h2>
+        <p>Formularz tworzony przez studenta z prefilled danymi konta.</p>
+    </div>
+
+    <form method="post" class="document-form">
+        <fieldset class="form-section">
+            <legend>Dane studenta (prefilled)</legend>
+
+            <div class="form-group">
+                <label>Numer indeksu</label>
+                <input type="text" value="{{ nr_indeksu }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Imię i nazwisko studenta</label>
+                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Specjalność</label>
+                <input type="text" value="{{ specjalnosc }}" readonly>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Rok akademicki</label>
+                    <input type="text" value="{{ rok_akademicki }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Miejsce odbycia praktyki</label>
+                    <input type="text" value="{{ miejsce_praktyki }}" readonly>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Opis praktyki</legend>
+
+            <div class="form-group">
+                <label for="charakterystyka_miejsca">Charakterystyka miejsca odbywania praktyki</label>
+                <textarea id="charakterystyka_miejsca" name="charakterystyka_miejsca" rows="4" {% if role != 'student' %}readonly{% endif %}>{{ charakterystyka_miejsca }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="opis_i_analiza">Opis i analiza wykonywanych prac</label>
+                <textarea id="opis_i_analiza" name="opis_i_analiza" rows="5" {% if role != 'student' %}readonly{% endif %}>{{ opis_i_analiza }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="wiedza_umiejetnosci">Wiedza i umiejętności uzyskane w trakcie praktyki</label>
+                <textarea id="wiedza_umiejetnosci" name="wiedza_umiejetnosci" rows="4" {% if role != 'student' %}readonly{% endif %}>{{ wiedza_umiejetnosci }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="data_na_koniec">Data na koniec</label>
+                <input id="data_na_koniec" name="data_na_koniec" type="date" value="{{ data_na_koniec }}" {% if role != 'student' %}readonly{% endif %}>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            {% if role == 'student' %}
+                <button type="submit" class="btn-primary">Zapisz załącznik 7</button>
+            {% endif %}
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
