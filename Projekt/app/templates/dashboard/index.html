@@ -24,6 +24,18 @@
     </div>
     {% endif %}
 
+    {% if uzytkownik.rola.nazwa == 'student' and (not uzytkownik.numer_albumu or not uzytkownik.specjalnosc or not uzytkownik.forma_studiow or not uzytkownik.rok_akademicki) %}
+    <div class="alert alert-info alert-action">
+        <div>
+            <strong>Uzupełnij dane studenta</strong>
+            <p>Aby korzystać z dokumenty praktyk i mieć poprawnie przypisane studia, uzupełnij brakujące dane.</p>
+        </div>
+        <a href="{{ url_for('dashboard.profil_studenta') }}" class="btn-primary">
+            Uzupełnij dane studenta
+        </a>
+    </div>
+    {% endif %}
+
     <div class="dashboard-body">
         <p>Panel główny jest w trakcie budowy.</p>
         <p>Twój email: {{ uzytkownik.email }}</p>

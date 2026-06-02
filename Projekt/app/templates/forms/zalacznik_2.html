@@ -10,6 +10,21 @@
     </div>
 
     <form method="post" class="document-form">
+        <fieldset class="form-section">
+            <legend>Dane studenta</legend>
+            <div class="form-group">
+                <label for="student_id">Imię i nazwisko studenta</label>
+                <select id="student_id" name="student_id" required>
+                    <option value="">— wybierz studenta —</option>
+                    {% for student in studenci %}
+                        <option value="{{ student.id }}">
+                            {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </fieldset>
+
         <p>Po utworzeniu dokumentu będzie dostępny do przeglądu przez studentów i opiekunów.</p>
 
         <div class="form-actions">

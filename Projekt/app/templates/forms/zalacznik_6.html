@@ -116,6 +116,23 @@
                 <button type="button" class="usun" onclick="deleteRow(this)">Usuń</button>
             </td>
         `;
+
+        // lock date to today for newly created rows (only for students)
+        const role = '{{ role }}';
+        if (role === 'student') {
+            const tempDiv = document.createElement('tbody');
+            tempDiv.innerHTML = row.innerHTML;
+            const dateInput = tempDiv.querySelector('input[name="data[]"]');
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+                dateInput.defaultValue = today;
+                dateInput.setAttribute('value', today);
+                dateInput.readOnly = true;
+            }
+            // apply modified innerHTML back to row
+            row.innerHTML = tempDiv.innerHTML;
+        }
         return row;
     }
 
@@ -135,5 +152,19 @@
             row.remove();
         }
     }
+
+    // On load: for students, set existing date inputs to today and make them readonly
+    document.addEventListener('DOMContentLoaded', function() {
+        const role = '{{ role }}';
+        if (role === 'student') {
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelectorAll('input[name="data[]"]').forEach(function(inp) {
+                inp.value = today;
+                inp.defaultValue = today;
+                inp.setAttribute('value', today);
+                inp.readOnly = true;
+            });
+        }
+    });
 </script>
 {% endblock %}

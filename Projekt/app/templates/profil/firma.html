@@ -48,21 +48,21 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="osoba_upowazzona_imie_nazwisko">
+                    <label for="osoba_upowazniona_imie_nazwisko">
                         Imię i nazwisko osoby upoważnionej do podpisania porozumienia
                     </label>
-                    <input id="osoba_upowazzona_imie_nazwisko"
-                        name="osoba_upowazzona_imie_nazwisko" type="text"
-                        value="{{ firma.osoba_upowazzona_imie_nazwisko if firma else '' }}"
+                    <input id="osoba_upowazniona_imie_nazwisko"
+                        name="osoba_upowazniona_imie_nazwisko" type="text"
+                        value="{{ firma.osoba_upowazniona_imie_nazwisko if firma else '' }}"
                         placeholder="np. Jan Kowalski">
                 </div>
                 <div class="form-group">
-                    <label for="osoba_upowazzona_stanowisko">
+                    <label for="osoba_upowazniona_stanowisko">
                         Stanowisko osoby upoważnionej
                     </label>
-                    <input id="osoba_upowazzona_stanowisko"
-                        name="osoba_upowazzona_stanowisko" type="text"
-                        value="{{ firma.osoba_upowazzona_stanowisko if firma else '' }}"
+                    <input id="osoba_upowazniona_stanowisko"
+                        name="osoba_upowazniona_stanowisko" type="text"
+                        value="{{ firma.osoba_upowazniona_stanowisko if firma else '' }}"
                         placeholder="np. Prezes Zarządu">
                 </div>
             </div>

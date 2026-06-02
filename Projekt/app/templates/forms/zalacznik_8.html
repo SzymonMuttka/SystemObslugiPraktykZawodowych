@@ -15,45 +15,25 @@
 
             <div class="form-row">
                 <div class="form-group">
+                    <label for="student_select">Imię i nazwisko studenta</label>
+                    <select id="student_select" name="imie_nazwisko_studenta" required>
+                        <option value="">— wybierz studenta —</option>
+                        {% for student in studenci %}
+                        <option
+                            value="{{ student.imie }} {{ student.nazwisko }}"
+                            data-student-id="{{ student.id }}"
+                            data-numer-albumu="{{ student.numer_albumu or '' }}"
+                        >
+                            {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" id="student_id" name="student_id" value="">
+                </div>
+                <div class="form-group">
                     <label>Numer indeksu</label>
-                    <input type="text" value="{{ nr_indeksu }}" readonly>
+                    <input id="nr_indeksu" name="nr_indeksu" type="text" value="{{ nr_indeksu }}" readonly>
                 </div>
-                <div class="form-group">
-                    <label>Imię i nazwisko studenta</label>
-                    <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Specjalność</label>
-                    <input type="text" value="{{ specjalnosc }}" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Rok akademicki</label>
-                    <input type="text" value="{{ rok_akademicki }}" readonly>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Miejsce praktyki</label>
-                    <input type="text" value="{{ miejsce_praktyki }}" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Okres praktyki</label>
-                    <input type="text" value="{{ okres_praktyki }}" readonly>
-                </div>
-            </div>
-        </fieldset>
-
-        <fieldset class="form-section">
-            <legend>Wypełniane przez dziekanat</legend>
-            <div class="form-group">
-                <label for="nr_albumu">Nr albumu</label>
-                <input id="nr_albumu" name="nr_albumu" type="text"
-                    value="{{ nr_albumu }}"
-                    {% if role != 'dziekanat' %}readonly{% endif %}>
             </div>
         </fieldset>
 
@@ -62,14 +42,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="ocena_sprawozdania_s">Ocena za sprawozdanie S*</label>
-                    <select id="ocena_sprawozdania_s" name="ocena_sprawozdania_s"
-                        {% if role != 'opiekun_uczelniany' %}disabled{% endif %}>
-                        <option value="">Wybierz</option>
-                        <option value="bardzo_dobra" {% if ocena_sprawozdania_s == 'bardzo_dobra' %}selected{% endif %}>Bardzo dobra</option>
-                        <option value="dobra" {% if ocena_sprawozdania_s == 'dobra' %}selected{% endif %}>Dobra</option>
-                        <option value="dostateczna" {% if ocena_sprawozdania_s == 'dostateczna' %}selected{% endif %}>Dostateczna</option>
-                        <option value="niedostateczna" {% if ocena_sprawozdania_s == 'niedostateczna' %}selected{% endif %}>Niedostateczna</option>
-                    </select>
+                    <input id="ocena_sprawozdania_s" name="ocena_sprawozdania_s" type="text" readonly>
                 </div>
                 <div class="form-group">
                     <label for="data_oceny_s">Data oceny S*</label>
@@ -85,11 +58,11 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Ocena U*</label>
-                    <input type="text" value="{{ ocena_u }}" readonly>
+                    <input id="ocena_u" type="text" value="{{ ocena_u }}" readonly>
                 </div>
                 <div class="form-group">
                     <label>Ocena Z*</label>
-                    <input type="text" value="{{ ocena_z }}" readonly>
+                    <input id="ocena_z" type="text" value="{{ ocena_z }}" readonly>
                 </div>
             </div>
         </fieldset>
@@ -104,22 +77,64 @@
             </div>
 
             <div class="form-group">
-                <label for="sklad_komisji">Skład komisji</label>
-                <input id="sklad_komisji" name="sklad_komisji" type="text"
-                    value="{{ sklad_komisji }}"
-                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>
+                <div class="sklad-komisji-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="2">Skład komisji</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="text" id="imie_nazwisko_1" name="imie_nazwisko_1"></td>
+                            <td><input type="text" id="funkcja_1" name="funkcja_1" value="Przewodniczący Komisji" readonly></td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" id="imie_nazwisko_2" name="imie_nazwisko_2" readonly></td>
+                            <td><input type="text" id="funkcja_2" name="funkcja_2" value="Uczelniany opiekun praktyki zawodowej" readonly></td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" id="imie_nazwisko_3" name="imie_nazwisko_3"></td>
+                            <td><input type="text" id="funkcja_3" name="funkcja_3"></td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" id="imie_nazwisko_4" name="imie_nazwisko_4"></td>
+                            <td><input type="text" id="funkcja_4" name="funkcja_4"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="pytania">Pytania / mini zadania zawodowe</label>
-                <textarea id="pytania" name="pytania" rows="4"
-                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>{{ pytania }}</textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="oceny_czastkowe">Ich oceny cząstkowe</label>
-                <textarea id="oceny_czastkowe" name="oceny_czastkowe" rows="4"
-                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>{{ oceny_czastkowe }}</textarea>
+                <div class="pytania-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Lp.</th>
+                            <th>Pytania / mini zadania zawodowe</th>
+                            <th>Oceny cząstkowe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><input type="text" id="pytanie_1" name="pytanie_1"></td>
+                            <td><input type="number" id="ocena_cz_1" name="ocena_cz_1" min="2" max="5"></td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td><input type="text" id="pytanie_2" name="pytanie_2"></td>
+                            <td><input type="number" id="ocena_cz_2" name="ocena_cz_2" min="2" max="5"></td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td><input type="text" id="pytanie_3" name="pytanie_3"></td>
+                            <td><input type="number" id="ocena_cz_3" name="ocena_cz_3" min="2" max="5"></td>
+                        </tr>
+                        <tr>
+                    </tbody>
+                </table>
             </div>
 
             <div class="form-row">
@@ -146,4 +161,103 @@
         </div>
     </form>
 </div>
+<script>
+    const studentSelect8 = document.getElementById('student_select');
+    const studentId8 = document.getElementById('student_id');
+    const nrIndeksu8 = document.getElementById('nr_indeksu');
+    const ocenaU8 = document.getElementById('ocena_u');
+    const ocenaZ8 = document.getElementById('ocena_z');
+    const ocenaSprawozdaniaS8 = document.getElementById('ocena_sprawozdania_s');
+    const dataOcenyS8 = document.getElementById('data_oceny_s');
+    const imieNazwisko2 = document.getElementById('imie_nazwisko_2');
+    
+    // Oceny cząstkowe
+    const ocenaCz1 = document.getElementById('ocena_cz_1');
+    const ocenaCz2 = document.getElementById('ocena_cz_2');
+    const ocenaCz3 = document.getElementById('ocena_cz_3');
+    const ocenaE = document.getElementById('ocena_za_mini_zadania_e');
+    const ocenaK = document.getElementById('ocena_koncowa');
+    
+    const studentZal3Data = {{ student_zal3_json|safe }};
+    const opiekunowie = {{ opiekunowie_json|safe }};
+
+    function textToNumber(text) {
+        if (!text) return 0;
+        const mapping = {
+            'bardzo_dobra': 5,
+            'dobra': 4,
+            'dostateczna': 3,
+            'niedostateczna': 2
+        };
+        const num = parseFloat(text);
+        return !isNaN(num) ? num : (mapping[text.toLowerCase()] || 0);
+    }
+
+    function updateZalacznik8Fields() {
+        const selectedOption = studentSelect8.options[studentSelect8.selectedIndex];
+        const studentId = selectedOption?.dataset?.studentId || '';
+        studentId8.value = studentId;
+        nrIndeksu8.value = selectedOption?.dataset?.numerAlbumu || '';
+
+        const zal3 = studentZal3Data[studentId] || {};
+        ocenaU8.value = zal3.ocena_przebiegu_ou || '';
+        ocenaZ8.value = zal3.ocena_przebiegu_of || '';
+        const ocenaS = zal3.ocena_sprawozdania || '';
+        if (ocenaSprawozdaniaS8) {
+            ocenaSprawozdaniaS8.value = ocenaS;
+        }
+        if (dataOcenyS8) {
+            dataOcenyS8.value = zal3.data_sprawozdania || '';
+        }
+        
+        // Wypełnij opiekuna uczelnianego
+        if (zal3.opiekun_id && opiekunowie[zal3.opiekun_id]) {
+            imieNazwisko2.value = opiekunowie[zal3.opiekun_id];
+        } else {
+            imieNazwisko2.value = '';
+        }
+        
+        // Przelicz oceny
+        calculateOcenaE();
+        calculateOcenaK();
+    }
+
+    function calculateOcenaE() {
+        const cz1 = parseFloat(ocenaCz1.value) || 0;
+        const cz2 = parseFloat(ocenaCz2.value) || 0;
+        const cz3 = parseFloat(ocenaCz3.value) || 0;
+        
+        if (cz1 && cz2 && cz3) {
+            const result = (cz1 + cz2 + cz3) / 3;
+            ocenaE.value = result.toFixed(2);
+        } else {
+            ocenaE.value = '';
+        }
+        calculateOcenaK();
+    }
+
+    function calculateOcenaK() {
+        const E = parseFloat(ocenaE.value) || 0;
+        const S = textToNumber(ocenaSprawozdaniaS8.value);
+        const U = textToNumber(ocenaU8.value);
+        const Z = textToNumber(ocenaZ8.value);
+        
+        if (E && S && U && Z) {
+            const result = 0.4 * E + 0.1 * S + 0.2 * U + 0.3 * Z;
+            ocenaK.value = result.toFixed(2);
+        } else {
+            ocenaK.value = '';
+        }
+    }
+
+    if (studentSelect8) {
+        studentSelect8.addEventListener('change', updateZalacznik8Fields);
+        updateZalacznik8Fields();
+    }
+    
+    if (ocenaCz1) ocenaCz1.addEventListener('change', calculateOcenaE);
+    if (ocenaCz2) ocenaCz2.addEventListener('change', calculateOcenaE);
+    if (ocenaCz3) ocenaCz3.addEventListener('change', calculateOcenaE);
+    if (ocenaSprawozdaniaS8) ocenaSprawozdaniaS8.addEventListener('change', calculateOcenaK);
+</script>
 {% endblock %}

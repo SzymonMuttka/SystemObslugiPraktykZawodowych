@@ -14,13 +14,35 @@
             <legend>Dane studenta (prefilled)</legend>
 
             <div class="form-group">
-                <label>Imię i nazwisko studenta</label>
-                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+                <label for="student_select">Imię i nazwisko studenta</label>
+                <select id="student_select" name="imie_nazwisko_studenta" required>
+                    <option value="">— wybierz studenta —</option>
+                    {% for student in studenci %}
+                        {% set practice = student_practice.get(student.id, {}) %}
+                        <option value="{{ student.imie }} {{ student.nazwisko }}"
+                            data-student-id="{{ student.id }}"
+                            data-numer-albumu="{{ student.numer_albumu }}"
+                            data-specjalnosc="{{ student.specjalnosc or '' }}"
+                            data-firma-nazwa="{{ practice.firma_nazwa }}"
+                            data-reprezentant-firmy="{{ practice.reprezentant_firmy }}"
+                            data-termin-od="{{ practice.termin_od }}"
+                            data-termin-do="{{ practice.termin_do }}">
+                            {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
+                        </option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" id="student_id" name="student_id" value="">
             </div>
 
             <div class="form-group">
-                <label>Specjalność</label>
-                <input type="text" value="{{ specjalnosc }}" readonly>
+                <label for="nr_indeksu">Numer indeksu</label>
+                <input id="nr_indeksu" name="nr_indeksu" type="text"
+                    {% if current_user.rola.nazwa != 'dziekanat' %}readonly{% endif %}>
+            </div>
+
+            <div class="form-group">
+                <label for="specjalnosc">Specjalność</label>
+                <input id="specjalnosc" name="specjalnosc" type="text" value="{{ specjalnosc }}" readonly>
             </div>
         </fieldset>
 
@@ -28,29 +50,68 @@
             <legend>Informacje o miejscu odbywania praktyki</legend>
 
             <div class="form-group">
-                <label>Miejsce praktyki</label>
-                <input type="text" value="{{ miejsce_praktyki }}" readonly>
+                <label for="miejsce_praktyki">Miejsce praktyki</label>
+                <input id="miejsce_praktyki" name="miejsce_praktyki" type="text" value="{{ miejsce_praktyki }}" readonly>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label>Termin od</label>
-                    <input type="date" value="{{ termin_od }}" readonly>
+                    <label for="termin_od">Termin od</label>
+                    <input id="termin_od" name="termin_od" type="date" value="{{ termin_od }}" readonly>
                 </div>
                 <div class="form-group">
-                    <label>Termin do</label>
-                    <input type="date" value="{{ termin_do }}" readonly>
+                    <label for="termin_do">Termin do</label>
+                    <input id="termin_do" name="termin_do" type="date" value="{{ termin_do }}" readonly>
                 </div>
             </div>
         </fieldset>
 
         <fieldset class="form-section">
-            <legend>Dane uzupełniane przez dziekanat</legend>
+            <legend>Dane uzupełniane przez opiekuna firmowego</legend>
 
-            <div class="form-group">
-                <label for="nr_indeksu">Numer indeksu</label>
-                <input id="nr_indeksu" name="nr_indeksu" type="text"
-                    {% if current_user.rola.nazwa != 'dziekanat' %}readonly{% endif %}>
+            <h4>Program praktyki zawodowej</h4>
+            <div class="program-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="2">Efekty kształcenia</th>
+                            <th>Dział (komórka) / przykładowe prace wykonywane przez praktykanta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for efekt in efekty %}
+                        <tr>
+                            <td>{{ efekt.numer }}</td>
+                            <td>{{ efekt.opis }}</td>
+                            <td><textarea name="ppz_dzial[]" rows="2"></textarea></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Harmonogram praktyki zawodowej</h4>
+            <div class="harmonogram-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>L.p.</th>
+                            <th>Dział / komórka (miejsce odbywania praktyki)</th>
+                            <th>Planowana liczba dni roboczych</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in range(1, 14) %}
+                        <tr>
+                            <td>{{ i }}</td>
+                            <td><textarea name="hpz_dzial[]" rows="2"></textarea></td>
+                            <td><input type="number" name="hpz_dni[]" min="0"></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p>Łączna liczba dni roboczych: <b id="hpz_total_days">0</b></p>
+                <p>Wymagana liczba dni roboczych: <b>120</b><p>
             </div>
 
             <div class="form-group">
@@ -61,32 +122,61 @@
             </div>
         </fieldset>
 
-        <fieldset class="form-section">
-            <legend>Dane uzupełniane przez opiekuna firmowego</legend>
-
-            <div class="form-group">
-                <label for="przykladowe_prace">Przykładowe prace wykonywane przez praktykanta</label>
-                <textarea id="przykladowe_prace" name="przykladowe_prace" rows="4"
-                    {% if current_user.rola.nazwa != 'opiekun_firmowy' %}readonly{% endif %}></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="dzial_komorka">Dział / komórka</label>
-                <input id="dzial_komorka" name="dzial_komorka" type="text"
-                    {% if current_user.rola.nazwa != 'opiekun_firmowy' %}readonly{% endif %}>
-            </div>
-
-            <div class="form-group">
-                <label for="planowana_liczba_dni">Planowana liczba dni roboczych</label>
-                <input id="planowana_liczba_dni" name="planowana_liczba_dni" type="number"
-                    {% if current_user.rola.nazwa != 'opiekun_firmowy' %}readonly{% endif %}>
-            </div>
-        </fieldset>
-
         <div class="form-actions">
             <button type="submit" class="btn-primary">Zapisz załącznik 2a</button>
             <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
         </div>
     </form>
 </div>
+<script>
+    const practiceData2a = {{ student_practice_json|safe }};
+    const studentSelect2a = document.getElementById('student_select');
+    const studentIdInput2a = document.getElementById('student_id');
+    const nrIndeksuInput = document.getElementById('nr_indeksu');
+    const specjalnoscInput = document.getElementById('specjalnosc');
+    const miejscePraktykiInput = document.getElementById('miejsce_praktyki');
+    const terminOdInput2a = document.getElementById('termin_od');
+    const terminDoInput2a = document.getElementById('termin_do');
+
+    function update2aFields(){
+        const opt = studentSelect2a.options[studentSelect2a.selectedIndex];
+        const studentId = opt?.dataset?.studentId || '';
+        studentIdInput2a.value = studentId;
+
+        nrIndeksuInput.value = opt?.dataset?.numerAlbumu || '';
+        specjalnoscInput.value = opt?.dataset?.specjalnosc || '';
+
+        if (studentId && practiceData2a[studentId]){
+            miejscePraktykiInput.value = practiceData2a[studentId].firma_nazwa || '';
+            terminOdInput2a.value = practiceData2a[studentId].termin_od || '';
+            terminDoInput2a.value = practiceData2a[studentId].termin_do || '';
+        } else {
+            miejscePraktykiInput.value = '';
+            terminOdInput2a.value = '';
+            terminDoInput2a.value = '';
+        }
+    }
+
+    studentSelect2a.addEventListener('change', update2aFields);
+    update2aFields();
+
+    const hpzDniInputs = document.querySelectorAll('input[name="hpz_dni[]"]');
+    const hpzTotalDays = document.getElementById('hpz_total_days');
+
+    function updateHarmonogramTotal() {
+        let total = 0;
+        hpzDniInputs.forEach(input => {
+            const value = parseInt(input.value, 10);
+            if (!Number.isNaN(value)) {
+                total += value;
+            }
+        });
+        if (hpzTotalDays) {
+            hpzTotalDays.textContent = total;
+        }
+    }
+
+    hpzDniInputs.forEach(input => input.addEventListener('input', updateHarmonogramTotal));
+    updateHarmonogramTotal();
+</script>
 {% endblock %}

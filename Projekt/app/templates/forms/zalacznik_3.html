@@ -10,72 +10,87 @@
     </div>
 
     <form method="post" class="document-form">
+
+        <fieldset class="form-section">
+            <legend>Dane studenta (prefilled po wyborze studenta)</legend>
+
+            <div class="form-group">
+                <label for="student_select">Imię i nazwisko studenta</label>
+                <select id="student_select" name="student_select" required>
+                    <option value="">— wybierz studenta —</option>
+                    {% for student in studenci %}
+                        <option
+                            value="{{ student.imie }} {{ student.nazwisko }}"
+                            data-student-id="{{ student.id }}"
+                            data-numer-albumu="{{ student.numer_albumu or '' }}"
+                            data-forma="{{ student.forma_studiow or '' }}"
+                            data-specjalnosc="{{ student.specjalnosc or '' }}"
+                        >
+                            {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
+                        </option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" id="student_id" name="student_id" value="">
+            </div>
+
+            <div class="form-group">
+                <label for="nr_indeksu">Numer indeksu</label>
+                <input id="nr_indeksu" name="nr_indeksu" type="text" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="forma_studiow">Forma studiów</label>
+                <input id="forma_studiow" name="forma_studiow" type="text" value="{{ forma_studiow }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="specjalnosc">Specjalność</label>
+                <input id="specjalnosc" name="specjalnosc" type="text" value="{{ specjalnosc }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="uczelniany_opiekun">Uczelniany opiekun praktyki zawodowej</label>
+                <input id="uczelniany_opiekun" name="uczelniany_opiekun" type="text" value="{{ uczelniany_opiekun }}" readonly>
+            </div>
+        </fieldset>
+
         <fieldset class="form-section">
             <legend>Dane z załącznika 1 (prefilled)</legend>
 
             <div class="form-group">
                 <label>Numer porozumienia</label>
-                <input type="text" value="{{ nr_porozumienia }}" readonly>
+                <input id="nr_porozumienia" type="text" value="{{ nr_porozumienia }}" readonly>
             </div>
 
             <div class="form-group">
                 <label>Data zawarcia porozumienia</label>
-                <input type="date" value="{{ data_zawarcia }}" readonly>
+                <input id="data_zawarcia" type="date" value="{{ data_zawarcia }}" readonly>
             </div>
 
             <div class="form-group">
                 <label>Nazwa zakładu pracy</label>
-                <input type="text" value="{{ nazwa_zakladu_pracy }}" readonly>
+                <input id="nazwa_zakladu_pracy" type="text" value="{{ nazwa_zakladu_pracy }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Firmowy opiekun praktyki zawodowej</label>
+                <input id="firmowy_opiekun" name="firmowy_opiekun" type="text" value="{{ firmowy_opiekun }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Stanowisko</label>
+                <input id="firmowy_stanowisko" name="firmowy_stanowisko" type="text" value="{{ firmowy_stanowisko }}" readonly>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label>Termin od</label>
-                    <input type="date" value="{{ termin_od }}" readonly>
+                    <input id="termin_od" type="date" value="{{ termin_od }}" readonly>
                 </div>
                 <div class="form-group">
                     <label>Termin do</label>
-                    <input type="date" value="{{ termin_do }}" readonly>
+                    <input id="termin_do" type="date" value="{{ termin_do }}" readonly>
                 </div>
-            </div>
-
-            <div class="form-group">
-                <label>Rok akademicki</label>
-                <input type="text" value="{{ rok_akademicki }}" readonly>
-            </div>
-        </fieldset>
-
-        <fieldset class="form-section">
-            <legend>Dane studenta (prefilled po numerze indeksu)</legend>
-
-            <div class="form-group">
-                <label>Imię i nazwisko studenta</label>
-                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
-            </div>
-
-            <div class="form-group">
-                <label>Forma studiów</label>
-                <input type="text" value="{{ forma_studiow }}" readonly>
-            </div>
-
-            <div class="form-group">
-                <label>Specjalność</label>
-                <input type="text" value="{{ specjalnosc }}" readonly>
-            </div>
-
-            <div class="form-group">
-                <label>Uczelniany opiekun praktyki zawodowej</label>
-                <input type="text" value="{{ uczelniany_opiekun }}" readonly>
-            </div>
-        </fieldset>
-
-        <fieldset class="form-section">
-            <legend>Wypełnianie przez dziekanat</legend>
-
-            <div class="form-group">
-                <label for="nr_indeksu">Numer indeksu</label>
-                <input id="nr_indeksu" name="nr_indeksu" type="text"
-                    {% if role != 'dziekanat' %}readonly{% endif %}>
             </div>
         </fieldset>
 
@@ -85,33 +100,32 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="miejscowosc">Miejscowość</label>
-                    <input id="miejscowosc" name="miejscowosc" type="text"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                    <input id="miejscowosc" name="miejscowosc" type="text">
                 </div>
                 <div class="form-group">
                     <label for="data_podpisu_firmowego">Data</label>
-                    <input id="data_podpisu_firmowego" name="data_podpisu_firmowego" type="date"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                    <input id="data_podpisu_firmowego" name="data_podpisu_firmowego" type="date">
                 </div>
             </div>
 
             <div class="form-group">
                 <label for="uwagi">Uwagi kierownika zakładu</label>
-                <textarea id="uwagi" name="uwagi" rows="4"
-                    {% if role != 'opiekun_firmowy' %}readonly{% endif %}></textarea>
+                <textarea id="uwagi" name="uwagi" rows="4"></textarea>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="ocena_przebiegu_1">Ocena przebiegu praktyki zawodowej 1</label>
-                    <input id="ocena_przebiegu_1" name="ocena_przebiegu_1" type="text"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                    <label for="ocena_przebiegu_1">Ocena parametryczna</label>
+                    <input id="ocena_przebiegu_1" name="ocena_przebiegu_1" type="number" min="2" max="5" step="1">
                 </div>
                 <div class="form-group">
                     <label for="data_przebiegu_1">Data na koniec 1</label>
-                    <input id="data_przebiegu_1" name="data_przebiegu_1" type="date"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                    <input id="data_przebiegu_1" name="data_przebiegu_1" type="date">
                 </div>
+            </div>
+            <div class="form-group">
+                <label for="ocena_opisowa_1">Ocena opisowa</label>
+                <textarea id="ocena_opisowa_1" name="ocena_opisowa_1" rows="3"></textarea>
             </div>
         </fieldset>
 
@@ -120,27 +134,27 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="ocena_przebiegu_2">Ocena przebiegu praktyki zawodowej 2</label>
-                    <input id="ocena_przebiegu_2" name="ocena_przebiegu_2" type="text"
-                        {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
+                    <label for="ocena_przebiegu_2">Ocena parametryczna</label>
+                    <input id="ocena_przebiegu_2" name="ocena_przebiegu_2" type="number" min="2" max="5" step="1">
                 </div>
                 <div class="form-group">
                     <label for="data_przebiegu_2">Data na koniec 2</label>
-                    <input id="data_przebiegu_2" name="data_przebiegu_2" type="date"
-                        {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
+                    <input id="data_przebiegu_2" name="data_przebiegu_2" type="date">
                 </div>
+            </div>
+            <div class="form-group">
+                <label for="ocena_opisowa_2">Ocena opisowa</label>
+                <textarea id="ocena_opisowa_2" name="ocena_opisowa_2" rows="3"></textarea>
             </div>
 
             <div class="form-group">
                 <label for="ocena_sprawozdania">Ocena sprawozdania z praktyki</label>
-                <input id="ocena_sprawozdania" name="ocena_sprawozdania" type="text"
-                    {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
+                <input id="ocena_sprawozdania" name="ocena_sprawozdania" type="text">
             </div>
 
             <div class="form-group">
                 <label for="data_sprawozdania">Data na koniec</label>
-                <input id="data_sprawozdania" name="data_sprawozdania" type="date"
-                    {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
+                <input id="data_sprawozdania" name="data_sprawozdania" type="date">
             </div>
         </fieldset>
 
@@ -150,4 +164,55 @@
         </div>
     </form>
 </div>
+<script>
+    const studentPractice3 = {{ student_practice_json|safe }};
+    const studentSelect3 = document.getElementById('student_select');
+    const studentId3 = document.getElementById('student_id');
+    const nrIndeksu3 = document.getElementById('nr_indeksu');
+    const formaStudiow3 = document.getElementById('forma_studiow');
+    const specjalnosc3 = document.getElementById('specjalnosc');
+    const uczelnianyOpiekun3 = document.getElementById('uczelniany_opiekun');
+    const firmowyOpiekun3 = document.getElementById('firmowy_opiekun');
+    const firmowyStanowisko3 = document.getElementById('firmowy_stanowisko');
+    const terminOd3 = document.getElementById('termin_od');
+    const terminDo3 = document.getElementById('termin_do');
+    const nrPorozumienia3 = document.getElementById('nr_porozumienia');
+    const dataZawarcia3 = document.getElementById('data_zawarcia');
+    const nazwaZakladuPracy3 = document.getElementById('nazwa_zakladu_pracy');
+
+    function updateZalacznik3Fields() {
+        const selectedOption = studentSelect3.options[studentSelect3.selectedIndex];
+        const studentId = selectedOption?.dataset?.studentId || '';
+        studentId3.value = studentId;
+        nrIndeksu3.value = selectedOption?.dataset?.numerAlbumu || '';
+        formaStudiow3.value = selectedOption?.dataset?.forma || '';
+        specjalnosc3.value = selectedOption?.dataset?.specjalnosc || '';
+
+        if (studentId && studentPractice3[studentId]) {
+            const practice = studentPractice3[studentId];
+            uczelnianyOpiekun3.value = practice.uczelniany_opiekun || '';
+            firmowyOpiekun3.value = practice.firmowy_opiekun || '';
+            firmowyStanowisko3.value = practice.firmowy_stanowisko || '';
+            terminOd3.value = practice.termin_od || '';
+            terminDo3.value = practice.termin_do || '';
+            nrPorozumienia3.value = practice.nr_porozumienia || '';
+            dataZawarcia3.value = practice.data_zawarcia || '';
+            nazwaZakladuPracy3.value = practice.nazwa_zakladu_pracy || '';
+        } else {
+            uczelnianyOpiekun3.value = '';
+            firmowyOpiekun3.value = '';
+            firmowyStanowisko3.value = '';
+            terminOd3.value = '';
+            terminDo3.value = '';
+            nrPorozumienia3.value = '';
+            dataZawarcia3.value = '';
+            nazwaZakladuPracy3.value = '';
+        }
+    }
+
+    if (studentSelect3) {
+        studentSelect3.addEventListener('change', updateZalacznik3Fields);
+        updateZalacznik3Fields();
+    }
+</script>
 {% endblock %}

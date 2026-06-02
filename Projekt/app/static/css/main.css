@@ -357,3 +357,39 @@ body {
     font-size: 13px;
     opacity: 0.85;
 }
+
+/* ============================================================
+   Table styles
+   ============================================================ */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 14px;
+}
+
+table th,
+table td {
+    border: 1px solid #e6edf3;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    vertical-align: middle;
+}
+
+table th {
+    background: #f8fafc;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+table tbody tr:nth-child(even) {
+    background: #fbfdff;
+}
+
+.data-table {
+    overflow-x: auto;
+}
+
+.data-table table {
+    min-width: 600px;
+}

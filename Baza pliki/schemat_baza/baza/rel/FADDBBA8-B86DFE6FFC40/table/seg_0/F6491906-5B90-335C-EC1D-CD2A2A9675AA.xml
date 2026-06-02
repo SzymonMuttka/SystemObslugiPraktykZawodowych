@@ -1,0 +1,110 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="F6491906-5B90-335C-EC1D-CD2A2A9675AA" name="program_harmonogram_praktyki">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-02 01:14:56 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<ordsAlias>table_24</ordsAlias>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="id" id="06218624-864F-51CF-00EB-CA8F05C94E62">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-02 01:16:05 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="dokument_id" id="B7C805C4-E269-9642-CC57-A94A620A9E98">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-02 01:16:28 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="92018EB0-3853-6459-83CD-49267E241640" referredColumn="E8923E12-E11E-34AF-DA99-F1BFC0EABE88"/>
+</associations>
+</Column>
+<Column name="numer" id="C6B90261-9860-FD36-CC42-E8901F74D556">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-02 01:16:05 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="ppz_dzial" id="9C0ADA92-84AA-5255-10CE-699FA8D4A951">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-02 01:16:05 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="hpz_dzial" id="633A41D1-2FA1-5DFC-1796-0C3036AEF607">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-02 01:16:05 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="hpz_dni" id="74878022-C864-00BA-8A0A-34E31CF651D9">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-02 01:16:05 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="37E2602A-2414-0E34-C64D-94B4DE1DC4D9" name="program_harmonogram_praktyki_PK">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-02 01:16:05 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="06218624-864F-51CF-00EB-CA8F05C94E62"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="6C0CBD96-8A2A-A42F-2F80-421F9E7B5AA3" name="program_harmonogram_praktyki__UN">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-02 01:16:55 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Unique Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="B7C805C4-E269-9642-CC57-A94A620A9E98"/>
+<colUsage columnID="C6B90261-9860-FD36-CC42-E8901F74D556"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="6ABE8CAE-D942-462B-D713-B919534B59EF" name="program_harmonogram_praktyki_dokument_FK">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-02 01:16:27 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="B7C805C4-E269-9642-CC57-A94A620A9E98"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

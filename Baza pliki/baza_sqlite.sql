@@ -270,6 +270,20 @@ CREATE TABLE efekt_uczenia_dokumentu (
 );
 
 -- ============================================================
+-- PROGRAM I HARMONOGRAM PRAKTYKI (ZAL_2A)
+-- ============================================================
+
+CREATE TABLE program_harmonogram_praktyki (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	dokument_id INTEGER NOT NULL REFERENCES dokument(id),
+	numer INTEGER NOT NULL,
+	ppz_dzial TEXT NOT NULL,
+	hpz_dzial TEXT NOT NULL,
+	hpz_dni INTEGER NOT NULL,
+	UNIQUE(dokument_id, numer)
+);
+
+-- ============================================================
 -- OCENY (ZAL_3 i ZAL_8)
 -- ============================================================
 
@@ -297,7 +311,6 @@ CREATE TABLE pytanie_komisji (
     numer_pytania INTEGER NOT NULL,
     -- 1, 2, 3
     tresc_pytania TEXT NOT NULL,
-    czlonek_id INTEGER NOT NULL REFERENCES uzytkownik(id),
     wartosc_oceny INTEGER NOT NULL,
     -- ocena 2-5
     oceniono TEXT NOT NULL DEFAULT (datetime('now')),

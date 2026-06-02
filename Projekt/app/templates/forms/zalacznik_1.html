@@ -30,23 +30,44 @@
             <legend>Dane wypełniane przez dziekanat</legend>
 
             <div class="form-group">
+                <label for="student_select">Imię i nazwisko studenta</label>
+                <select id="student_select" name="imie_nazwisko_studenta" required>
+                    <option value="">— wybierz studenta —</option>
+                    {% for student in studenci %}
+                        {% set practice = student_practice.get(student.id, {}) %}
+                        <option value="{{ student.imie }} {{ student.nazwisko }}"
+                            data-student-id="{{ student.id }}"
+                            data-firma-nazwa="{{ practice.firma_nazwa }}"
+                            data-reprezentant-firmy="{{ practice.reprezentant_firmy }}"
+                            data-termin-od="{{ practice.termin_od }}"
+                            data-termin-do="{{ practice.termin_do }}">
+                            {{ student.imie }} {{ student.nazwisko }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" id="student_id" name="student_id" value="">
+            </div>
+
+            <div class="form-group">
+                <label for="reprezentant_uczelni">Reprezentant uczelni</label>
+                <select id="reprezentant_uczelni" name="reprezentant_uczelni_id" required>
+                    <option value="">— wybierz reprezentanta uczelni —</option>
+                    {% for reprezentant in reprezentanci_uczelni %}
+                        <option value="{{ reprezentant.id }}">
+                            {{ reprezentant.imie }} {{ reprezentant.nazwisko }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label for="nazwa_zakladu_pracy">Nazwa zakładu pracy</label>
                 <input id="nazwa_zakladu_pracy" name="nazwa_zakladu_pracy" type="text" required>
             </div>
 
             <div class="form-group">
-                <label for="reprezentant_uczelni">Reprezentant uczelni</label>
-                <input id="reprezentant_uczelni" name="reprezentant_uczelni" type="text" required>
-            </div>
-
-            <div class="form-group">
                 <label for="reprezentant_firmy">Reprezentant firmy</label>
                 <input id="reprezentant_firmy" name="reprezentant_firmy" type="text" required>
-            </div>
-
-            <div class="form-group">
-                <label for="imie_nazwisko_studenta">Imię i nazwisko studenta</label>
-                <input id="imie_nazwisko_studenta" name="imie_nazwisko_studenta" type="text" required>
             </div>
 
             <div class="form-row">
@@ -72,4 +93,35 @@
         </div>
     </form>
 </div>
+
+<script>
+    const practiceData = {{ student_practice_json|safe }};
+    const studentSelect = document.getElementById('student_select');
+    const studentIdInput = document.getElementById('student_id');
+    const nazwaZakladuInput = document.getElementById('nazwa_zakladu_pracy');
+    const reprezentantFirmyInput = document.getElementById('reprezentant_firmy');
+    const terminOdInput = document.getElementById('termin_od');
+    const terminDoInput = document.getElementById('termin_do');
+
+    function updateAttachment1Fields() {
+        const option = studentSelect.options[studentSelect.selectedIndex];
+        const studentId = option?.dataset?.studentId || '';
+        studentIdInput.value = studentId;
+
+        if (studentId && practiceData[studentId]) {
+            nazwaZakladuInput.value = practiceData[studentId].firma_nazwa || '';
+            reprezentantFirmyInput.value = practiceData[studentId].reprezentant_firmy || '';
+            terminOdInput.value = practiceData[studentId].termin_od || '';
+            terminDoInput.value = practiceData[studentId].termin_do || '';
+        } else {
+            nazwaZakladuInput.value = '';
+            reprezentantFirmyInput.value = '';
+            terminOdInput.value = '';
+            terminDoInput.value = '';
+        }
+    }
+
+    studentSelect.addEventListener('change', updateAttachment1Fields);
+    updateAttachment1Fields();
+</script>
 {% endblock %}
