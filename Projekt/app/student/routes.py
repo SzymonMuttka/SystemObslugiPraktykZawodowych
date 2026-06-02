@@ -11,11 +11,18 @@ bp = Blueprint('dashboard', __name__)
 
 
 def generate_agreement_number():
-    """Generuje tymczasowy numer porozumienia dla załącznika 1.
+    """Generuje numer porozumienia w formacie POR-000X."""
+    from app import db
+    from sqlalchemy import text
 
-    TODO: zastąpić rzeczywistą logiką generowania numeru z bazy danych.
-    """
-    return 'POR-0001'
+    #count = db.session.query(func.count(Dokument.id)).filter(Dokument.typ_dokumentu_id == 1).scalar()
+    count = db.session.execute(
+        text("SELECT COUNT(typ_dokumentu_id) FROM dokument WHERE typ_dokumentu_id = 1")
+        ).scalar()
+
+    next_number = count + 1
+
+    return f"POR-{next_number:04d}"
 
 
 def save_attachment1_data(form_data):
@@ -1042,7 +1049,9 @@ def save_attachment5_data(form_data):
 @bp.route('/formularz/zalacznik-5', methods=['GET', 'POST'])
 @login_required
 def zalacznik_5():
-    """Formularz załącznika 5 - Kwestionariusz ankiety."""
+    from app import db
+    from sqlalchemy import text
+
     role = current_user.rola.nazwa
 
     if request.method == 'POST':
@@ -1059,21 +1068,56 @@ def zalacznik_5():
         if saved:
             flash('Dane załącznika 5 zostały zapisane.', 'success')
             return redirect(url_for('dashboard.index'))
+
         flash('Wystąpił problem podczas zapisu formularza.', 'danger')
 
+    student_data = db.session.execute(
+        text(
+            """
+            SELECT p.rok_akademicki,
+                   u.specjalnosc,
+                   u.forma_studiow
+            FROM praktyka p
+            JOIN uzytkownik u ON p.student_id = u.id
+            WHERE p.student_id = :student_id
+            ORDER BY p.id DESC
+            LIMIT 1
+            """
+        ),
+        {"student_id": current_user.id}
+    ).fetchone()
+
+    rok_akademicki = student_data[0] if student_data else ''
+    kierunek = student_data[1] if student_data else ''
+    forma_studiow = student_data[2] if student_data else ''
+
     prefilled = {
-        'rok_akademicki': '',
-        'kierunek': '',
-        'forma_studiow': '',
-        'semestr': '',
-        'ilosc_godzin_praktyki': '',
+        'rok_akademicki': rok_akademicki,
+        'kierunek': kierunek,
+        'forma_studiow': forma_studiow,
+        'semestr': '6',
+        'ilosc_godzin_praktyki': '960',
         'odpowiedz': '',
         'dodatkowe_uwagi': '',
     }
 
+    pytania_rows = db.session.execute(
+        text(
+            "SELECT id, numer, tresc_pytania "
+            "FROM pytanie_ankiety "
+            "ORDER BY numer LIMIT 14"
+        )
+    ).fetchall()
+
+    pytania = [
+        {'id': r[0], 'numer': r[1], 'tresc_pytania': r[2]}
+        for r in pytania_rows
+    ]
+
     return render_template(
         'forms/zalacznik_5.html',
         role=role,
+        pytania=pytania,
         **prefilled
     )
 
