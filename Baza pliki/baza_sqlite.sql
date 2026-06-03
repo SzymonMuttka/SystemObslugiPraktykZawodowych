@@ -57,6 +57,8 @@ CREATE TABLE praktyka (
     -- 'standard' / 'alternative'
     status TEXT NOT NULL DEFAULT 'pending',
     -- 'pending', 'active', 'completed', 'rejected'
+	aktualny_etap INTEGER NOT NULL DEFAULT 0,
+	-- 'awaiting_review', 'returned', 'completed', 'archived'
     data_rozpoczecia TEXT,
     data_zakonczenia TEXT,
     liczba_dni_roboczych INTEGER DEFAULT 120,
@@ -91,13 +93,19 @@ CREATE TABLE dokument (
     utworzony_przez INTEGER NOT NULL REFERENCES uzytkownik(id),
     status TEXT NOT NULL DEFAULT 'draft',
     -- 'draft', 'in_progress', 'awaiting_signature',
-    -- 'awaiting_review', 'returned', 'completed', 'archived'
-    aktualny_etap INTEGER NOT NULL DEFAULT 1,
+	ostatni_edytor TEXT,
     jest_usuniety INTEGER NOT NULL DEFAULT 0,
     jest_anonimowy INTEGER NOT NULL DEFAULT 0,
     -- tylko ZAL_5
     utworzono TEXT NOT NULL DEFAULT (datetime('now')),
     zaktualizowano TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE udostepniony_dokument (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	udostepniajacy INTEGER NOT NULL REFERENCES uzytkownik(id),
+	dokument_id INTEGER NOT NULL REFERENCES dokument(id),
+	adresat INTEGER NOT NULL REFERENCES uzytkownik(id)
 );
 
 -- ============================================================
@@ -236,13 +244,20 @@ CREATE TABLE wpis_dziennika (
     numer_dnia INTEGER NOT NULL,
     data_wpisu TEXT NOT NULL,
     opis_prac TEXT NOT NULL,
-    numery_efektow TEXT NOT NULL,
     nadzorujacy_id INTEGER REFERENCES uzytkownik(id),
     jest_podpisany INTEGER NOT NULL DEFAULT 0,
     podpisano TEXT,
     utworzono TEXT NOT NULL DEFAULT (datetime('now')),
     zaktualizowano TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(dokument_id, numer_dnia)
+);
+
+CREATE TABLE wpis_efekt (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dokument_id INTEGER NOT NULL REFERENCES dokument(id),
+	numer_dnia INTEGER NOT NULL,
+	nr_efektu INTEGER NOT NULL,
+	UNIQUE(dokument_id, numer_dnia, nr_efektu)
 );
 
 -- ============================================================
