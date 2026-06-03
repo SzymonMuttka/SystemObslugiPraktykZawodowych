@@ -42,6 +42,7 @@
 <createdTime>2026-04-29 08:21:34 UTC</createdTime>
 <ownerDesignName>baza</ownerDesignName>
 <importedID>0CB9223A-6B97-A7C3-204C-9D8BEE5305D9</importedID>
+<nullsAllowed>true</nullsAllowed>
 <use>0</use>
 <logicalDatatype>LOGDT011</logicalDatatype>
 <domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
@@ -57,6 +58,7 @@
 <createdTime>2026-04-29 08:21:34 UTC</createdTime>
 <ownerDesignName>baza</ownerDesignName>
 <importedID>F5744A14-CF93-8444-F84B-DF5F0260BAC5</importedID>
+<nullsAllowed>true</nullsAllowed>
 <use>0</use>
 <logicalDatatype>LOGDT011</logicalDatatype>
 <domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
@@ -72,6 +74,7 @@
 <createdTime>2026-04-29 08:21:34 UTC</createdTime>
 <ownerDesignName>baza</ownerDesignName>
 <importedID>2BBBB333-70BF-AA80-5AE7-5A86560CE0BB</importedID>
+<nullsAllowed>true</nullsAllowed>
 <use>0</use>
 <logicalDatatype>LOGDT011</logicalDatatype>
 <domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>

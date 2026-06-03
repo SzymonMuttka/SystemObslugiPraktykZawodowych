@@ -14,13 +14,13 @@
             <legend>Dane studenta (prefilled)</legend>
 
             <div class="form-group">
-                <label>Numer indeksu</label>
-                <input type="text" value="{{ nr_indeksu }}" readonly>
+                <label>Imię i nazwisko studenta</label>
+                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
             </div>
 
             <div class="form-group">
-                <label>Imię i nazwisko studenta</label>
-                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+                <label>Numer indeksu</label>
+                <input type="text" value="{{ nr_indeksu }}" readonly>
             </div>
 
             <div class="form-group">
@@ -28,21 +28,22 @@
                 <input type="text" value="{{ specjalnosc }}" readonly>
             </div>
 
-            <div class="form-group">
-                <label>Rok akademicki</label>
-                <input type="text" value="{{ rok_akademicki }}" readonly>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Rok akademicki</label>
+                    <input type="text" value="{{ rok_akademicki }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="miejsce_odbycia_praktyki">Miejsce odbycia praktyki</label>
+                    <input id="miejsce_odbycia_praktyki" name="miejsce_odbycia_praktyki" type="text"
+                        value="{{ miejsce_odbycia_praktyki }}"
+                        {% if role != 'student' %}readonly{% endif %}>
+                </div>
             </div>
         </fieldset>
 
         <fieldset class="form-section">
             <legend>Wypełniane przez studenta</legend>
-
-            <div class="form-group">
-                <label for="miejsce_odbycia_praktyki">Miejsce odbycia praktyki</label>
-                <input id="miejsce_odbycia_praktyki" name="miejsce_odbycia_praktyki" type="text"
-                    value="{{ miejsce_odbycia_praktyki }}"
-                    {% if role != 'student' %}readonly{% endif %}>
-            </div>
 
             <div class="form-group">
                 <label for="charakterystyka_miejsca_pracy">Charakterystyka miejsca pracy</label>
@@ -63,21 +64,10 @@
             </div>
 
             <div class="form-group">
-                <label for="data_na_koniec_studenta">Data na koniec (student)</label>
-                <input id="data_na_koniec_studenta" name="data_na_koniec_studenta" type="date"
-                    value="{{ data_na_koniec_studenta }}"
+                <label for="data_na_koniec">Data</label>
+                <input id="data_na_koniec" name="data_na_koniec" type="date"
+                    value="{{ data_na_koniec }}"
                     {% if role != 'student' %}readonly{% endif %}>
-            </div>
-        </fieldset>
-
-        <fieldset class="form-section">
-            <legend>Wypełniane przez opiekuna uczelnianego</legend>
-
-            <div class="form-group">
-                <label for="data_na_koniec_uczelnianego">Data na koniec (opiekun uczelniany)</label>
-                <input id="data_na_koniec_uczelnianego" name="data_na_koniec_uczelnianego" type="date"
-                    value="{{ data_na_koniec_uczelnianego }}"
-                    {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
             </div>
         </fieldset>
 

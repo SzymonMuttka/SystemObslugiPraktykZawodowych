@@ -30,11 +30,11 @@
                             <td colspan="5">
                                 <select name="odpowiedz[]">
                                     <option value="" selected>-- wybierz odpowiedź --</option>
-                                    <option value="5">Zdecydowanie tak</option>
-                                    <option value="4">Raczej tak</option>
-                                    <option value="3">Trudno powiedzieć</option>
-                                    <option value="2">Raczej nie</option>
-                                    <option value="1">Zdecydowanie nie</option>
+                                    <option value="zdecydowanie_tak">Zdecydowanie tak</option>
+                                    <option value="raczej_tak">Raczej tak</option>
+                                    <option value="trudno_powiedziec">Trudno powiedzieć</option>
+                                    <option value="raczej_nie">Raczej nie</option>
+                                    <option value="zdecydowanie_nie">Zdecydowanie nie</option>
                                 </select>
                             </td>
                         </tr>
@@ -55,27 +55,27 @@
 
             <div class="form-group">
                 <label>Rok akademicki</label>
-                <input type="text" value="{{ rok_akademicki }}">
+                <input type="text" name="rok_akademicki" value="{{ rok_akademicki }}">
             </div>
 
             <div class="form-group">
                 <label>Kierunek studiów</label>
-                <input type="text" value="{{ kierunek }}">
+                <input type="text" name="specjalnosc" value="{{ specjalnosc }}">
             </div>
 
             <div class="form-group">
                 <label>Forma studiów</label>
-                <input type="text" value="{{ forma_studiow }}">
+                <input type="text" name="forma_studiow" value="{{ forma_studiow }}">
             </div>
 
             <div class="form-group">
                 <label>Semestr</label>
-                <input type="text" value="6">
+                <input type="text" name="semestr" value="{{ semestr }}">
             </div>
 
             <div class="form-group">
                 <label>Liczba godzin praktyki zawodowej</label>
-                <input type="text" value="960">
+                <input type="text" name="liczba_godzin" value="{{ ilosc_godzin_praktyki }}">
             </div>
         </fieldset>
 

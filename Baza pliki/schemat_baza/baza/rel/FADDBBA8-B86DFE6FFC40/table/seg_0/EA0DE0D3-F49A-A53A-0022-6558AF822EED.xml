@@ -64,19 +64,6 @@
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 <autoIncrementCycle>false</autoIncrementCycle>
 </Column>
-<Column name="brakujace_elementy" id="E4697676-793E-745C-1B49-32DB5D93F043">
-<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:21:34 UTC</createdTime>
-<ownerDesignName>baza</ownerDesignName>
-<importedID>BEB6F7FD-CBF4-F8B0-78D3-19D4C0670A33</importedID>
-<nullsAllowed>true</nullsAllowed>
-<use>0</use>
-<logicalDatatype>LOGDT040</logicalDatatype>
-<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
-<ownDataTypeParameters>,,</ownDataTypeParameters>
-<autoIncrementCycle>false</autoIncrementCycle>
-</Column>
 <Column name="ocenione_przez" id="62500AD7-BE5B-0470-54DA-70EB759BCFA4">
 <sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
 <createdBy>Student</createdBy>

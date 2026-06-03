@@ -8,7 +8,7 @@
 <referredTableID>7BC42E30-145E-3651-CAA9-50272A73FED8</referredTableID>
 <keyObject>6E24D070-66BC-62CC-831A-1D9AF2A29679</keyObject>
 <referredKeyID>6E24D070-66BC-62CC-831A-1D9AF2A29679</referredKeyID>
-<mandatory>true</mandatory>
+<mandatory>false</mandatory>
 <refColNames>id</refColNames>
 <transferable>true</transferable>
 <rely>false</rely>

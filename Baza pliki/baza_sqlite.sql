@@ -50,7 +50,7 @@ CREATE TABLE uzytkownik (
 CREATE TABLE praktyka (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL REFERENCES uzytkownik(id),
-    firma_id INTEGER NOT NULL REFERENCES firma(id),
+    firma_id INTEGER REFERENCES firma(id),
     opiekun_firmowy_id INTEGER REFERENCES uzytkownik(id),
     opiekun_uczelniany_id INTEGER REFERENCES uzytkownik(id),
     sciezka TEXT NOT NULL,
@@ -262,10 +262,8 @@ CREATE TABLE efekt_uczenia_dokumentu (
     status TEXT,
     -- ZAL_4: 'achieved' / 'not_achieved'
     -- ZAL_4A: 'achieved' / 'partial' / 'not_achieved'
-    brakujace_elementy TEXT,
-    -- tylko ZAL_4A przy 'partial'
     ocenione_przez INTEGER REFERENCES uzytkownik(id),
-    oceniono TEXT,
+    oceniono TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(dokument_id, efekt_id)
 );
 
@@ -314,7 +312,7 @@ CREATE TABLE pytanie_komisji (
     wartosc_oceny INTEGER NOT NULL,
     -- ocena 2-5
     oceniono TEXT NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(dokument_id, numer_pytania, czlonek_id)
+    UNIQUE(dokument_id, numer_pytania)
 );
 
 -- ============================================================
@@ -344,6 +342,17 @@ CREATE TABLE komentarz_ankiety (
     tresc TEXT
     -- brak uzytkownik_id - anonimowość
 );
+
+CREATE TABLE ankieta_dane (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	dokument_id INTEGER NOT NULL REFERENCES dokument(id),
+	uwagi TEXT,
+	rok_akademicki TEXT,
+	specjalnosc TEXT,
+	forma_studiow TEXT,
+	semestr INTEGER,
+	liczba_godzin INTEGER
+)
 
 -- ============================================================
 -- SKŁAD KOMISJI (ZAL_8)

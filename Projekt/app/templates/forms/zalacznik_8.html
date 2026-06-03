@@ -42,13 +42,12 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="ocena_sprawozdania_s">Ocena za sprawozdanie S*</label>
-                    <input id="ocena_sprawozdania_s" name="ocena_sprawozdania_s" type="text" readonly>
+                    <input id="ocena_sprawozdania_s" name="ocena_sprawozdania_s" type="text">
                 </div>
                 <div class="form-group">
                     <label for="data_oceny_s">Data oceny S*</label>
                     <input id="data_oceny_s" name="data_oceny_s" type="date"
-                        value="{{ data_oceny_s }}"
-                        {% if role != 'opiekun_uczelniany' %}readonly{% endif %}>
+                        value="{{ data_oceny_s }}">
                 </div>
             </div>
         </fieldset>
@@ -58,11 +57,11 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Ocena U*</label>
-                    <input id="ocena_u" type="text" value="{{ ocena_u }}" readonly>
+                    <input id="ocena_u" name="ocena_u" type="text" value="{{ ocena_u }}">
                 </div>
                 <div class="form-group">
                     <label>Ocena Z*</label>
-                    <input id="ocena_z" type="text" value="{{ ocena_z }}" readonly>
+                    <input id="ocena_z" name="ocena_z" type="text" value="{{ ocena_z }}">
                 </div>
             </div>
         </fieldset>
@@ -90,7 +89,7 @@
                             <td><input type="text" id="funkcja_1" name="funkcja_1" value="Przewodniczący Komisji" readonly></td>
                         </tr>
                         <tr>
-                            <td><input type="text" id="imie_nazwisko_2" name="imie_nazwisko_2" readonly></td>
+                            <td><input type="text" id="imie_nazwisko_2" name="imie_nazwisko_2"></td>
                             <td><input type="text" id="funkcja_2" name="funkcja_2" value="Uczelniany opiekun praktyki zawodowej" readonly></td>
                         </tr>
                         <tr>

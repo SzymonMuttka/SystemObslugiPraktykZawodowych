@@ -6,6 +6,7 @@ from flask import (
     redirect, url_for, flash, current_app
 )
 from flask_login import login_required, current_user
+from sqlalchemy import text
 
 bp = Blueprint('dashboard', __name__)
 
@@ -828,15 +829,14 @@ def save_attachment4_data(form_data):
 
             db.session.execute(
                 text(
-                    "INSERT OR REPLACE INTO efekt_uczenia_dokumentu (dokument_id, efekt_id, status, ocenione_przez, oceniono)"
-                    " VALUES (:doc_id, :efekt_id, :status, :ocenione_przez, :oceniono)"
+                    "INSERT OR REPLACE INTO efekt_uczenia_dokumentu (dokument_id, efekt_id, status, ocenione_przez)"
+                    " VALUES (:doc_id, :efekt_id, :status, :ocenione_przez)"
                 ),
                 {
                     'doc_id': dokument_id,
                     'efekt_id': efekt_id,
                     'status': status,
                     'ocenione_przez': opiekun_firmowy_id,
-                    'oceniono': oceniono,
                 }
             )
 
@@ -928,16 +928,212 @@ def zalacznik_4():
 
 
 def save_attachment4a_data(form_data):
-    """Szkielet zapisu załącznika 4a (Potwierdzenie uzyskania efektów)."""
-    current_app.logger.debug('Zapis załącznika 4a: %s', form_data)
-    # TODO: dodać implementację zapisu do bazy dla dokumentu i pól
-    return True
+    from app import db
+    from sqlalchemy import text
+
+    try:
+        student_id = int(form_data.get('student_id')) if form_data.get('student_id') else None
+
+        if not student_id:
+            current_app.logger.error(
+                'Brak wybranego studenta przy zapisie załącznika 4a.'
+            )
+            return False
+
+        praktyka_row = db.session.execute(
+            text("""
+                SELECT id FROM praktyka WHERE student_id = :student_id ORDER BY id DESC LIMIT 1
+            """),
+            {'student_id': student_id}
+        ).fetchone()
+
+        if not praktyka_row:
+            current_app.logger.error(
+                'Nie znaleziono praktyki dla studenta %s',
+                student_id
+            )
+            return False
+
+        praktyka_id = praktyka_row[0]
+
+        # aktualizacja liczby godzin
+        db.session.execute(
+            text("""
+                UPDATE praktyka SET liczba_godzin = :liczba_godzin, zaktualizowano = datetime('now') WHERE id = :praktyka_id
+            """),
+            {
+                'liczba_godzin': int(form_data.get('ilosc_godzin_praktyk') or 0),
+                'praktyka_id': praktyka_id
+            }
+        )
+
+        typ_row = db.session.execute(
+            text("""
+                SELECT id FROM typ_dokumentu WHERE kod = 'ZAL_4A' LIMIT 1
+            """)
+        ).fetchone()
+
+        if not typ_row:
+            current_app.logger.error('Nie znaleziono typu dokumentu ZAL_4A')
+            return False
+
+        typ_id = typ_row[0]
+
+        dokument_row = db.session.execute(
+            text("""
+                SELECT id FROM dokument WHERE praktyka_id = :praktyka_id AND typ_dokumentu_id = :typ_id LIMIT 1
+            """),
+            {
+                'praktyka_id': praktyka_id,
+                'typ_id': typ_id
+            }
+        ).fetchone()
+
+        if dokument_row:
+            dokument_id = dokument_row[0]
+
+            db.session.execute(
+                text("""
+                    UPDATE dokument SET status = 'completed', aktualny_etap = 2, zaktualizowano = datetime('now') WHERE id = :id
+                """),
+                {'id': dokument_id}
+            )
+        else:
+            db.session.execute(
+                text("""
+                    INSERT INTO dokument ( praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap )
+                    VALUES ( :praktyka_id, :typ_id, :uzytkownik_id, 'completed', 2 )
+                """),
+                {
+                    'praktyka_id': praktyka_id,
+                    'typ_id': typ_id,
+                    'uzytkownik_id': current_user.id
+                }
+            )
+
+            dokument_id = db.session.execute(text("SELECT last_insert_rowid()")).scalar()
+
+        efekt_rows = db.session.execute(
+            text("""
+                SELECT id FROM efekt_uczenia ORDER BY numer LIMIT 13
+            """)
+        ).fetchall()
+
+        status_map = {
+            '0': 'not_achieved',
+            '1': 'partial',
+            '2': 'achieved'
+        }
+
+        efekty_values = form_data.get('efekt_uzyskany', [])
+
+        for idx, row in enumerate(efekt_rows):
+
+            efekt_id = row[0]
+
+            value = (
+                efekty_values[idx]
+                if idx < len(efekty_values)
+                else '0'
+            )
+
+            status = status_map.get(value, 'not_achieved')
+
+            istnieje = db.session.execute(
+                text("""
+                    SELECT id FROM efekt_uczenia_dokumentu WHERE dokument_id = :doc_id AND efekt_id = :efekt_id
+                """),
+                {
+                    'doc_id': dokument_id,
+                    'efekt_id': efekt_id
+                }
+            ).fetchone()
+
+            if istnieje:
+                db.session.execute(
+                    text("""
+                        UPDATE efekt_uczenia_dokumentu SET status, ocenione_przez = :ocenione_przez = :status WHERE id = :id
+                    """),
+                    {
+                        'status': status,
+                        'ocenione_przez': current_user.id,
+                        'id': istnieje[0]
+                    }
+                )
+            else:
+                db.session.execute(
+                    text("""
+                        INSERT INTO efekt_uczenia_dokumentu ( dokument_id, efekt_id, status, ocenione_przez )
+                        VALUES ( :doc_id, :efekt_id, :status, :ocenione_przez )
+                    """),
+                    {
+                        'doc_id': dokument_id,
+                        'efekt_id': efekt_id,
+                        'status': status,
+                        'ocenione_przez': current_user.id
+                    }
+                )
+
+        istnieje = db.session.execute(
+            text("""
+                SELECT id FROM dane_dokumentu WHERE dokument_id = :doc_id AND klucz = 'data_wyniku_komisji'
+            """),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if istnieje:
+            db.session.execute(
+                text("""
+                    UPDATE dane_dokumentu SET wartosc = :wartosc, wypelnione_przez = :user_id WHERE id = :id
+                """),
+                {
+                    'wartosc': form_data.get(
+                        'data_wyniku_komisji'
+                    ),
+                    'user_id': current_user.id,
+                    'id': istnieje[0]
+                }
+            )
+        else:
+            db.session.execute(
+                text("""
+                    INSERT INTO dane_dokumentu ( dokument_id, klucz, wartosc, wypelnione_przez )
+                    VALUES ( :doc_id, 'data_wyniku_komisji', :wartosc, :user_id )
+                """),
+                {
+                    'doc_id': dokument_id,
+                    'wartosc': form_data.get(
+                        'data_wyniku_komisji'
+                    ),
+                    'user_id': current_user.id
+                }
+            )
+
+        db.session.commit()
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception(e)
+        return False
 
 
 @bp.route('/formularz/zalacznik-4a', methods=['GET', 'POST'])
 @login_required
 def zalacznik_4a():
     """Formularz załącznika 4a - Potwierdzenie uzyskania efektów uczenia się."""
+    from app.models.uzytkownik import Uzytkownik, Rola
+    from app import db
+    from sqlalchemy import text
+
+    rola_student = Rola.query.filter_by(nazwa='student').first()
+    studenci = (
+        Uzytkownik.query
+        .filter_by(rola_id=rola_student.id, jest_aktywny=True)
+        .order_by(Uzytkownik.numer_albumu)
+        .all()
+    ) if rola_student else []
+
     role = current_user.rola.nazwa
 
     if request.method == 'POST':
@@ -945,21 +1141,36 @@ def zalacznik_4a():
             flash('Nie masz uprawnień do zapisu tego formularza.', 'danger')
             return redirect(url_for('dashboard.index'))
 
-        if role == 'dziekanat':
-            form_data = {
-                'nr_indeksu': request.form.get('nr_indeksu'),
-            }
-        else:
-            form_data = {
-                'wynik_komisji': request.form.get('wynik_komisji'),
-                'data_wyniku_komisji': request.form.get('data_wyniku_komisji'),
-            }
+        form_data = {
+            'student_id': request.form.get('student_id'),
+            'nr_indeksu': request.form.get('nr_indeksu'),
+            'ilosc_godzin_praktyk': request.form.get('ilosc_godzin_praktyk'),
+            'efekt_uzyskany': request.form.getlist('efekt_uzyskany[]'),
+            'data_wyniku_komisji': request.form.get('data_wyniku_komisji'),
+        }
 
         saved = save_attachment4a_data(form_data)
         if saved:
             flash('Dane załącznika 4a zostały zapisane.', 'success')
             return redirect(url_for('dashboard.index'))
         flash('Wystąpił problem podczas zapisu formularza.', 'danger')
+    
+    efekty_rows = db.session.execute(
+        text("""
+            SELECT id, numer, opis
+            FROM efekt_uczenia
+            ORDER BY numer
+        """)
+    ).fetchall()
+
+    efekty = [
+        {
+            'id': r[0],
+            'numer': r[1],
+            'opis': r[2]
+        }
+        for r in efekty_rows
+    ]
 
     prefilled = {
         'imie_nazwisko_studenta': '',
@@ -973,21 +1184,162 @@ def zalacznik_4a():
     return render_template(
         'forms/zalacznik_4a.html',
         role=role,
+        studenci=studenci,
+        efekty=efekty,
         **prefilled
     )
 
 
 def save_attachment4b_data(form_data):
-    """Szkielet zapisu załącznika 4b (Wniosek o zaliczenie efektów)."""
-    current_app.logger.debug('Zapis załącznika 4b: %s', form_data)
-    # TODO: dodać implementację zapisu do bazy dla dokumentu i pól
-    return True
+    from app import db
+    from sqlalchemy import text
+
+    try:
+        student_id = current_user.id
+
+        rok_akademicki = f"{date.today().year - 1}/{date.today().year}"
+
+        # praktyka
+        praktyka = db.session.execute(
+            text("""
+                SELECT id FROM praktyka WHERE student_id = :student_id AND sciezka = 'alternative' LIMIT 1
+            """),
+            {"student_id": student_id}
+        ).fetchone()
+
+        if praktyka:
+            praktyka_id = praktyka[0]
+
+            db.session.execute(
+                text("""
+                    UPDATE praktyka SET status = 'active', zaktualizowano = datetime('now') WHERE id = :id
+                """),
+                {"id": praktyka_id}
+            )
+        else:
+            db.session.execute(
+                text("""
+                    INSERT INTO praktyka ( student_id, firma_id, opiekun_firmowy_id, opiekun_uczelniany_id, sciezka, status,
+                        liczba_dni_roboczych, liczba_godzin, rok_akademicki
+                    )
+                    VALUES ( :student_id, NULL, NULL, NULL, 'alternative', 'active', NULL, NULL, :rok_akademicki )
+                """),
+                {
+                    "student_id": student_id,
+                    "rok_akademicki": rok_akademicki
+                }
+            )
+
+            praktyka_id = db.session.execute(
+                text("SELECT last_insert_rowid()")
+            ).scalar()
+
+        # typ dokumentu
+        typ_dokumentu_id = db.session.execute(
+            text("""
+                SELECT id FROM typ_dokumentu WHERE kod = 'ZAL_4B'
+            """)
+        ).scalar()
+
+        # dokument
+        dokument = db.session.execute(
+            text("""
+                SELECT id FROM dokument WHERE praktyka_id = :praktyka_id AND typ_dokumentu_id = :typ_dokumentu_id LIMIT 1
+            """),
+            {
+                "praktyka_id": praktyka_id,
+                "typ_dokumentu_id": typ_dokumentu_id
+            }
+        ).fetchone()
+
+        if dokument:
+            dokument_id = dokument[0]
+
+            db.session.execute(
+                text("""
+                    UPDATE dokument SET status = 'completed', aktualny_etap = 1, zaktualizowano = datetime('now') WHERE id = :id
+                """),
+                {"id": dokument_id}
+            )
+        else:
+            db.session.execute(
+                text("""
+                    INSERT INTO dokument ( praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap )
+                    VALUES ( :praktyka_id, :typ_dokumentu_id, :uzytkownik_id, 'completed', 1 )
+                """),
+                {
+                    "praktyka_id": praktyka_id,
+                    "typ_dokumentu_id": typ_dokumentu_id,
+                    "uzytkownik_id": current_user.id
+                }
+            )
+
+            dokument_id = db.session.execute(
+                text("SELECT last_insert_rowid()")
+            ).scalar()
+
+        pola = {
+            'uzasadnienie': form_data.get('uzasadnienie'),
+            'data_uzasadnienia': form_data.get('data_uzasadnienia'),
+            'opinia_komisji': form_data.get('opinia_komisji'),
+            'data_opinii_komisji': form_data.get('data_opinii_komisji'),
+            'decyzja_dyrektora': form_data.get('decyzja_dyrektora'),
+            'efekty_do_zaliczenia': form_data.get('efekty_do_zaliczenia'),
+            'data_decyzji_dyrektora': form_data.get('data_decyzji_dyrektora')
+        }
+
+        for klucz, wartosc in pola.items():
+
+            istnieje = db.session.execute(
+                text("""
+                    SELECT id FROM dane_dokumentu WHERE dokument_id = :dokument_id AND klucz = :klucz
+                """),
+                {
+                    "dokument_id": dokument_id,
+                    "klucz": klucz
+                }
+            ).fetchone()
+
+            if istnieje:
+                db.session.execute(
+                    text("""
+                        UPDATE dane_dokumentu SET wartosc = :wartosc WHERE id = :id
+                    """),
+                    {
+                        "wartosc": wartosc,
+                        "id": istnieje[0]
+                    }
+                )
+            else:
+                db.session.execute(
+                    text("""
+                        INSERT INTO dane_dokumentu ( dokument_id, klucz, wartosc, wypelnione_przez )
+                        VALUES ( :dokument_id, :klucz, :wartosc, :uzytkownik_id )
+                    """),
+                    {
+                        "dokument_id": dokument_id,
+                        "klucz": klucz,
+                        "wartosc": wartosc,
+                        "uzytkownik_id": current_user.id
+                    }
+                )
+
+        db.session.commit()
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception(e)
+        return False
 
 
 @bp.route('/formularz/zalacznik-4b', methods=['GET', 'POST'])
 @login_required
 def zalacznik_4b():
     """Formularz załącznika 4b - Wniosek o zaliczenie efektów uczenia się."""
+    from app import db
+    from sqlalchemy import text
+
     role = current_user.rola.nazwa
 
     if request.method == 'POST':
@@ -995,23 +1347,15 @@ def zalacznik_4b():
             flash('Nie masz uprawnień do zapisu tego formularza.', 'danger')
             return redirect(url_for('dashboard.index'))
 
-        if role == 'student':
-            form_data = {
-                'nr_indeksu': request.form.get('nr_indeksu'),
-                'data_zlozenia': request.form.get('data_zlozenia'),
-                'uzasadnienie': request.form.get('uzasadnienie'),
-                'data_uzasadnienia': request.form.get('data_uzasadnienia'),
-            }
-        elif role == 'czlonek_komisji':
-            form_data = {
-                'opinia_komisji': request.form.get('opinia_komisji'),
-                'data_opinii_komisji': request.form.get('data_opinii_komisji'),
-            }
-        else:
-            form_data = {
-                'decyzja_dyrektora': request.form.get('decyzja_dyrektora'),
-                'data_decyzji_dyrektora': request.form.get('data_decyzji_dyrektora'),
-            }
+        form_data = {
+            'uzasadnienie': request.form.get('uzasadnienie'),
+            'data_uzasadnienia': request.form.get('data_uzasadnienia'),
+            'opinia_komisji': request.form.get('opinia_komisji'),
+            'data_opinii_komisji': request.form.get('data_opinii_komisji'),
+            'decyzja_dyrektora': request.form.get('decyzja_dyrektora'),
+            'efekty_do_zaliczenia': request.form.get('efekty_do_zaliczenia'),
+            'data_decyzji_dyrektora': request.form.get('data_decyzji_dyrektora'),
+        }
 
         saved = save_attachment4b_data(form_data)
         if saved:
@@ -1019,10 +1363,32 @@ def zalacznik_4b():
             return redirect(url_for('dashboard.index'))
         flash('Wystąpił problem podczas zapisu formularza.', 'danger')
 
+    student_data = db.session.execute(
+        text("""
+            SELECT
+                u.imie,
+                u.nazwisko,
+                u.numer_albumu,
+                u.specjalnosc
+            FROM uzytkownik u
+            WHERE u.id = :student_id
+        """),
+        {"student_id": current_user.id}
+    ).fetchone()
+
+    imie_nazwisko_studenta = ''
+    nr_indeksu = ''
+    specjalnosc = ''
+
+    if student_data:
+        imie_nazwisko_studenta = f"{student_data[0]} {student_data[1]}"
+        nr_indeksu = student_data[2] or ''
+        specjalnosc = student_data[3] or ''
+
     prefilled = {
-        'imie_nazwisko_studenta': '',
-        'specjalnosc': '',
-        'nr_indeksu': '',
+        'imie_nazwisko_studenta': imie_nazwisko_studenta,
+        'specjalnosc': specjalnosc,
+        'nr_indeksu': nr_indeksu,
         'data_zlozenia': date.today().isoformat(),
         'uzasadnienie': '',
         'data_uzasadnienia': date.today().isoformat(),
@@ -1040,10 +1406,123 @@ def zalacznik_4b():
 
 
 def save_attachment5_data(form_data):
-    """Szkielet zapisu załącznika 5 (Kwestionariusz ankiety)."""
+    """Zapis załącznika 5 (Kwestionariusz ankiety).
+
+    Tworzy wpis w tabeli ankieta_dane oraz 14 wpisów w tabeli odpowiedz_ankiety.
+    """
+    from app import db
+    from sqlalchemy import text
+
     current_app.logger.debug('Zapis załącznika 5: %s', form_data)
-    # TODO: dodać implementację zapisu do bazy dla dokumentu i pól
-    return True
+
+    try:
+        student_id = current_user.id
+
+        # Pobierz praktykę studenta
+        praktyka_row = db.session.execute(
+            text("SELECT id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
+            {'student_id': student_id}
+        ).fetchone()
+        praktyka_id = praktyka_row[0] if praktyka_row else None
+        if not praktyka_id:
+            current_app.logger.error('Nie znaleziono praktyki dla studenta %s przy zapisie załącznika 5.', student_id)
+            return False
+
+        # Znajdź typ dokumentu ZAL_5
+        typ_row = db.session.execute(
+            text("SELECT id FROM typ_dokumentu WHERE kod='ZAL_5' LIMIT 1")
+        ).fetchone()
+        typ_id = typ_row[0] if typ_row else None
+        if not typ_id:
+            current_app.logger.error('Nie znaleziono typu dokumentu ZAL_5 przy zapisie załącznika 5.')
+            return False
+
+        # Utwórz dokument
+        db.session.execute(
+            text(
+                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap, jest_anonimowy)"
+                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :etap, 1)"
+            ),
+            {
+                'praktyka_id': praktyka_id,
+                'typ_id': typ_id,
+                'utworzony_przez': current_user.id,
+                'status': 'completed',
+                'etap': 10,
+            }
+        )
+        db.session.commit()
+
+        # Pobierz ID utworzonego dokumentu
+        dokument_row = db.session.execute(
+            text("SELECT id FROM dokument WHERE praktyka_id=:praktyka_id AND typ_dokumentu_id=:typ_id ORDER BY id DESC LIMIT 1"),
+            {'praktyka_id': praktyka_id, 'typ_id': typ_id}
+        ).fetchone()
+        dokument_id = dokument_row[0] if dokument_row else None
+        if not dokument_id:
+            current_app.logger.error('Nie udało się pobrać dokumentu po zapisie załącznika 5.')
+            return False
+
+        # Pobierz pytania ankiety
+        pytania_rows = db.session.execute(
+            text("SELECT id FROM pytanie_ankiety ORDER BY numer LIMIT 14")
+        ).fetchall()
+
+        # Pobierz odpowiedzi z formularza
+        odpowiedzi = form_data.get('odpowiedz', []) or []
+        if not isinstance(odpowiedzi, list):
+            odpowiedzi = [odpowiedzi]
+
+        # Wstaw 14 wpisów do odpowiedz_ankiety
+        for idx, pytanie_row in enumerate(pytania_rows):
+            pytanie_id = pytanie_row[0]
+            wartosc = odpowiedzi[idx] if idx < len(odpowiedzi) else ''
+
+            db.session.execute(
+                text(
+                    "INSERT INTO odpowiedz_ankiety (dokument_id, pytanie_id, odpowiedz)"
+                    " VALUES (:dokument_id, :pytanie_id, :wartosc)"
+                ),
+                {
+                    'dokument_id': dokument_id,
+                    'pytanie_id': pytanie_id,
+                    'wartosc': wartosc,
+                }
+            )
+
+        # Dane studenta i uwagi do ankieta_dane
+        dodatkowe_uwagi = form_data.get('dodatkowe_uwagi', '') or ''
+        rok_akademicki = form_data.get('rok_akademicki', '') or ''
+        specjalnosc = form_data.get('specjalnosc', '') or ''
+        forma_studiow = form_data.get('forma_studiow', '') or ''
+        semestr = form_data.get('semestr', '') or ''
+        liczba_godzin = form_data.get('liczba_godzin', '') or ''
+
+        # Wstaw wpis do ankieta_dane
+        db.session.execute(
+            text(
+                "INSERT INTO ankieta_dane (dokument_id, uwagi, rok_akademicki, specjalnosc, forma_studiow, semestr, liczba_godzin)"
+                " VALUES (:dokument_id, :uwagi, :rok, :specjalnosc, :forma, :semestr, :godziny)"
+            ),
+            {
+                'dokument_id': dokument_id,
+                'uwagi': dodatkowe_uwagi,
+                'rok': rok_akademicki,
+                'specjalnosc': specjalnosc,
+                'forma': forma_studiow,
+                'semestr': semestr,
+                'godziny': liczba_godzin,
+            }
+        )
+
+        db.session.commit()
+        current_app.logger.info('Załącznik 5 zapisany: dokument_id=%s', dokument_id)
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Błąd zapisu załącznika 5: {e}')
+        return False
 
 
 @bp.route('/formularz/zalacznik-5', methods=['GET', 'POST'])
@@ -1060,8 +1539,13 @@ def zalacznik_5():
             return redirect(url_for('dashboard.index'))
 
         form_data = {
-            'odpowiedz': request.form.get('odpowiedz'),
+            'odpowiedz': request.form.getlist('odpowiedz[]'),
             'dodatkowe_uwagi': request.form.get('dodatkowe_uwagi'),
+            'rok_akademicki': request.form.get('rok_akademicki'),
+            'specjalnosc': request.form.get('specjalnosc'),
+            'forma_studiow': request.form.get('forma_studiow'),
+            'semestr': request.form.get('semestr'),
+            'liczba_godzin': request.form.get('liczba_godzin'),
         }
 
         saved = save_attachment5_data(form_data)
@@ -1072,31 +1556,31 @@ def zalacznik_5():
         flash('Wystąpił problem podczas zapisu formularza.', 'danger')
 
     student_data = db.session.execute(
-        text(
-            """
+        text("""
             SELECT p.rok_akademicki,
-                   u.specjalnosc,
-                   u.forma_studiow
+                u.specjalnosc,
+                u.forma_studiow,
+                p.liczba_godzin
             FROM praktyka p
             JOIN uzytkownik u ON p.student_id = u.id
             WHERE p.student_id = :student_id
             ORDER BY p.id DESC
             LIMIT 1
-            """
-        ),
+        """),
         {"student_id": current_user.id}
     ).fetchone()
 
     rok_akademicki = student_data[0] if student_data else ''
-    kierunek = student_data[1] if student_data else ''
+    specjalnosc = student_data[1] if student_data else ''
     forma_studiow = student_data[2] if student_data else ''
+    liczba_godzin = student_data[3] if student_data else ''
 
     prefilled = {
         'rok_akademicki': rok_akademicki,
-        'kierunek': kierunek,
+        'specjalnosc': specjalnosc,
         'forma_studiow': forma_studiow,
-        'semestr': '6',
-        'ilosc_godzin_praktyki': '960',
+        'semestr': '7',
+        'ilosc_godzin_praktyki': liczba_godzin,
         'odpowiedz': '',
         'dodatkowe_uwagi': '',
     }
@@ -1473,17 +1957,186 @@ def zalacznik_7():
 
 
 def save_attachment7a_data(form_data):
-    """Szkielet zapisu załącznika 7a (Sprawozdanie z pracy zawodowej)."""
+    """Zapis załącznika 7a (Sprawozdanie z pracy zawodowej)."""
+    from app import db
+    from sqlalchemy import text
+
     current_app.logger.debug('Zapis załącznika 7a: %s', form_data)
-    # TODO: dodać implementację zapisu do bazy dla dokumentu sprawozdania 7a
-    return True
+
+    try:
+        student_id = current_user.id
+
+        praktyka_row = db.session.execute(
+            text("""
+                SELECT id FROM praktyka WHERE student_id = :student_id ORDER BY id DESC LIMIT 1
+            """),
+            {'student_id': student_id}
+        ).fetchone()
+
+        if not praktyka_row:
+            current_app.logger.error('Nie znaleziono praktyki dla studenta %s', student_id)
+            return False
+
+        praktyka_id = praktyka_row[0]
+
+        typ_row = db.session.execute(
+            text("""
+                SELECT id FROM typ_dokumentu WHERE kod = 'ZAL_7A' LIMIT 1
+            """)
+        ).fetchone()
+
+        if not typ_row:
+            current_app.logger.error('Nie znaleziono typu dokumentu ZAL_7A.')
+            return False
+
+        typ_id = typ_row[0]
+
+        dokument_row = db.session.execute(
+            text("""
+                SELECT id FROM dokument WHERE praktyka_id = :praktyka_id AND typ_dokumentu_id = :typ_id LIMIT 1
+            """),
+            {
+                'praktyka_id': praktyka_id,
+                'typ_id': typ_id
+            }
+        ).fetchone()
+
+        if dokument_row:
+            dokument_id = dokument_row[0]
+
+            db.session.execute(
+                text("""
+                    UPDATE dokument SET status = 'completed', aktualny_etap = 3, zaktualizowano = datetime('now') WHERE id = :id
+                """),
+                {'id': dokument_id}
+            )
+        else:
+            db.session.execute(
+                text("""
+                    INSERT INTO dokument ( praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap )
+                    VALUES ( :praktyka_id, :typ_id, :utworzony_przez, 'completed', 3 )
+                """),
+                {
+                    'praktyka_id': praktyka_id,
+                    'typ_id': typ_id,
+                    'utworzony_przez': current_user.id
+                }
+            )
+
+            db.session.commit()
+
+            dokument_id = db.session.execute(
+                text("""
+                    SELECT id FROM dokument WHERE praktyka_id = :praktyka_id AND typ_dokumentu_id = :typ_id ORDER BY id DESC LIMIT 1
+                """),
+                {
+                    'praktyka_id': praktyka_id,
+                    'typ_id': typ_id
+                }
+            ).scalar()
+
+        dane_map = {
+            'miejsce_odbycia_praktyki':
+                form_data.get(
+                    'miejsce_odbycia_praktyki',
+                    ''
+                ),
+            'charakterystyka_miejsca_pracy':
+                form_data.get(
+                    'charakterystyka_miejsca_pracy',
+                    ''
+                ),
+            'opis_i_analiza':
+                form_data.get(
+                    'opis_i_analiza',
+                    ''
+                ),
+            'wiedza_umiejetnosci':
+                form_data.get(
+                    'wiedza_umiejetnosci',
+                    ''
+                ),
+            'data_na_koniec':
+                form_data.get(
+                    'data_na_koniec',
+                    ''
+                ),
+        }
+
+        for klucz, wartosc in dane_map.items():
+
+            istnieje = db.session.execute(
+                text("""
+                    SELECT id FROM dane_dokumentu WHERE dokument_id = :doc_id AND klucz = :klucz
+                """),
+                {
+                    'doc_id': dokument_id,
+                    'klucz': klucz
+                }
+            ).fetchone()
+
+            if istnieje:
+                db.session.execute(
+                    text("""
+                        UPDATE dane_dokumentu SET wartosc = :wartosc, wypelnione_przez = :user_id WHERE id = :id
+                    """),
+                    {
+                        'wartosc': wartosc,
+                        'user_id': current_user.id,
+                        'id': istnieje[0]
+                    }
+                )
+            else:
+                db.session.execute(
+                    text("""
+                        INSERT INTO dane_dokumentu ( dokument_id, klucz, wartosc, wypelnione_przez )
+                        VALUES ( :doc_id, :klucz, :wartosc, :user_id )
+                    """),
+                    {
+                        'doc_id': dokument_id,
+                        'klucz': klucz,
+                        'wartosc': wartosc,
+                        'user_id': current_user.id
+                    }
+                )
+
+        db.session.commit()
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(
+            f'Błąd zapisu załącznika 7a: {e}'
+        )
+        return False
 
 
 @bp.route('/formularz/zalacznik-7a', methods=['GET', 'POST'])
 @login_required
 def zalacznik_7a():
     """Formularz załącznika 7a - Sprawozdanie z pracy zawodowej lub działalności gospodarczej."""
+    from app import db
+    from sqlalchemy import text
+
     role = current_user.rola.nazwa
+
+    student_id = current_user.id
+
+    praktyka_row = db.session.execute(
+        text(
+            "SELECT p.rok_akademicki "
+            "FROM praktyka p "
+            "WHERE p.student_id = :student_id "
+            "ORDER BY p.id DESC LIMIT 1"
+        ),
+        {'student_id': student_id}
+    ).fetchone()
+
+    rok_akademicki = (
+        praktyka_row[0]
+        if praktyka_row and praktyka_row[0]
+        else ''
+    )
 
     if request.method == 'POST':
         if role not in ['student', 'opiekun_uczelniany']:
@@ -1496,7 +2149,7 @@ def zalacznik_7a():
                 'charakterystyka_miejsca_pracy': request.form.get('charakterystyka_miejsca_pracy'),
                 'opis_i_analiza': request.form.get('opis_i_analiza'),
                 'wiedza_umiejetnosci': request.form.get('wiedza_umiejetnosci'),
-                'data_na_koniec_studenta': request.form.get('data_na_koniec_studenta'),
+                'data_na_koniec': request.form.get('data_na_koniec'),
             }
         else:
             form_data = {
@@ -1510,16 +2163,18 @@ def zalacznik_7a():
         flash('Wystąpił problem podczas zapisu formularza.', 'danger')
 
     prefilled = {
-        'nr_indeksu': '',
-        'imie_nazwisko_studenta': '',
-        'specjalnosc': '',
-        'rok_akademicki': '',
+        'nr_indeksu': current_user.numer_albumu or '',
+        'imie_nazwisko_studenta': f"{current_user.imie} {current_user.nazwisko}",
+        'specjalnosc': current_user.specjalnosc or '',
+        'rok_akademicki': rok_akademicki,
+
+        # pozostaje ręcznie wypełniane
         'miejsce_odbycia_praktyki': '',
+
         'charakterystyka_miejsca_pracy': '',
         'opis_i_analiza': '',
         'wiedza_umiejetnosci': '',
-        'data_na_koniec_studenta': date.today().isoformat(),
-        'data_na_koniec_uczelnianego': date.today().isoformat(),
+        'data_na_koniec': date.today().isoformat(),
     }
 
     return render_template(
@@ -1533,22 +2188,23 @@ def save_attachment8_data(form_data):
     """Zapisz załącznik 8 do bazy: dokument, pytanie_komisji, dane_dokumentu."""
     from app import db
     from sqlalchemy import text
-    
+
     try:
         student_id = form_data.get('student_id')
         if not student_id:
             current_app.logger.error('Brak student_id w form_data')
             return False
-        
-        # Znajdź praktykę dla studenta
+
+        # Znajdź praktykę dla studenta (pobierz również pole sciezka)
         praktyka_result = db.session.execute(text(
-            "SELECT id FROM praktyka WHERE student_id = :student_id ORDER BY utworzono DESC LIMIT 1"
+            "SELECT id, sciezka FROM praktyka WHERE student_id = :student_id ORDER BY utworzono DESC LIMIT 1"
         ), {'student_id': student_id}).fetchone()
         if not praktyka_result:
             current_app.logger.error('Brak praktyki dla studenta %s', student_id)
             return False
         praktyka_id = praktyka_result[0]
-        
+        praktyka_sciezka = praktyka_result[1] if len(praktyka_result) > 1 else None
+
         # Znajdź typ dokumentu ZAL_8
         typ_doc_result = db.session.execute(text(
             "SELECT id FROM typ_dokumentu WHERE kod = 'ZAL_8'"
@@ -1557,7 +2213,7 @@ def save_attachment8_data(form_data):
             current_app.logger.error('Brak typu dokumentu ZAL_8')
             return False
         typ_dokumentu_id = typ_doc_result[0]
-        
+
         # Utwórz dokument
         doc_insert = text(
             "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap) "
@@ -1569,14 +2225,14 @@ def save_attachment8_data(form_data):
             'utworzony_przez': current_user.id,
         })
         db.session.commit()
-        
+
         # Pobierz ID nowo utworzonego dokumentu
         doc_id_result = db.session.execute(text(
             "SELECT id FROM dokument WHERE praktyka_id = :praktyka_id AND typ_dokumentu_id = :typ_dokumentu_id "
             "ORDER BY utworzono DESC LIMIT 1"
         ), {'praktyka_id': praktyka_id, 'typ_dokumentu_id': typ_dokumentu_id}).fetchone()
         dokument_id = doc_id_result[0]
-        
+
         # Wstaw wpisy do pytanie_komisji (3 pytania)
         for i in range(1, 4):
             pytanie_text = form_data.get(f'pytanie_{i}', '')
@@ -1586,7 +2242,7 @@ def save_attachment8_data(form_data):
                     ocena_val = int(float(ocena_str))
                 except (ValueError, TypeError):
                     ocena_val = 0
-                
+
                 db.session.execute(text(
                     "INSERT INTO pytanie_komisji (dokument_id, numer_pytania, tresc_pytania, wartosc_oceny) "
                     "VALUES (:dokument_id, :numer, :tresc, :ocena)"
@@ -1596,7 +2252,7 @@ def save_attachment8_data(form_data):
                     'tresc': pytanie_text,
                     'ocena': ocena_val,
                 })
-        
+
         # Wstaw wpisy do dane_dokumentu
         dane_keys = [
             'imie_nazwisko_1', 'funkcja_1', 'imie_nazwisko_2', 'funkcja_2',
@@ -1616,15 +2272,31 @@ def save_attachment8_data(form_data):
                     'wypelnione_przez': current_user.id,
                 })
 
+        # If this practice uses the alternative path, persist additional grade fields
+        if praktyka_sciezka and str(praktyka_sciezka).lower() == 'alternative':
+            alt_keys = ['ocena_sprawozdania_s', 'data_oceny_s', 'ocena_u', 'ocena_z']
+            for key in alt_keys:
+                value = form_data.get(key, '')
+                if value:
+                    db.session.execute(text(
+                        "INSERT OR REPLACE INTO dane_dokumentu (dokument_id, klucz, wartosc, wypelnione_przez) "
+                        "VALUES (:dokument_id, :klucz, :wartosc, :wypelnione_przez)"
+                    ), {
+                        'dokument_id': dokument_id,
+                        'klucz': key,
+                        'wartosc': value,
+                        'wypelnione_przez': current_user.id,
+                    })
+
         db.session.execute(
             text("UPDATE praktyka SET status='completed' WHERE id=:praktyka_id"),
             {'praktyka_id': praktyka_id}
         )
-        
+
         db.session.commit()
         current_app.logger.info('Załącznik 8 zapisany: dokument_id=%s', dokument_id)
         return True
-    
+
     except Exception as e:
         db.session.rollback()
         current_app.logger.error('Błąd przy zapisie załącznika 8: %s', str(e))
@@ -1685,12 +2357,12 @@ def zalacznik_8():
         form_data['data_oceny_s'] = request.form.get('data_oceny_s')
         form_data['ocena_za_mini_zadania_e'] = request.form.get('ocena_za_mini_zadania_e')
         form_data['ocena_koncowa'] = request.form.get('ocena_koncowa')
-        
+
         # Skład komisji
         for i in range(1, 5):
             form_data[f'imie_nazwisko_{i}'] = request.form.get(f'imie_nazwisko_{i}')
             form_data[f'funkcja_{i}'] = request.form.get(f'funkcja_{i}')
-        
+
         # Pytania i oceny
         for i in range(1, 4):
             form_data[f'pytanie_{i}'] = request.form.get(f'pytanie_{i}')
