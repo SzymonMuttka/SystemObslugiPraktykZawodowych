@@ -125,6 +125,7 @@
             </section>
             {% endif %}
 
+            {% if uzytkownik.rola.nazwa != 'student' %}
             {% if selected_practice %}
             <section class="dashboard-section">
                 <h3>Wybrana praktyka</h3>
@@ -159,6 +160,7 @@
                 </table> 
                 </div>
             </section>
+            {% endif %}
             {% endif %}
 
             {% if show_company_edit %}

@@ -341,6 +341,14 @@ body {
 
 .btn-secondary:hover { background: #f8fafc; }
 
+.efekty-select {
+    width: 50px;
+}
+
+.efekty-select option {
+    padding-left: 5px;
+}
+
 /* ============================================================
    Alert z akcją (baner dashboardu)
    ============================================================ */

@@ -65,7 +65,7 @@
                         <th>Data</th>
                         <th>Opis wykonywanych prac</th>
                         <th>Nr efektów uczenia się</th>
-                        <th>Uwagi</th>
+                        <th>Uwagi opiekuna / osoby nadzorującej</th>
                         <th>Akcje</th>
                     </tr>
                 </thead>
@@ -74,7 +74,14 @@
                         <td><input type="number" name="dzien[]" min="1" required {% if role != 'student' %}readonly{% endif %}></td>
                         <td><input type="date" name="data[]" required {% if role != 'student' %}readonly{% endif %}></td>
                         <td><input type="text" name="opis[]" required {% if role != 'student' %}readonly{% endif %}></td>
-                        <td><input type="text" name="efekty[]" required {% if role != 'student' %}readonly{% endif %}></td>
+                        <td>
+                            <select class="efekty-select" name="efekty[]" multiple required {% if role != 'student' %}disabled{% endif %}>
+                                {% for i in range(1, 14) %}
+                                <option value="{{ i }}">{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="hidden" name="efekty_rows[]" value="">
+                        </td>
                         <td><input type="text" name="uwagi[]" {% if role != 'opiekun_firmowy' %}readonly{% endif %}></td>
                         <td>
                             {% if role == 'student' %}
@@ -101,17 +108,24 @@
     function createRow() {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><input type="number" name="dzien[]" min="1" required></td>
-            <td><input type="date" name="data[]" required></td>
-            <td><input type="text" name="opis[]" required></td>
-            <td><input type="text" name="efekty[]" required></td>
+            <td><input type="number" name="dzien[]" min="1" required {% if role != 'student' %}readonly{% endif %}></td>
+            <td><input type="date" name="data[]" required {% if role != 'student' %}readonly{% endif %}></td>
+            <td><input type="text" name="opis[]" required {% if role != 'student' %}readonly{% endif %}></td>
+            <td>
+                <select class="efekty-select" name="efekty[]" multiple required {% if role != 'student' %}disabled{% endif %}>
+                    {% for i in range(1, 14) %}
+                    <option value="{{ i }}">{{ i }}</option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" name="efekty_rows[]" value="">
+            </td>
+            <td><input type="text" name="uwagi[]" {% if role != 'opiekun_firmowy' %}readonly{% endif %}></td>
             <td>
                 <button type="button" class="dodaj_nowy" onclick="addAfter(this)">Dodaj wiersz poniżej</button>
                 <button type="button" class="usun" onclick="deleteRow(this)">Usuń</button>
             </td>
         `;
 
-        // lock date to today for newly created rows (only for students)
         const role = '{{ role }}';
         if (role === 'student') {
             const tempDiv = document.createElement('tbody');
@@ -122,7 +136,6 @@
                 dateInput.value = today;
                 dateInput.defaultValue = today;
                 dateInput.setAttribute('value', today);
-                dateInput.readOnly = true;
             }
             // apply modified innerHTML back to row
             row.innerHTML = tempDiv.innerHTML;
@@ -147,7 +160,20 @@
         }
     }
 
-    // On load: for students, set existing date inputs to today and make them readonly
+    function serializeEfektyRows() {
+        document.querySelectorAll('#tableBody tr').forEach(function(row) {
+            const select = row.querySelector('select.efekty-select');
+            const hidden = row.querySelector('input[name="efekty_rows[]"]');
+            if (!select || !hidden) {
+                return;
+            }
+            const selected = Array.from(select.selectedOptions).map(function(option) {
+                return option.value;
+            });
+            hidden.value = selected.join(',');
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const role = '{{ role }}';
         if (role === 'student') {
@@ -156,7 +182,13 @@
                 inp.value = today;
                 inp.defaultValue = today;
                 inp.setAttribute('value', today);
-                inp.readOnly = true;
+            });
+        }
+
+        const form = document.querySelector('form.document-form');
+        if (form) {
+            form.addEventListener('submit', function() {
+                serializeEfektyRows();
             });
         }
     });

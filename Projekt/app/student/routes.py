@@ -33,7 +33,7 @@ def update_practice_stage_from_typ(praktyka_id, typ_id):
     db.session.execute(
         text(
             "UPDATE praktyka "
-            "SET aktualny_etap = (SELECT aktualny_etap FROM typ_dokumentu WHERE id = :typ_id) "
+            "SET aktualny_etap = (SELECT kolejnosc FROM typ_dokumentu WHERE id = :typ_id) "
             "WHERE id = :praktyka_id"
         ),
         {'typ_id': typ_id, 'praktyka_id': praktyka_id}
@@ -64,11 +64,12 @@ def save_attachment1_data(form_data):
 
         # 1) Aktualizuj praktykę studenta opiekunem uczelnianym
         praktyka = db.session.execute(
-            text("SELECT id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
+            text("SELECT id, opiekun_firmowy_id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
             {'student_id': student_id}
         ).fetchone()
 
         praktyka_id = praktyka[0] if praktyka else None
+        opiekun_firmowy_id = praktyka[1] if praktyka and len(praktyka) > 1 else None
         if praktyka_id and opiekun_uczelniany_id:
             db.session.execute(
                 text("UPDATE praktyka SET opiekun_uczelniany_id=:opiekun_id WHERE id=:praktyka_id"),
@@ -106,7 +107,84 @@ def save_attachment1_data(form_data):
             ).fetchone()
             dokument_id = doc_row[0] if doc_row else None
 
-        # 3) Utwórz trzy wpisy w tabeli dane_dokumentu
+        # 3) Utwórz wpisy udostępnionego dokumentu
+        if dokument_id:
+            role_rows = db.session.execute(
+                text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','dziekanat','opiekun_uczelniany','opiekun_firmowy','dyrektor')")
+            ).fetchall()
+            role_ids = {row[0]: row[1] for row in role_rows}
+
+            if student_id and role_ids.get('student'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'adresat': student_id,
+                        'rola_id': role_ids['student'],
+                    }
+                )
+
+            if role_ids.get('dziekanat'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 1, 0, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'rola_id': role_ids['dziekanat'],
+                    }
+                )
+
+            if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'adresat': opiekun_uczelniany_id,
+                        'rola_id': role_ids['opiekun_uczelniany'],
+                    }
+                )
+
+            if opiekun_firmowy_id and role_ids.get('opiekun_firmowy'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 1, 1)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'adresat': opiekun_firmowy_id,
+                        'rola_id': role_ids['opiekun_firmowy'],
+                    }
+                )
+
+            if role_ids.get('dyrektor'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 1, 1)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'rola_id': role_ids['dyrektor'],
+                    }
+                )
+
+            db.session.commit()
+
+        # 4) Utwórz trzy wpisy w tabeli dane_dokumentu
         if dokument_id:
             db.session.execute(
                 text("INSERT OR REPLACE INTO dane_dokumentu (dokument_id, klucz, wartosc, wypelnione_przez) VALUES (:doc_id, :klucz, :wartosc, :wypelniajacy)"),
@@ -169,6 +247,12 @@ def index():
                     {'label': 'Załącznik 4b', 'url': url_for('dashboard.zalacznik_4b')},
                     {'label': 'Załącznik 7a', 'url': url_for('dashboard.zalacznik_7a')},
                 ]
+            else:
+                available_documents = [
+                    {'label': 'Załącznik 4b', 'url': url_for('dashboard.zalacznik_4b')},
+                    {'label': 'Załącznik 7a', 'url': url_for('dashboard.zalacznik_7a')},
+                ]
+
     elif role in ['dziekanat', 'opiekun_firmowy', 'opiekun_uczelniany', 'dyrektor', 'czlonek_komisji']:
         query = (
             "SELECT p.id, u.imie || ' ' || u.nazwisko AS student_name, u.numer_albumu, p.status, p.sciezka "
@@ -223,46 +307,46 @@ def index():
                         {'label': 'Załącznik 9', 'url': url_for('dashboard.zalacznik_9')},
                     ]
 
-        # Pobierz dokumenty utworzone przez użytkownika lub udostępnione mu
-        try:
-            docs_params = {'user_id': current_user.id, 'rola_id': current_user.rola_id}
-            # dla roli student pokaż wszystkie dokumenty utworzone/udostępnione bez filtrowania po praktyce
-            if role == 'student':
+    # Pobierz dokumenty utworzone przez użytkownika lub udostępnione mu
+    try:
+        docs_params = {'user_id': current_user.id, 'rola_id': current_user.rola_id}
+        # dla roli student pokaż wszystkie dokumenty utworzone/udostępnione bez filtrowania po praktyce
+        if role == 'student':
+            docs_query = (
+                "SELECT d.id, t.kod, oe.imie || ' ' || oe.nazwisko AS ostatni, d.zaktualizowano "
+                "FROM dokument d "
+                "JOIN typ_dokumentu t ON d.typ_dokumentu_id = t.id "
+                "LEFT JOIN uzytkownik oe ON d.ostatni_edytor = oe.id "
+                "WHERE (d.utworzony_przez = :user_id OR EXISTS(SELECT 1 FROM udostepniony_dokument ud WHERE ud.dokument_id = d.id "
+                "AND (ud.adresat = :user_id OR (ud.rola_id = :rola_id AND ud.adresat IS NULL)))) "
+            )
+            docs_rows = db.session.execute(text(docs_query), docs_params).fetchall()
+        else:
+            # dla innych ról pokaż dokumenty tylko jeśli wybrano praktykę
+            docs_rows = []
+            if selected_practice_id:
                 docs_query = (
                     "SELECT d.id, t.kod, oe.imie || ' ' || oe.nazwisko AS ostatni, d.zaktualizowano "
                     "FROM dokument d "
                     "JOIN typ_dokumentu t ON d.typ_dokumentu_id = t.id "
                     "LEFT JOIN uzytkownik oe ON d.ostatni_edytor = oe.id "
-                    "WHERE (d.utworzony_przez = :user_id OR EXISTS(SELECT 1 FROM udostepniony_dokument ud WHERE ud.dokument_id = d.id "
+                    "WHERE d.praktyka_id = :selected_practice_id AND (d.utworzony_przez = :user_id OR EXISTS(SELECT 1 FROM udostepniony_dokument ud WHERE ud.dokument_id = d.id "
                     "AND (ud.udostepniajacy = :user_id OR ud.adresat = :user_id OR ud.rola_id = :rola_id))) "
                 )
+                docs_params['selected_practice_id'] = selected_practice_id
                 docs_rows = db.session.execute(text(docs_query), docs_params).fetchall()
-            else:
-                # dla innych ról pokaż dokumenty tylko jeśli wybrano praktykę
-                docs_rows = []
-                if selected_practice_id:
-                    docs_query = (
-                        "SELECT d.id, t.kod, oe.imie || ' ' || oe.nazwisko AS ostatni, d.zaktualizowano "
-                        "FROM dokument d "
-                        "JOIN typ_dokumentu t ON d.typ_dokumentu_id = t.id "
-                        "LEFT JOIN uzytkownik oe ON d.ostatni_edytor = oe.id "
-                        "WHERE d.praktyka_id = :selected_practice_id AND (d.utworzony_przez = :user_id OR EXISTS(SELECT 1 FROM udostepniony_dokument ud WHERE ud.dokument_id = d.id "
-                        "AND (ud.udostepniajacy = :user_id OR ud.adresat = :user_id OR ud.rola_id = :rola_id))) "
-                    )
-                    docs_params['selected_practice_id'] = selected_practice_id
-                    docs_rows = db.session.execute(text(docs_query), docs_params).fetchall()
 
-            for dr in docs_rows:
-                kod = dr[1] or ''
-                label = kod.replace('ZAL_', 'Załącznik ') if kod.startswith('ZAL_') else kod
-                my_documents.append({
-                    'id': dr[0],
-                    'label': label,
-                    'ostatni': dr[2] or '',
-                    'zaktualizowano': dr[3] or '',
-                })
-        except Exception:
-            current_app.logger.exception('Błąd pobierania dokumentów użytkownika')
+        for dr in docs_rows:
+            kod = dr[1] or ''
+            label = kod.replace('ZAL_', 'Załącznik ') if kod.startswith('ZAL_') else kod
+            my_documents.append({
+                'id': dr[0],
+                'label': label,
+                'ostatni': dr[2] or '',
+                'zaktualizowano': dr[3] or '',
+            })
+    except Exception:
+        current_app.logger.exception('Błąd pobierania dokumentów użytkownika')
 
     show_create_nav = role not in ['opiekun_uczelniany', 'dyrektor']
     show_practice_selection = role in ['dziekanat', 'opiekun_firmowy', 'opiekun_uczelniany', 'dyrektor', 'czlonek_komisji']
@@ -341,6 +425,9 @@ def zalacznik_1():
         flash('Tylko dziekanat może wypełniać załącznik 1.', 'danger')
         return redirect(url_for('dashboard.index'))
 
+    selected_practice_id = request.args.get('selected_praktyka_id', type=int)
+    selected_student = None
+
     if request.method == 'POST':
         form_data = {
             'nr_porozumienia': request.form.get('nr_porozumienia'),
@@ -383,6 +470,24 @@ def zalacznik_1():
         .all()
     ) if role_ids else []
 
+    if selected_practice_id:
+        student_row = db.session.execute(
+            text(
+                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu "
+                "FROM praktyka p "
+                "JOIN uzytkownik u ON p.student_id = u.id "
+                "WHERE p.id = :praktyka_id"
+            ),
+            {'praktyka_id': selected_practice_id}
+        ).fetchone()
+        if student_row:
+            selected_student = {
+                'id': student_row[0],
+                'imie': student_row[1] or '',
+                'nazwisko': student_row[2] or '',
+                'numer_albumu': student_row[3] or '',
+            }
+
     practice_rows = db.session.execute(text(
         "SELECT p.student_id, f.nazwa AS firma_nazwa, u.imie || ' ' || u.nazwisko AS reprezentant_firmy, p.data_rozpoczecia, p.data_zakonczenia "
         "FROM praktyka p "
@@ -411,6 +516,7 @@ def zalacznik_1():
         reprezentanci_uczelni=reprezentanci_uczelni,
         student_practice=student_practice,
         student_practice_json=json.dumps(student_practice),
+        selected_student=selected_student,
     )
 
 
@@ -432,10 +538,12 @@ def save_attachment2_data(form_data):
             return False
 
         praktyka_row = db.session.execute(
-            text("SELECT id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
+            text("SELECT id, opiekun_firmowy_id, opiekun_uczelniany_id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
             {'student_id': student_id}
         ).fetchone()
         praktyka_id = praktyka_row[0] if praktyka_row else None
+        opiekun_firmowy_id = praktyka_row[1] if praktyka_row and len(praktyka_row) > 1 else None
+        opiekun_uczelniany_id = praktyka_row[2] if praktyka_row and len(praktyka_row) > 2 else None
         if not praktyka_id:
             current_app.logger.error('Nie znaleziono praktyki dla studenta %s przy zapisie załącznika 2.', student_id)
             return False
@@ -461,6 +569,87 @@ def save_attachment2_data(form_data):
                 'ostatni_edytor': current_user.id,
             }
         )
+
+        doc_row = db.session.execute(
+            text("SELECT id FROM dokument WHERE praktyka_id=:praktyka_id AND typ_dokumentu_id=:typ_id ORDER BY id DESC LIMIT 1"),
+            {'praktyka_id': praktyka_id, 'typ_id': typ_id}
+        ).fetchone()
+        dokument_id = doc_row[0] if doc_row else None
+
+        if dokument_id:
+            role_rows = db.session.execute(
+                text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','dziekanat','opiekun_uczelniany','opiekun_firmowy','dyrektor')")
+            ).fetchall()
+            role_ids = {row[0]: row[1] for row in role_rows}
+
+            if student_id and role_ids.get('student'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'adresat': student_id,
+                        'rola_id': role_ids['student'],
+                    }
+                )
+
+            if role_ids.get('dziekanat'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'rola_id': role_ids['dziekanat'],
+                    }
+                )
+
+            if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'adresat': opiekun_uczelniany_id,
+                        'rola_id': role_ids['opiekun_uczelniany'],
+                    }
+                )
+
+            if opiekun_firmowy_id and role_ids.get('opiekun_firmowy'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 1, 1)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'adresat': opiekun_firmowy_id,
+                        'rola_id': role_ids['opiekun_firmowy'],
+                    }
+                )
+
+            if role_ids.get('dyrektor'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 1, 1)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'rola_id': role_ids['dyrektor'],
+                    }
+                )
+
         update_practice_stage_from_typ(praktyka_id, typ_id)
         db.session.commit()
         return True
@@ -484,6 +673,9 @@ def zalacznik_2():
         flash('Tylko dziekanat może utworzyć załącznik 2.', 'danger')
         return redirect(url_for('dashboard.index'))
 
+    selected_practice_id = request.args.get('selected_praktyka_id', type=int)
+    selected_student = None
+
     if request.method == 'POST':
         form_data = {
             'student_id': request.form.get('student_id')
@@ -497,16 +689,36 @@ def zalacznik_2():
     from app.models.uzytkownik import Uzytkownik, Rola
     from app import db
 
+    if selected_practice_id:
+        student_row = db.session.execute(
+            text(
+                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu "
+                "FROM praktyka p "
+                "JOIN uzytkownik u ON p.student_id = u.id "
+                "WHERE p.id = :praktyka_id"
+            ),
+            {'praktyka_id': selected_practice_id}
+        ).fetchone()
+        if student_row:
+            selected_student = {
+                'id': student_row[0],
+                'imie': student_row[1] or '',
+                'nazwisko': student_row[2] or '',
+                'numer_albumu': student_row[3] or '',
+            }
+
     rola_student = Rola.query.filter_by(nazwa='student').first()
-    studenci = (
-        Uzytkownik.query
-        .filter_by(rola_id=rola_student.id, jest_aktywny=True)
-        .order_by(Uzytkownik.numer_albumu)
-        .all()
-    ) if rola_student else []
+    studenci = []
+    if not selected_student and rola_student:
+        studenci = (
+            Uzytkownik.query
+            .filter_by(rola_id=rola_student.id, jest_aktywny=True)
+            .order_by(Uzytkownik.numer_albumu)
+            .all()
+        )
 
     # GET: pokaż ekran potwierdzenia utworzenia dokumentu
-    return render_template('forms/zalacznik_2.html', studenci=studenci)
+    return render_template('forms/zalacznik_2.html', studenci=studenci, selected_student=selected_student)
 
 
 def save_attachment2a_data(form_data):
@@ -530,10 +742,12 @@ def save_attachment2a_data(form_data):
             return False
 
         praktyka_row = db.session.execute(
-            text("SELECT id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
+            text("SELECT id, opiekun_uczelniany_id, opiekun_firmowy_id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
             {'student_id': student_id}
         ).fetchone()
         praktyka_id = praktyka_row[0] if praktyka_row else None
+        opiekun_uczelniany_id = praktyka_row[1] if praktyka_row and len(praktyka_row) > 1 else None
+        opiekun_firmowy_id = praktyka_row[2] if praktyka_row and len(praktyka_row) > 2 else None
         if not praktyka_id:
             current_app.logger.error('Nie znaleziono praktyki dla studenta %s przy zapisie załącznika 2a.', student_id)
             return False
@@ -592,6 +806,80 @@ def save_attachment2a_data(form_data):
                 }
             )
 
+        # Utwórz wpisy udostępnionego dokumentu
+        role_rows = db.session.execute(
+            text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','dziekanat','opiekun_uczelniany','opiekun_firmowy','dyrektor')")
+        ).fetchall()
+        role_ids = {row[0]: row[1] for row in role_rows}
+
+        if student_id and role_ids.get('student'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 1, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': student_id,
+                    'rola_id': role_ids['student'],
+                }
+            )
+
+        if role_ids.get('dziekanat'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dziekanat'],
+                }
+            )
+
+        if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 1, 1)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': opiekun_uczelniany_id,
+                    'rola_id': role_ids['opiekun_uczelniany'],
+                }
+            )
+
+        if opiekun_firmowy_id and role_ids.get('opiekun_firmowy'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 1)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': opiekun_firmowy_id,
+                    'rola_id': role_ids['opiekun_firmowy'],
+                }
+            )
+
+        if role_ids.get('dyrektor'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dyrektor'],
+                }
+            )
+
         db.session.commit()
         return True
     except Exception as e:
@@ -608,6 +896,8 @@ def zalacznik_2a():
     # Edytowalne pola przez opiekuna firmowego: przykladowe_prace, dzial_komorka, planowana_liczba_dni
 
     role = current_user.rola.nazwa
+    selected_practice_id = request.args.get('selected_praktyka_id', type=int)
+    selected_student = None
 
     # Tworzenie dokumentu tylko przez dziekanat
     if request.method == 'POST':
@@ -663,6 +953,32 @@ def zalacznik_2a():
         .all()
     ) if rola_student else []
 
+    if selected_practice_id:
+        student_row = db.session.execute(
+            text(
+                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu, u.specjalnosc, f.nazwa AS firma_nazwa, "
+                "up.imie || ' ' || up.nazwisko AS reprezentant_firmy, p.data_rozpoczecia, p.data_zakonczenia "
+                "FROM praktyka p "
+                "JOIN uzytkownik u ON p.student_id = u.id "
+                "LEFT JOIN firma f ON p.firma_id = f.id "
+                "LEFT JOIN uzytkownik up ON p.opiekun_firmowy_id = up.id "
+                "WHERE p.id = :praktyka_id"
+            ),
+            {'praktyka_id': selected_practice_id}
+        ).fetchone()
+        if student_row:
+            selected_student = {
+                'id': student_row[0],
+                'imie': student_row[1] or '',
+                'nazwisko': student_row[2] or '',
+                'numer_albumu': student_row[3] or '',
+                'specjalnosc': student_row[4] or '',
+                'firma_nazwa': student_row[5] or '',
+                'reprezentant_firmy': student_row[6] or '',
+                'termin_od': student_row[7] or '',
+                'termin_do': student_row[8] or '',
+            }
+
     practice_rows = db.session.execute(text(
         "SELECT p.student_id, f.nazwa AS firma_nazwa, u.imie || ' ' || u.nazwisko AS reprezentant_firmy, p.data_rozpoczecia, p.data_zakonczenia "
         "FROM praktyka p "
@@ -697,6 +1013,7 @@ def zalacznik_2a():
         studenci=studenci,
         student_practice=student_practice,
         student_practice_json=json.dumps(student_practice),
+        selected_student=selected_student,
         efekty=efekty,
     )
 
@@ -718,10 +1035,12 @@ def save_attachment3_data(form_data):
             return False
 
         praktyka_row = db.session.execute(
-            text("SELECT id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
+            text("SELECT id, opiekun_uczelniany_id, opiekun_firmowy_id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
             {'student_id': student_id}
         ).fetchone()
         praktyka_id = praktyka_row[0] if praktyka_row else None
+        opiekun_uczelniany_id = praktyka_row[1] if praktyka_row and len(praktyka_row) > 1 else None
+        opiekun_firmowy_id = praktyka_row[2] if praktyka_row and len(praktyka_row) > 2 else None
         if not praktyka_id:
             current_app.logger.error('Nie znaleziono praktyki dla studenta %s przy zapisie załącznika 3.', student_id)
             return False
@@ -758,6 +1077,83 @@ def save_attachment3_data(form_data):
         if not dokument_id:
             current_app.logger.error('Nie udało się pobrać dokumentu po zapisie załącznika 3.')
             return False
+
+        # Utwórz wpisy udostępnionego dokumentu
+        role_rows = db.session.execute(
+            text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','dziekanat','opiekun_uczelniany','opiekun_firmowy','dyrektor')")
+        ).fetchall()
+        role_ids = {row[0]: row[1] for row in role_rows}
+
+        if student_id and role_ids.get('student'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': student_id,
+                    'rola_id': role_ids['student'],
+                }
+            )
+
+        if role_ids.get('dziekanat'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dziekanat'],
+                }
+            )
+
+        if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 1)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': opiekun_uczelniany_id,
+                    'rola_id': role_ids['opiekun_uczelniany'],
+                }
+            )
+
+        if opiekun_firmowy_id and role_ids.get('opiekun_firmowy'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 1)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': opiekun_firmowy_id,
+                    'rola_id': role_ids['opiekun_firmowy'],
+                }
+            )
+
+        if role_ids.get('dyrektor'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 1, 1)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dyrektor'],
+                }
+            )
+
+        db.session.commit()
+
 
         dane_map = {
             'miejscowość': form_data.get('miejscowosc', ''),
@@ -809,6 +1205,8 @@ def zalacznik_3():
     from app.models.uzytkownik import Uzytkownik, Rola
 
     role = current_user.rola.nazwa
+    selected_practice_id = request.args.get('selected_praktyka_id', type=int)
+    selected_student = None
 
     rola_student = Rola.query.filter_by(nazwa='student').first()
     studenci = (
@@ -873,6 +1271,26 @@ def zalacznik_3():
             'termin_do': termin_do_value,
         }
 
+    if selected_practice_id:
+        student_row = db.session.execute(
+            text(
+                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu, u.forma_studiow, u.specjalnosc "
+                "FROM praktyka p "
+                "JOIN uzytkownik u ON p.student_id = u.id "
+                "WHERE p.id = :praktyka_id"
+            ),
+            {'praktyka_id': selected_practice_id}
+        ).fetchone()
+        if student_row:
+            selected_student = {
+                'id': student_row[0],
+                'imie': student_row[1] or '',
+                'nazwisko': student_row[2] or '',
+                'numer_albumu': student_row[3] or '',
+                'forma_studiow': student_row[4] or '',
+                'specjalnosc': student_row[5] or '',
+            }
+
     if request.method == 'POST':
         form_data = {
             'status': 'updated_by_' + role,
@@ -919,7 +1337,8 @@ def zalacznik_3():
         'forms/zalacznik_3.html',
         role=role,
         studenci=studenci,
-        student_practice_json=json.dumps(student_practice),
+        student_practice=student_practice,
+        selected_student=selected_student,
         **prefilled
     )
 
@@ -938,11 +1357,12 @@ def save_attachment4_data(form_data):
             return False
 
         praktyka_row = db.session.execute(
-            text("SELECT id, opiekun_firmowy_id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
+            text("SELECT id, opiekun_firmowy_id, opiekun_uczelniany_id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
             {'student_id': student_id}
         ).fetchone()
         praktyka_id = praktyka_row[0] if praktyka_row else None
         opiekun_firmowy_id = praktyka_row[1] if praktyka_row and len(praktyka_row) > 1 else None
+        opiekun_uczelniany_id = praktyka_row[2] if praktyka_row and len(praktyka_row) > 2 else None
         if not praktyka_id:
             current_app.logger.error('Nie znaleziono praktyki dla studenta %s przy zapisie załącznika 4.', student_id)
             return False
@@ -977,6 +1397,79 @@ def save_attachment4_data(form_data):
         if not dokument_id:
             current_app.logger.error('Nie udało się pobrać dokumentu po zapisie załącznika 4.')
             return False
+
+        role_rows = db.session.execute(
+            text("SELECT nazwa, id FROM role WHERE nazwa IN ('student', 'dziekanat', 'opiekun_uczelniany', 'opiekun_firmowy', 'dyrektor')")
+        ).fetchall()
+        role_ids = {row[0]: row[1] for row in role_rows}
+
+        if student_id and role_ids.get('student'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': student_id,
+                    'rola_id': role_ids['student'],
+                }
+            )
+
+        if role_ids.get('dziekanat'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dziekanat'],
+                }
+            )
+
+        if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 1)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': opiekun_uczelniany_id,
+                    'rola_id': role_ids['opiekun_uczelniany'],
+                }
+            )
+
+        if opiekun_firmowy_id and role_ids.get('opiekun_firmowy'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 1)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': opiekun_firmowy_id,
+                    'rola_id': role_ids['opiekun_firmowy'],
+                }
+            )
+
+        if role_ids.get('dyrektor'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dyrektor'],
+                }
+            )
 
         efekty_values = form_data.get('efekt_uzyskany', []) or []
         oceniono = '1' if form_data.get('opinia_opiekuna_uczelnianego', '').strip() else '0'
@@ -1036,6 +1529,8 @@ def zalacznik_4():
     from app.models.uzytkownik import Uzytkownik, Rola
 
     role = current_user.rola.nazwa
+    selected_practice_id = request.args.get('selected_praktyka_id', type=int)
+    selected_student = None
 
     rola_student = Rola.query.filter_by(nazwa='student').first()
     studenci = (
@@ -1044,6 +1539,25 @@ def zalacznik_4():
         .order_by(Uzytkownik.numer_albumu)
         .all()
     ) if rola_student else []
+
+    if selected_practice_id:
+        student_row = db.session.execute(
+            text(
+                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu, u.specjalnosc "
+                "FROM praktyka p "
+                "JOIN uzytkownik u ON p.student_id = u.id "
+                "WHERE p.id = :praktyka_id"
+            ),
+            {'praktyka_id': selected_practice_id}
+        ).fetchone()
+        if student_row:
+            selected_student = {
+                'id': student_row[0],
+                'imie': student_row[1] or '',
+                'nazwisko': student_row[2] or '',
+                'numer_albumu': student_row[3] or '',
+                'specjalnosc': student_row[4] or '',
+            }
 
     if request.method == 'POST':
         if role not in ['dziekanat', 'opiekun_firmowy', 'opiekun_uczelniany']:
@@ -1066,10 +1580,10 @@ def zalacznik_4():
         flash('Wystąpił problem podczas zapisu formularza.', 'danger')
 
     prefilled = {
-        'imie_nazwisko_studenta': '',
-        'specjalnosc': '',
+        'imie_nazwisko_studenta': f"{selected_student['imie']} {selected_student['nazwisko']}" if selected_student else '',
+        'specjalnosc': selected_student['specjalnosc'] if selected_student else '',
         'ilosc_godzin_praktyk': '',
-        'nr_indeksu': '',
+        'nr_indeksu': selected_student['numer_albumu'] if selected_student else '',
         'opinia_opiekuna_uczelnianego': '',
         'data_opinii': date.today().isoformat(),
     }
@@ -1082,6 +1596,7 @@ def zalacznik_4():
         'forms/zalacznik_4.html',
         role=role,
         studenci=studenci,
+        selected_student=selected_student,
         efekty=efekty,
         **prefilled
     )
@@ -1456,6 +1971,79 @@ def save_attachment4b_data(form_data):
                 text("SELECT last_insert_rowid()")
             ).scalar()
 
+        if dokument_id:
+            role_rows = db.session.execute(
+                text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','dziekanat','opiekun_uczelniany','dyrektor','czlonek_komisji')")
+            ).fetchall()
+            role_ids = {row[0]: row[1] for row in role_rows}
+
+            if student_id and role_ids.get('student'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'adresat': student_id,
+                        'rola_id': role_ids['student'],
+                    }
+                )
+
+            if role_ids.get('dziekanat'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'rola_id': role_ids['dziekanat'],
+                    }
+                )
+
+            if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'adresat': opiekun_uczelniany_id,
+                        'rola_id': role_ids['opiekun_uczelniany'],
+                    }
+                )
+
+            if role_ids.get('dyrektor'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 1, 1)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'rola_id': role_ids['dyrektor'],
+                    }
+                )
+
+            if role_ids.get('czlonek_komisji'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 1, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'rola_id': role_ids['czlonek_komisji'],
+                    }
+                )
+
         pola = {
             'uzasadnienie': form_data.get('uzasadnienie'),
             'data_uzasadnienia': form_data.get('data_uzasadnienia'),
@@ -1825,10 +2413,12 @@ def save_attachment6_data(form_data):
 
         # find latest practice for student
         praktyka_row = db.session.execute(
-            text("SELECT id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
+            text("SELECT id, opiekun_firmowy_id, opiekun_uczelniany_id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
             {'student_id': student_id}
         ).fetchone()
         praktyka_id = praktyka_row[0] if praktyka_row else None
+        opiekun_firmowy_id = praktyka_row[1] if praktyka_row and len(praktyka_row) > 1 else None
+        opiekun_uczelniany_id = praktyka_row[2] if praktyka_row and len(praktyka_row) > 2 else None
         if not praktyka_id:
             current_app.logger.error('Nie znaleziono praktyki dla studenta %s przy zapisie załącznika 6.', student_id)
             return False
@@ -1866,10 +2456,85 @@ def save_attachment6_data(form_data):
             current_app.logger.error('Nie udało się pobrać dokumentu po zapisie załącznika 6.')
             return False
 
+        # udostępniony_dokument entries
+        role_rows = db.session.execute(
+            text("SELECT nazwa, id FROM role WHERE nazwa IN ('student', 'dziekanat', 'opiekun_uczelniany', 'opiekun_firmowy', 'dyrektor')")
+        ).fetchall()
+        role_ids = {row[0]: row[1] for row in role_rows}
+
+        if student_id and role_ids.get('student'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': student_id,
+                    'rola_id': role_ids['student'],
+                }
+            )
+
+        if role_ids.get('dziekanat'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dziekanat'],
+                }
+            )
+
+        if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': opiekun_uczelniany_id,
+                    'rola_id': role_ids['opiekun_uczelniany'],
+                }
+            )
+
+        if opiekun_firmowy_id and role_ids.get('opiekun_firmowy'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 1)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': opiekun_firmowy_id,
+                    'rola_id': role_ids['opiekun_firmowy'],
+                }
+            )
+
+        if role_ids.get('dyrektor'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dyrektor'],
+                }
+            )
+
         # Insert journal entries (wpis_dziennika) for each provided row
         dzien = form_data.get('dzien', []) or []
         data_list = form_data.get('data', []) or []
         opis_list = form_data.get('opis', []) or []
+        efekty_rows = form_data.get('efekty_rows', []) or []
         efekty_list = form_data.get('efekty', []) or []
         uwagi_list = form_data.get('uwagi', []) or []
 
@@ -1879,25 +2544,50 @@ def save_attachment6_data(form_data):
                 numer_dnia = int(dzien[idx]) if dzien[idx] is not None and str(dzien[idx]).strip() != '' else (idx + 1)
             except Exception:
                 numer_dnia = idx + 1
+            data_wpisu = data_list[idx].strip() if idx < len(data_list) and data_list[idx] else today
             opis_prac = opis_list[idx].strip() if idx < len(opis_list) and opis_list[idx] else ''
-            numery_efektow = efekty_list[idx].strip() if idx < len(efekty_list) and efekty_list[idx] else ''
             uwagi_opiekuna = uwagi_list[idx].strip() if idx < len(uwagi_list) and uwagi_list[idx] else ''
 
             db.session.execute(
                 text(
-                    "INSERT INTO wpis_dziennika (dokument_id, numer_dnia, data_wpisu, opis_prac, numery_efektow, uwagi_opiekuna, jest_podpisany)"
-                    " VALUES (:dokument_id, :numer_dnia, :data_wpisu, :opis_prac, :numery_efektow, :uwagi_opiekuna, :jest_podpisany)"
+                    "INSERT INTO wpis_dziennika (dokument_id, numer_dnia, data_wpisu, opis_prac, uwagi_opiekuna, jest_podpisany)"
+                    " VALUES (:dokument_id, :numer_dnia, :data_wpisu, :opis_prac, :uwagi_opiekuna, :jest_podpisany)"
                 ),
                 {
                     'dokument_id': dokument_id,
                     'numer_dnia': numer_dnia,
-                    'data_wpisu': today,
+                    'data_wpisu': data_wpisu,
                     'opis_prac': opis_prac,
-                    'numery_efektow': numery_efektow,
                     'uwagi_opiekuna': uwagi_opiekuna,
                     'jest_podpisany': 0,
                 }
             )
+
+            # insert each selected effect separately into wpis_efekt
+            efekty_row = efekty_rows[idx] if idx < len(efekty_rows) else ''
+            if not efekty_row and idx < len(efekty_list):
+                efekty_row = efekty_list[idx]
+
+            if efekty_row:
+                for efekt in str(efekty_row).split(','):
+                    efekt_value = efekt.strip()
+                    if not efekt_value:
+                        continue
+                    try:
+                        numer_efektu = int(efekt_value)
+                    except ValueError:
+                        continue
+                    db.session.execute(
+                        text(
+                            "INSERT OR IGNORE INTO wpis_efekt (dokument_id, numer_dnia, nr_efektu)"
+                            " VALUES (:dokument_id, :numer_dnia, :nr_efektu)"
+                        ),
+                        {
+                            'dokument_id': dokument_id,
+                            'numer_dnia': numer_dnia,
+                            'nr_efektu': numer_efektu,
+                        }
+                    )
 
         # Insert dane_dokumentu entries for attachments
         wykaz = form_data.get('wykaz_zalacznikow', '') or ''
@@ -1942,6 +2632,7 @@ def zalacznik_6():
                 'data': request.form.getlist('data[]'),
                 'opis': request.form.getlist('opis[]'),
                 'efekty': request.form.getlist('efekty[]'),
+                'efekty_rows': request.form.getlist('efekty_rows[]'),
                 'uwagi': request.form.getlist('uwagi[]'),
             }
         else:
@@ -1951,6 +2642,7 @@ def zalacznik_6():
                 'data': request.form.getlist('data[]'),
                 'opis': request.form.getlist('opis[]'),
                 'efekty': request.form.getlist('efekty[]'),
+                'efekty_rows': request.form.getlist('efekty_rows[]'),
                 'uwagi': request.form.getlist('uwagi[]'),
             }
 
@@ -2014,10 +2706,11 @@ def save_attachment7_data(form_data):
     try:
         student_id = current_user.id
         praktyka_row = db.session.execute(
-            text("SELECT id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
+            text("SELECT id, opiekun_uczelniany_id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
             {'student_id': student_id}
         ).fetchone()
         praktyka_id = praktyka_row[0] if praktyka_row else None
+        opiekun_uczelniany_id = praktyka_row[1] if praktyka_row and len(praktyka_row) > 1 else None
         if not praktyka_id:
             current_app.logger.error('Nie znaleziono praktyki dla studenta %s przy zapisie załącznika 7.', student_id)
             return False
@@ -2052,6 +2745,65 @@ def save_attachment7_data(form_data):
         if not dokument_id:
             current_app.logger.error('Nie udało się pobrać dokumentu po zapisie załącznika 7.')
             return False
+
+        role_rows = db.session.execute(
+            text("SELECT nazwa, id FROM role WHERE nazwa IN ('student', 'dziekanat', 'opiekun_uczelniany', 'dyrektor')")
+        ).fetchall()
+        role_ids = {row[0]: row[1] for row in role_rows}
+
+        if student_id and role_ids.get('student'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': student_id,
+                    'rola_id': role_ids['student'],
+                }
+            )
+
+        if role_ids.get('dziekanat'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dziekanat'],
+                }
+            )
+
+        if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 1)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'adresat': opiekun_uczelniany_id,
+                    'rola_id': role_ids['opiekun_uczelniany'],
+                }
+            )
+
+        if role_ids.get('dyrektor'):
+            db.session.execute(
+                text(
+                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': current_user.id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dyrektor'],
+                }
+            )
 
         dane_map = {
             'charakterystyka_miejsca': form_data.get('charakterystyka_miejsca', ''),
@@ -2504,6 +3256,8 @@ def zalacznik_8():
     from app.models.uzytkownik import Uzytkownik, Rola
 
     role = current_user.rola.nazwa
+    selected_practice_id = request.args.get('selected_praktyka_id', type=int)
+    selected_student = None
 
     rola_student = Rola.query.filter_by(nazwa='student').first()
     studenci = (
@@ -2512,6 +3266,24 @@ def zalacznik_8():
         .order_by(Uzytkownik.numer_albumu)
         .all()
     ) if rola_student else []
+
+    if selected_practice_id:
+        student_row = db.session.execute(
+            text(
+                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu "
+                "FROM praktyka p "
+                "JOIN uzytkownik u ON p.student_id = u.id "
+                "WHERE p.id = :praktyka_id"
+            ),
+            {'praktyka_id': selected_practice_id}
+        ).fetchone()
+        if student_row:
+            selected_student = {
+                'id': student_row[0],
+                'imie': student_row[1] or '',
+                'nazwisko': student_row[2] or '',
+                'numer_albumu': student_row[3] or '',
+            }
 
     zal3_rows = db.session.execute(text(
         "SELECT p.student_id, p.opiekun_uczelniany_id, dd.klucz, dd.wartosc "
@@ -2569,6 +3341,7 @@ def zalacznik_8():
     prefilled = {
         'nr_indeksu': '',
         'imie_nazwisko_studenta': '',
+        'student_id': '',
         'specjalnosc': '',
         'rok_akademicki': '',
         'miejsce_praktyki': '',
@@ -2585,6 +3358,11 @@ def zalacznik_8():
         'ocena_za_mini_zadania_e': '',
         'ocena_koncowa': '',
     }
+
+    if selected_student:
+        prefilled['imie_nazwisko_studenta'] = f"{selected_student['imie']} {selected_student['nazwisko']}"
+        prefilled['nr_indeksu'] = selected_student['numer_albumu']
+        prefilled['student_id'] = selected_student['id']
 
     return render_template(
         'forms/zalacznik_8.html',

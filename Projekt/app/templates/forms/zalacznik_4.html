@@ -14,31 +14,23 @@
             <legend>Dane studenta (prefilled po wyborze studenta)</legend>
 
             <div class="form-group">
-                <label for="student_select">Imię i nazwisko studenta</label>
-                <select id="student_select" name="imie_nazwisko_studenta" required>
-                    <option value="">— wybierz studenta —</option>
-                    {% for student in studenci %}
-                        <option
-                            value="{{ student.imie }} {{ student.nazwisko }}"
-                            data-student-id="{{ student.id }}"
-                            data-numer-albumu="{{ student.numer_albumu or '' }}"
-                            data-specjalnosc="{{ student.specjalnosc or '' }}"
-                        >
-                            {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
-                        </option>
-                    {% endfor %}
-                </select>
-                <input type="hidden" id="student_id" name="student_id" value="">
+                <label for="student_input">Imię i nazwisko studenta</label>
+                <input id="student_input" name="imie_nazwisko_studenta" type="text"
+                    value="{{ imie_nazwisko_studenta }}" readonly>
+                <input type="hidden" id="student_id" name="student_id"
+                    value="{{ selected_student.id if selected_student else '' }}">
             </div>
 
             <div class="form-group">
                 <label for="nr_indeksu">Numer indeksu</label>
-                <input id="nr_indeksu" name="nr_indeksu" type="text" readonly>
+                <input id="nr_indeksu" name="nr_indeksu" type="text"
+                    value="{{ nr_indeksu }}" readonly>
             </div>
 
             <div class="form-group">
                 <label for="specjalnosc">Specjalność</label>
-                <input id="specjalnosc" name="specjalnosc" type="text" readonly>
+                <input id="specjalnosc" name="specjalnosc" type="text"
+                    value="{{ specjalnosc }}" readonly>
             </div>
 
             <div class="form-group">
@@ -97,23 +89,4 @@
         </div>
     </form>
 </div>
-<script>
-    const studentSelect4 = document.getElementById('student_select');
-    const studentId4 = document.getElementById('student_id');
-    const nrIndeksu4 = document.getElementById('nr_indeksu');
-    const specjalnosc4 = document.getElementById('specjalnosc');
-
-    function updateZalacznik4Fields() {
-        const selectedOption = studentSelect4.options[studentSelect4.selectedIndex];
-        const studentId = selectedOption?.dataset?.studentId || '';
-        studentId4.value = studentId;
-        nrIndeksu4.value = selectedOption?.dataset?.numerAlbumu || '';
-        specjalnosc4.value = selectedOption?.dataset?.specjalnosc || '';
-    }
-
-    if (studentSelect4) {
-        studentSelect4.addEventListener('change', updateZalacznik4Fields);
-        updateZalacznik4Fields();
-    }
-</script>
 {% endblock %}

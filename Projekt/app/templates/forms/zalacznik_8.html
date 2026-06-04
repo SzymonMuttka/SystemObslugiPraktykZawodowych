@@ -15,20 +15,10 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="student_select">Imię i nazwisko studenta</label>
-                    <select id="student_select" name="imie_nazwisko_studenta" required>
-                        <option value="">— wybierz studenta —</option>
-                        {% for student in studenci %}
-                        <option
-                            value="{{ student.imie }} {{ student.nazwisko }}"
-                            data-student-id="{{ student.id }}"
-                            data-numer-albumu="{{ student.numer_albumu or '' }}"
-                        >
-                            {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <input type="hidden" id="student_id" name="student_id" value="">
+                    <label for="student_name">Imię i nazwisko studenta</label>
+                    <input id="student_name" name="imie_nazwisko_studenta" type="text"
+                        value="{{ imie_nazwisko_studenta }}" readonly>
+                    <input type="hidden" id="student_id" name="student_id" value="{{ student_id }}">
                 </div>
                 <div class="form-group">
                     <label>Numer indeksu</label>
@@ -161,7 +151,6 @@
     </form>
 </div>
 <script>
-    const studentSelect8 = document.getElementById('student_select');
     const studentId8 = document.getElementById('student_id');
     const nrIndeksu8 = document.getElementById('nr_indeksu');
     const ocenaU8 = document.getElementById('ocena_u');
@@ -193,11 +182,7 @@
     }
 
     function updateZalacznik8Fields() {
-        const selectedOption = studentSelect8.options[studentSelect8.selectedIndex];
-        const studentId = selectedOption?.dataset?.studentId || '';
-        studentId8.value = studentId;
-        nrIndeksu8.value = selectedOption?.dataset?.numerAlbumu || '';
-
+        const studentId = studentId8?.value || '';
         const zal3 = studentZal3Data[studentId] || {};
         ocenaU8.value = zal3.ocena_przebiegu_ou || '';
         ocenaZ8.value = zal3.ocena_przebiegu_of || '';
@@ -208,14 +193,14 @@
         if (dataOcenyS8) {
             dataOcenyS8.value = zal3.data_sprawozdania || '';
         }
-        
+
         // Wypełnij opiekuna uczelnianego
         if (zal3.opiekun_id && opiekunowie[zal3.opiekun_id]) {
             imieNazwisko2.value = opiekunowie[zal3.opiekun_id];
         } else {
             imieNazwisko2.value = '';
         }
-        
+
         // Przelicz oceny
         calculateOcenaE();
         calculateOcenaK();
@@ -249,11 +234,8 @@
         }
     }
 
-    if (studentSelect8) {
-        studentSelect8.addEventListener('change', updateZalacznik8Fields);
-        updateZalacznik8Fields();
-    }
-    
+    updateZalacznik8Fields();
+
     if (ocenaCz1) ocenaCz1.addEventListener('change', calculateOcenaE);
     if (ocenaCz2) ocenaCz2.addEventListener('change', calculateOcenaE);
     if (ocenaCz3) ocenaCz3.addEventListener('change', calculateOcenaE);

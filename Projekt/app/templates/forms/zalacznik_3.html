@@ -16,41 +16,61 @@
 
             <div class="form-group">
                 <label for="student_select">Imię i nazwisko studenta</label>
-                <select id="student_select" name="student_select" required>
-                    <option value="">— wybierz studenta —</option>
-                    {% for student in studenci %}
-                        <option
-                            value="{{ student.imie }} {{ student.nazwisko }}"
-                            data-student-id="{{ student.id }}"
-                            data-numer-albumu="{{ student.numer_albumu or '' }}"
-                            data-forma="{{ student.forma_studiow or '' }}"
-                            data-specjalnosc="{{ student.specjalnosc or '' }}"
-                        >
-                            {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
-                        </option>
-                    {% endfor %}
-                </select>
-                <input type="hidden" id="student_id" name="student_id" value="">
+                {% if selected_student %}
+                    <input id="student_select" type="text"
+                        value="{{ selected_student.imie }} {{ selected_student.nazwisko }} ({{ selected_student.numer_albumu }})"
+                        readonly>
+                    <input type="hidden" id="student_id" name="student_id" value="{{ selected_student.id }}">
+                {% else %}
+                    <select id="student_select" name="student_select" required>
+                        <option value="">— wybierz studenta —</option>
+                        {% for student in studenci %}
+                            {% set practice = student_practice.get(student.id, {}) %}
+                            <option
+                                value="{{ student.imie }} {{ student.nazwisko }}"
+                                data-student-id="{{ student.id }}"
+                                data-numer-albumu="{{ student.numer_albumu or '' }}"
+                                data-forma="{{ student.forma_studiow or '' }}"
+                                data-specjalnosc="{{ student.specjalnosc or '' }}"
+                                data-uczelniany-opiekun="{{ practice.uczelniany_opiekun or '' }}"
+                                data-firmowy-opiekun="{{ practice.firmowy_opiekun or '' }}"
+                                data-firmowy-stanowisko="{{ practice.firmowy_stanowisko or '' }}"
+                                data-termin-od="{{ practice.termin_od or '' }}"
+                                data-termin-do="{{ practice.termin_do or '' }}"
+                                data-nr-porozumienia="{{ practice.nr_porozumienia or '' }}"
+                                data-data-zawarcia="{{ practice.data_zawarcia or '' }}"
+                                data-nazwa-zakladu="{{ practice.nazwa_zakladu_pracy or '' }}"
+                            >
+                                {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" id="student_id" name="student_id" value="">
+                {% endif %}
             </div>
 
             <div class="form-group">
                 <label for="nr_indeksu">Numer indeksu</label>
-                <input id="nr_indeksu" name="nr_indeksu" type="text" readonly>
+                <input id="nr_indeksu" name="nr_indeksu" type="text"
+                    value="{{ selected_student.numer_albumu if selected_student else '' }}" readonly>
             </div>
 
             <div class="form-group">
                 <label for="forma_studiow">Forma studiów</label>
-                <input id="forma_studiow" name="forma_studiow" type="text" value="{{ forma_studiow }}" readonly>
+                <input id="forma_studiow" name="forma_studiow" type="text"
+                    value="{{ selected_student.forma_studiow if selected_student else forma_studiow }}" readonly>
             </div>
 
             <div class="form-group">
                 <label for="specjalnosc">Specjalność</label>
-                <input id="specjalnosc" name="specjalnosc" type="text" value="{{ specjalnosc }}" readonly>
+                <input id="specjalnosc" name="specjalnosc" type="text"
+                    value="{{ selected_student.specjalnosc if selected_student else specjalnosc }}" readonly>
             </div>
 
             <div class="form-group">
                 <label for="uczelniany_opiekun">Uczelniany opiekun praktyki zawodowej</label>
-                <input id="uczelniany_opiekun" name="uczelniany_opiekun" type="text" value="{{ uczelniany_opiekun }}" readonly>
+                <input id="uczelniany_opiekun" name="uczelniany_opiekun" type="text"
+                    value="{{ student_practice.get(selected_student.id, {}).get('uczelniany_opiekun', '') if selected_student else uczelniany_opiekun }}" readonly>
             </div>
         </fieldset>
 
@@ -59,37 +79,51 @@
 
             <div class="form-group">
                 <label>Numer porozumienia</label>
-                <input id="nr_porozumienia" type="text" value="{{ nr_porozumienia }}" readonly>
+                <input id="nr_porozumienia" type="text"
+                    value="{{ student_practice.get(selected_student.id, {}).get('nr_porozumienia', '') if selected_student else nr_porozumienia }}"
+                    readonly>
             </div>
 
             <div class="form-group">
                 <label>Data zawarcia porozumienia</label>
-                <input id="data_zawarcia" type="date" value="{{ data_zawarcia }}" readonly>
+                <input id="data_zawarcia" type="date"
+                    value="{{ student_practice.get(selected_student.id, {}).get('data_zawarcia', '') if selected_student else data_zawarcia }}"
+                    readonly>
             </div>
 
             <div class="form-group">
                 <label>Nazwa zakładu pracy</label>
-                <input id="nazwa_zakladu_pracy" type="text" value="{{ nazwa_zakladu_pracy }}" readonly>
+                <input id="nazwa_zakladu_pracy" type="text"
+                    value="{{ student_practice.get(selected_student.id, {}).get('nazwa_zakladu_pracy', '') if selected_student else nazwa_zakladu_pracy }}"
+                    readonly>
             </div>
 
             <div class="form-group">
                 <label>Firmowy opiekun praktyki zawodowej</label>
-                <input id="firmowy_opiekun" name="firmowy_opiekun" type="text" value="{{ firmowy_opiekun }}" readonly>
+                <input id="firmowy_opiekun" name="firmowy_opiekun" type="text"
+                    value="{{ student_practice.get(selected_student.id, {}).get('firmowy_opiekun', '') if selected_student else firmowy_opiekun }}"
+                    readonly>
             </div>
 
             <div class="form-group">
                 <label>Stanowisko</label>
-                <input id="firmowy_stanowisko" name="firmowy_stanowisko" type="text" value="{{ firmowy_stanowisko }}" readonly>
+                <input id="firmowy_stanowisko" name="firmowy_stanowisko" type="text"
+                    value="{{ student_practice.get(selected_student.id, {}).get('firmowy_stanowisko', '') if selected_student else firmowy_stanowisko }}"
+                    readonly>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label>Termin od</label>
-                    <input id="termin_od" type="date" value="{{ termin_od }}" readonly>
+                    <input id="termin_od" type="date"
+                        value="{{ student_practice.get(selected_student.id, {}).get('termin_od', '') if selected_student else termin_od }}"
+                        readonly>
                 </div>
                 <div class="form-group">
                     <label>Termin do</label>
-                    <input id="termin_do" type="date" value="{{ termin_do }}" readonly>
+                    <input id="termin_do" type="date"
+                        value="{{ student_practice.get(selected_student.id, {}).get('termin_do', '') if selected_student else termin_do }}"
+                        readonly>
                 </div>
             </div>
         </fieldset>
@@ -164,7 +198,7 @@
 
             <div class="form-group">
                 <label for="ocena_sprawozdania">Ocena sprawozdania z praktyki</label>
-                <input id="ocena_sprawozdania" name="ocena_sprawozdania" type="text">
+                <input id="ocena_sprawozdania" name="ocena_sprawozdania" type="number" min="2" max="5" step="1">
             </div>
 
             <div class="form-group">
@@ -180,7 +214,6 @@
     </form>
 </div>
 <script>
-    const studentPractice3 = {{ student_practice_json|safe }};
     const studentSelect3 = document.getElementById('student_select');
     const studentId3 = document.getElementById('student_id');
     const nrIndeksu3 = document.getElementById('nr_indeksu');
@@ -196,6 +229,9 @@
     const nazwaZakladuPracy3 = document.getElementById('nazwa_zakladu_pracy');
 
     function updateZalacznik3Fields() {
+        if (!studentSelect3 || studentSelect3.tagName !== 'SELECT') {
+            return;
+        }
         const selectedOption = studentSelect3.options[studentSelect3.selectedIndex];
         const studentId = selectedOption?.dataset?.studentId || '';
         studentId3.value = studentId;
@@ -203,16 +239,15 @@
         formaStudiow3.value = selectedOption?.dataset?.forma || '';
         specjalnosc3.value = selectedOption?.dataset?.specjalnosc || '';
 
-        if (studentId && studentPractice3[studentId]) {
-            const practice = studentPractice3[studentId];
-            uczelnianyOpiekun3.value = practice.uczelniany_opiekun || '';
-            firmowyOpiekun3.value = practice.firmowy_opiekun || '';
-            firmowyStanowisko3.value = practice.firmowy_stanowisko || '';
-            terminOd3.value = practice.termin_od || '';
-            terminDo3.value = practice.termin_do || '';
-            nrPorozumienia3.value = practice.nr_porozumienia || '';
-            dataZawarcia3.value = practice.data_zawarcia || '';
-            nazwaZakladuPracy3.value = practice.nazwa_zakladu_pracy || '';
+        if (studentId) {
+            uczelnianyOpiekun3.value = selectedOption?.dataset?.uczelnianyOpiekun || '';
+            firmowyOpiekun3.value = selectedOption?.dataset?.firmowyOpiekun || '';
+            firmowyStanowisko3.value = selectedOption?.dataset?.firmowyStanowisko || '';
+            terminOd3.value = selectedOption?.dataset?.terminOd || '';
+            terminDo3.value = selectedOption?.dataset?.terminDo || '';
+            nrPorozumienia3.value = selectedOption?.dataset?.nrPorozumienia || '';
+            dataZawarcia3.value = selectedOption?.dataset?.dataZawarcia || '';
+            nazwaZakladuPracy3.value = selectedOption?.dataset?.nazwaZakladu || '';
         } else {
             uczelnianyOpiekun3.value = '';
             firmowyOpiekun3.value = '';
@@ -225,7 +260,7 @@
         }
     }
 
-    if (studentSelect3) {
+    if (studentSelect3 && studentSelect3.tagName === 'SELECT') {
         studentSelect3.addEventListener('change', updateZalacznik3Fields);
         updateZalacznik3Fields();
     }

@@ -31,21 +31,28 @@
 
             <div class="form-group">
                 <label for="student_select">Imię i nazwisko studenta</label>
-                <select id="student_select" name="imie_nazwisko_studenta" required>
-                    <option value="">— wybierz studenta —</option>
-                    {% for student in studenci %}
-                        {% set practice = student_practice.get(student.id, {}) %}
-                        <option value="{{ student.imie }} {{ student.nazwisko }}"
-                            data-student-id="{{ student.id }}"
-                            data-firma-nazwa="{{ practice.firma_nazwa }}"
-                            data-reprezentant-firmy="{{ practice.reprezentant_firmy }}"
-                            data-termin-od="{{ practice.termin_od }}"
-                            data-termin-do="{{ practice.termin_do }}">
-                            {{ student.imie }} {{ student.nazwisko }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <input type="hidden" id="student_id" name="student_id" value="">
+                {% if selected_student %}
+                    <input id="student_select" type="text"
+                        value="{{ selected_student.imie }} {{ selected_student.nazwisko }} ({{ selected_student.numer_albumu }})"
+                        readonly>
+                    <input type="hidden" id="student_id" name="student_id" value="{{ selected_student.id }}">
+                {% else %}
+                    <select id="student_select" name="imie_nazwisko_studenta" required>
+                        <option value="">— wybierz studenta —</option>
+                        {% for student in studenci %}
+                            {% set practice = student_practice.get(student.id, {}) %}
+                            <option value="{{ student.imie }} {{ student.nazwisko }}"
+                                data-student-id="{{ student.id }}"
+                                data-firma-nazwa="{{ practice.firma_nazwa }}"
+                                data-reprezentant-firmy="{{ practice.reprezentant_firmy }}"
+                                data-termin-od="{{ practice.termin_od }}"
+                                data-termin-do="{{ practice.termin_do }}">
+                                {{ student.imie }} {{ student.nazwisko }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" id="student_id" name="student_id" value="">
+                {% endif %}
             </div>
 
             <div class="form-group">
@@ -104,6 +111,10 @@
     const terminDoInput = document.getElementById('termin_do');
 
     function updateAttachment1Fields() {
+        if (!studentSelect || !studentIdInput) {
+            return;
+        }
+
         const option = studentSelect.options[studentSelect.selectedIndex];
         const studentId = option?.dataset?.studentId || '';
         studentIdInput.value = studentId;
@@ -121,7 +132,9 @@
         }
     }
 
-    studentSelect.addEventListener('change', updateAttachment1Fields);
-    updateAttachment1Fields();
+    if (studentSelect) {
+        studentSelect.addEventListener('change', updateAttachment1Fields);
+        updateAttachment1Fields();
+    }
 </script>
 {% endblock %}

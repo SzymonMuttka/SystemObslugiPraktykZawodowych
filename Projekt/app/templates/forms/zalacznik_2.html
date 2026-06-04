@@ -14,14 +14,19 @@
             <legend>Dane studenta</legend>
             <div class="form-group">
                 <label for="student_id">Imię i nazwisko studenta</label>
-                <select id="student_id" name="student_id" required>
-                    <option value="">— wybierz studenta —</option>
-                    {% for student in studenci %}
-                        <option value="{{ student.id }}">
-                            {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
-                        </option>
-                    {% endfor %}
-                </select>
+                {% if selected_student %}
+                    <input type="hidden" name="student_id" value="{{ selected_student.id }}">
+                    <input id="student_id" name="student_id" value="{{ selected_student.imie }} {{ selected_student.nazwisko }} ({{ selected_student.numer_albumu }})" readonly>
+                {% else %}
+                    <select id="student_id" name="student_id" required>
+                        <option value="">— wybierz studenta —</option>
+                        {% for student in studenci %}
+                            <option value="{{ student.id }}">
+                                {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
             </div>
         </fieldset>
 

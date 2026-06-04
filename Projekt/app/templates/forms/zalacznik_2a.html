@@ -15,34 +15,43 @@
 
             <div class="form-group">
                 <label for="student_select">Imię i nazwisko studenta</label>
-                <select id="student_select" name="imie_nazwisko_studenta" required>
-                    <option value="">— wybierz studenta —</option>
-                    {% for student in studenci %}
-                        {% set practice = student_practice.get(student.id, {}) %}
-                        <option value="{{ student.imie }} {{ student.nazwisko }}"
-                            data-student-id="{{ student.id }}"
-                            data-numer-albumu="{{ student.numer_albumu }}"
-                            data-specjalnosc="{{ student.specjalnosc or '' }}"
-                            data-firma-nazwa="{{ practice.firma_nazwa }}"
-                            data-reprezentant-firmy="{{ practice.reprezentant_firmy }}"
-                            data-termin-od="{{ practice.termin_od }}"
-                            data-termin-do="{{ practice.termin_do }}">
-                            {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
-                        </option>
-                    {% endfor %}
-                </select>
-                <input type="hidden" id="student_id" name="student_id" value="">
+                {% if selected_student %}
+                    <input id="student_select" type="text"
+                        value="{{ selected_student.imie }} {{ selected_student.nazwisko }} ({{ selected_student.numer_albumu }})"
+                        readonly>
+                    <input type="hidden" id="student_id" name="student_id" value="{{ selected_student.id }}">
+                {% else %}
+                    <select id="student_select" name="imie_nazwisko_studenta" required>
+                        <option value="">— wybierz studenta —</option>
+                        {% for student in studenci %}
+                            {% set practice = student_practice.get(student.id, {}) %}
+                            <option value="{{ student.imie }} {{ student.nazwisko }}"
+                                data-student-id="{{ student.id }}"
+                                data-numer-albumu="{{ student.numer_albumu }}"
+                                data-specjalnosc="{{ student.specjalnosc or '' }}"
+                                data-firma-nazwa="{{ practice.firma_nazwa }}"
+                                data-reprezentant-firmy="{{ practice.reprezentant_firmy }}"
+                                data-termin-od="{{ practice.termin_od }}"
+                                data-termin-do="{{ practice.termin_do }}">
+                                {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" id="student_id" name="student_id" value="">
+                {% endif %}
             </div>
 
             <div class="form-group">
                 <label for="nr_indeksu">Numer indeksu</label>
                 <input id="nr_indeksu" name="nr_indeksu" type="text"
+                    value="{{ selected_student.numer_albumu if selected_student else '' }}"
                     {% if current_user.rola.nazwa != 'dziekanat' %}readonly{% endif %}>
             </div>
 
             <div class="form-group">
                 <label for="specjalnosc">Specjalność</label>
-                <input id="specjalnosc" name="specjalnosc" type="text" value="{{ specjalnosc }}" readonly>
+                <input id="specjalnosc" name="specjalnosc" type="text"
+                    value="{{ selected_student.specjalnosc if selected_student else specjalnosc }}" readonly>
             </div>
         </fieldset>
 
@@ -51,17 +60,20 @@
 
             <div class="form-group">
                 <label for="miejsce_praktyki">Miejsce praktyki</label>
-                <input id="miejsce_praktyki" name="miejsce_praktyki" type="text" value="{{ miejsce_praktyki }}" readonly>
+                <input id="miejsce_praktyki" name="miejsce_praktyki" type="text"
+                    value="{{ selected_student.firma_nazwa if selected_student else miejsce_praktyki }}" readonly>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label for="termin_od">Termin od</label>
-                    <input id="termin_od" name="termin_od" type="date" value="{{ termin_od }}" readonly>
+                    <input id="termin_od" name="termin_od" type="date"
+                        value="{{ selected_student.termin_od if selected_student else termin_od }}" readonly>
                 </div>
                 <div class="form-group">
                     <label for="termin_do">Termin do</label>
-                    <input id="termin_do" name="termin_do" type="date" value="{{ termin_do }}" readonly>
+                    <input id="termin_do" name="termin_do" type="date"
+                        value="{{ selected_student.termin_do if selected_student else termin_do }}" readonly>
                 </div>
             </div>
         </fieldset>
@@ -139,6 +151,10 @@
     const terminDoInput2a = document.getElementById('termin_do');
 
     function update2aFields(){
+        if (!studentSelect2a || studentSelect2a.tagName !== 'SELECT') {
+            return;
+        }
+
         const opt = studentSelect2a.options[studentSelect2a.selectedIndex];
         const studentId = opt?.dataset?.studentId || '';
         studentIdInput2a.value = studentId;
@@ -157,8 +173,10 @@
         }
     }
 
-    studentSelect2a.addEventListener('change', update2aFields);
-    update2aFields();
+    if (studentSelect2a && studentSelect2a.tagName === 'SELECT') {
+        studentSelect2a.addEventListener('change', update2aFields);
+        update2aFields();
+    }
 
     const hpzDniInputs = document.querySelectorAll('input[name="hpz_dni[]"]');
     const hpzTotalDays = document.getElementById('hpz_total_days');
