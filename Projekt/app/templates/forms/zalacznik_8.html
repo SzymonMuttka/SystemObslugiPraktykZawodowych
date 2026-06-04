@@ -75,7 +75,11 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td><input type="text" id="imie_nazwisko_1" name="imie_nazwisko_1"></td>
+                            <td>
+                                <select id="imie_nazwisko_1" name="imie_nazwisko_1">
+                                    <option value="">-- Wybierz osobę --</option>
+                                </select>
+                            </td>
                             <td><input type="text" id="funkcja_1" name="funkcja_1" value="Przewodniczący Komisji" readonly></td>
                         </tr>
                         <tr>
@@ -83,12 +87,20 @@
                             <td><input type="text" id="funkcja_2" name="funkcja_2" value="Uczelniany opiekun praktyki zawodowej" readonly></td>
                         </tr>
                         <tr>
-                            <td><input type="text" id="imie_nazwisko_3" name="imie_nazwisko_3"></td>
-                            <td><input type="text" id="funkcja_3" name="funkcja_3"></td>
+                            <td>
+                                <select id="imie_nazwisko_3" name="imie_nazwisko_3">
+                                    <option value="">-- Wybierz osobę --</option>
+                                </select>
+                            </td>
+                            <td><input type="text" id="funkcja_3" name="funkcja_3" readonly></td>
                         </tr>
                         <tr>
-                            <td><input type="text" id="imie_nazwisko_4" name="imie_nazwisko_4"></td>
-                            <td><input type="text" id="funkcja_4" name="funkcja_4"></td>
+                            <td>
+                                <select id="imie_nazwisko_4" name="imie_nazwisko_4">
+                                    <option value="">-- Wybierz osobę --</option>
+                                </select>
+                            </td>
+                            <td><input type="text" id="funkcja_4" name="funkcja_4" readonly></td>
                         </tr>
                     </tbody>
                 </table>
@@ -159,6 +171,14 @@
     const dataOcenyS8 = document.getElementById('data_oceny_s');
     const imieNazwisko2 = document.getElementById('imie_nazwisko_2');
     
+    // Selecty dla składu komisji
+    const select1 = document.getElementById('imie_nazwisko_1');
+    const select3 = document.getElementById('imie_nazwisko_3');
+    const select4 = document.getElementById('imie_nazwisko_4');
+    const funkcja1 = document.getElementById('funkcja_1');
+    const funkcja3 = document.getElementById('funkcja_3');
+    const funkcja4 = document.getElementById('funkcja_4');
+    
     // Oceny cząstkowe
     const ocenaCz1 = document.getElementById('ocena_cz_1');
     const ocenaCz2 = document.getElementById('ocena_cz_2');
@@ -167,7 +187,13 @@
     const ocenaK = document.getElementById('ocena_koncowa');
     
     const studentZal3Data = {{ student_zal3_json|safe }};
-    const opiekunowie = {{ opiekunowie_json|safe }};
+    const czlonkowieKomisji = {{ czlonkowie_komisji_json|safe }};
+    const komisjaOsoby = {{ komisja_osoby_json|safe }};
+    const prefilledOpiekun = {{ prefilled_opiekun|tojson|safe }};
+    const prefilledOpiekunId = {{ prefilled_opiekun_id|tojson|safe }};
+    
+    // Przechowywanie oryginalnych opcji
+    const allSelectOptions = {};
 
     function textToNumber(text) {
         if (!text) return 0;
@@ -180,6 +206,103 @@
         const num = parseFloat(text);
         return !isNaN(num) ? num : (mapping[text.toLowerCase()] || 0);
     }
+
+    // Funkcja do wypełniania selectów danymi komisji
+    function populateKomisjaSelects() {
+        // Select 1 - tylko członkowie komisji
+        const currentValue1 = select1.value;
+        select1.innerHTML = '<option value="">-- Wybierz osobę --</option>';
+        
+        Object.entries(czlonkowieKomisji).forEach(([id, osoba]) => {
+            const option = document.createElement('option');
+            option.value = osoba.imie_nazwisko;
+            option.dataset.id = id;
+            option.dataset.funkcja = osoba.funkcja;
+            option.textContent = osoba.imie_nazwisko;
+            select1.appendChild(option);
+        });
+        
+        select1.value = currentValue1;
+        
+        // Select 3 i 4 - członkowie komisji i opiekunowie
+        [select3, select4].forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">-- Wybierz osobę --</option>';
+            
+            Object.entries(komisjaOsoby).forEach(([id, osoba]) => {
+                const option = document.createElement('option');
+                option.value = osoba.imie_nazwisko;
+                option.dataset.id = id;
+                option.dataset.funkcja = osoba.funkcja;
+                option.textContent = osoba.imie_nazwisko;
+                select.appendChild(option);
+            });
+            
+            select.value = currentValue;
+        });
+    }
+
+    // Funkcja do uaktualniania dostępności opcji (disable/enable)
+    function updateSelectAvailability() {
+        const selectedValues = [
+            select1.value,
+            select3.value,
+            select4.value
+        ].filter(v => v !== '');
+        
+        // Dodaj wartość z imieNazwisko2 (opiekun praktyk) do niedostępnych opcji
+        const opiekunValue = imieNazwisko2.value;
+        if (opiekunValue) {
+            selectedValues.push(opiekunValue);
+        }
+        
+        // Update select1 - tylko czlonkowie komisji
+        const options1 = select1.querySelectorAll('option');
+        options1.forEach(option => {
+            if (option.value === '') {
+                option.disabled = false;
+            } else {
+                const isSelectedInOther = selectedValues.includes(option.value) && option.value !== select1.value;
+                option.disabled = isSelectedInOther;
+            }
+        });
+        
+        // Update select3 i select4 - czlonkowie komisji i opiekunowie
+        [select3, select4].forEach(currentSelect => {
+            const options = currentSelect.querySelectorAll('option');
+            options.forEach(option => {
+                if (option.value === '') {
+                    option.disabled = false;
+                } else {
+                    const isSelectedInOther = selectedValues.includes(option.value) && option.value !== currentSelect.value;
+                    option.disabled = isSelectedInOther;
+                }
+            });
+        });
+    }
+
+    // Event listenery dla selectów - automatyczne wypełnianie funkcji
+    select1.addEventListener('change', function() {
+        // Funkcja_1 zawsze pozostaje "Przewodniczący Komisji"
+        funkcja1.value = 'Przewodniczący Komisji';
+        updateSelectAvailability();
+    });
+
+    select3.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        funkcja3.value = selectedOption.dataset.funkcja || '';
+        updateSelectAvailability();
+    });
+
+    select4.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        funkcja4.value = selectedOption.dataset.funkcja || '';
+        updateSelectAvailability();
+    });
+
+    // Event listener na pole opiekuna uczelnianego - aby aktualizować dostępne opcje
+    imieNazwisko2.addEventListener('change', updateSelectAvailability);
+    imieNazwisko2.addEventListener('input', updateSelectAvailability);
 
     function updateZalacznik8Fields() {
         const studentId = studentId8?.value || '';
@@ -194,9 +317,13 @@
             dataOcenyS8.value = zal3.data_sprawozdania || '';
         }
 
-        // Wypełnij opiekuna uczelnianego
-        if (zal3.opiekun_id && opiekunowie[zal3.opiekun_id]) {
-            imieNazwisko2.value = opiekunowie[zal3.opiekun_id];
+        // Wypełnij opiekuna uczelnianego: najpierw z ZAL_3, potem fallback do prefilled id, potem do prefilled name
+        if (zal3.opiekun_id && komisjaOsoby[zal3.opiekun_id]) {
+            imieNazwisko2.value = komisjaOsoby[zal3.opiekun_id].imie_nazwisko;
+        } else if (prefilledOpiekunId && komisjaOsoby[prefilledOpiekunId]) {
+            imieNazwisko2.value = komisjaOsoby[prefilledOpiekunId].imie_nazwisko;
+        } else if (prefilledOpiekun) {
+            imieNazwisko2.value = prefilledOpiekun;
         } else {
             imieNazwisko2.value = '';
         }
@@ -234,7 +361,10 @@
         }
     }
 
+    // Inicjalizacja
+    populateKomisjaSelects();
     updateZalacznik8Fields();
+    updateSelectAvailability();
 
     if (ocenaCz1) ocenaCz1.addEventListener('change', calculateOcenaE);
     if (ocenaCz2) ocenaCz2.addEventListener('change', calculateOcenaE);

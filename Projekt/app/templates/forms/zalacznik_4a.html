@@ -18,24 +18,10 @@
                     Imię i nazwisko studenta
                 </label>
 
-                <select id="student_select" name="imie_nazwisko_studenta" required>
-                    <option value="">— wybierz studenta —</option>
-
-                    {% for student in studenci %}
-                    <option
-                        value="{{ student.imie }} {{ student.nazwisko }}"
-                        data-student-id="{{ student.id }}"
-                        data-numer-albumu="{{ student.numer_albumu or '' }}"
-                        data-specjalnosc="{{ student.specjalnosc or '' }}"
-                    >
-                        {{ student.imie }}
-                        {{ student.nazwisko }}
-                        ({{ student.numer_albumu }})
-                    </option>
-                    {% endfor %}
-                </select>
-
-                <input type="hidden" id="student_id" name="student_id" value="">
+                <input id="student_select" type="text"
+                    value="{{ selected_student.imie }} {{ selected_student.nazwisko }} ({{ selected_student.numer_albumu }})"
+                    readonly>
+                <input type="hidden" id="student_id" name="student_id" value="{{ selected_student.id }}">
             </div>
 
             <div class="form-group">
@@ -103,21 +89,6 @@
 </div>
 
 <script>
-    const studentSelect4a = document.getElementById('student_select');
-    const studentId4a = document.getElementById('student_id');
-    const nrIndeksu4a = document.getElementById('nr_indeksu');
-    const specjalnosc4a = document.getElementById('specjalnosc');
-
-    function updateZalacznik4aFields() {
-        const selectedOption = studentSelect4a.options[studentSelect4a.selectedIndex];
-        specjalnosc4a.value = selectedOption?.dataset?.specjalnosc || '';
-        studentId4a.value = selectedOption?.dataset?.studentId || '';
-        nrIndeksu4a.value = selectedOption?.dataset?.numerAlbumu || '';
-    }
-
-    if (studentSelect4a) {
-        studentSelect4a.addEventListener('change', updateZalacznik4aFields);
-        updateZalacznik4aFields();
-    }
+    // Pole studenta jest readonly, żaden JavaScript nie jest wymagany
 </script>
 {% endblock %}

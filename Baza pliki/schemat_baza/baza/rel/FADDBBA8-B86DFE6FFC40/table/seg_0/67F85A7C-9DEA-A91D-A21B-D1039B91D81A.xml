@@ -60,17 +60,5 @@
 <colUsage columnID="30E999EC-440A-A681-79D7-B2EADE6454E2"/>
 </indexColumnUsage>
 </ind_PK_UK>
-<ind_PK_UK id="CC363720-C2EE-46B5-0556-17F46F3EE806" name="pytanie_ankiety__IDXv1">
-<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:21:34 UTC</createdTime>
-<ownerDesignName>baza</ownerDesignName>
-<importedID>6C30EF1C-C150-B260-C715-45EDD51E959A</importedID>
-<indexState>Unique Constraint</indexState>
-<isSurrogateKey>false</isSurrogateKey>
-<indexColumnUsage>
-<colUsage columnID="102AA9BA-9084-FA4A-9188-72DE4FFB73D3"/>
-</indexColumnUsage>
-</ind_PK_UK>
 </indexes>
 </Table>

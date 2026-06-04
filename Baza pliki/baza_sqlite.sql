@@ -329,25 +329,15 @@ CREATE TABLE pytanie_ankiety (
 
 CREATE TABLE odpowiedz_ankiety (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dokument_id INTEGER NOT NULL REFERENCES dokument(id),
     pytanie_id INTEGER NOT NULL REFERENCES pytanie_ankiety(id),
     odpowiedz TEXT NOT NULL,
     -- 'zdecydowanie_tak', 'raczej_tak', 'trudno_powiedziec',
     -- 'raczej_nie', 'zdecydowanie_nie'
-    UNIQUE(dokument_id, pytanie_id)
-    -- brak uzytkownik_id - anonimowość
-);
-
-CREATE TABLE komentarz_ankiety (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dokument_id INTEGER NOT NULL REFERENCES dokument(id),
-    tresc TEXT
     -- brak uzytkownik_id - anonimowość
 );
 
 CREATE TABLE ankieta_dane (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	dokument_id INTEGER NOT NULL REFERENCES dokument(id),
 	uwagi TEXT,
 	rok_akademicki TEXT,
 	specjalnosc TEXT,

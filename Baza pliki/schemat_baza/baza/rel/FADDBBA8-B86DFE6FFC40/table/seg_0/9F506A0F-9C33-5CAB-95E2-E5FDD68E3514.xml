@@ -21,34 +21,18 @@
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 <autoIncrementCycle>false</autoIncrementCycle>
 </Column>
-<Column name="dokument_id" id="335F1CD0-A3CF-5726-B656-DB05D9BD28AC">
-<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<Column name="pytanie_id" id="4B790235-0110-3332-0F9E-0EF4CC45BCC5">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 23:02:50 UTC</createdTime>
 <ownerDesignName>baza</ownerDesignName>
-<importedID>9252922B-9446-D837-586B-1FAF04532F2B</importedID>
 <use>0</use>
 <logicalDatatype>LOGDT011</logicalDatatype>
 <domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
 <ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
 <autoIncrementCycle>false</autoIncrementCycle>
 <associations>
-<colAssociation fkAssociation="D6F7A149-435A-750E-9B4C-9950A527425B" referredColumn="E8923E12-E11E-34AF-DA99-F1BFC0EABE88"/>
-</associations>
-</Column>
-<Column name="pytanie_id" id="FCE767AE-732A-998E-3DAB-1CD52F881746">
-<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:21:34 UTC</createdTime>
-<ownerDesignName>baza</ownerDesignName>
-<importedID>D1F04E65-EE17-FDD9-9D28-169D905C2C64</importedID>
-<use>0</use>
-<logicalDatatype>LOGDT011</logicalDatatype>
-<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
-<ownDataTypeParameters>,,</ownDataTypeParameters>
-<autoIncrementCycle>false</autoIncrementCycle>
-<associations>
-<colAssociation fkAssociation="8127410C-E200-9AB3-3B39-8D2131372E18" referredColumn="30E999EC-440A-A681-79D7-B2EADE6454E2"/>
+<colAssociation fkAssociation="AEA89DC9-BD9C-2FD1-5574-B165422BD63F" referredColumn="30E999EC-440A-A681-79D7-B2EADE6454E2"/>
 </associations>
 </Column>
 <Column name="odpowiedz" id="500A0C39-1FF1-EFEF-08A2-E1DF9594D66C">
@@ -78,37 +62,14 @@
 <colUsage columnID="39190811-D31B-6CDD-9D4F-20BE34F43761"/>
 </indexColumnUsage>
 </ind_PK_UK>
-<ind_PK_UK id="6CC15BB9-9613-C34D-67D4-3FE4A23FEB60" name="odpowiedz_ankiety_UK0">
-<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:21:34 UTC</createdTime>
-<ownerDesignName>baza</ownerDesignName>
-<importedID>CE8B463F-A2C2-FE7C-A9E3-300F6D28386C</importedID>
-<indexState>Unique Constraint</indexState>
-<isSurrogateKey>false</isSurrogateKey>
-<indexColumnUsage>
-<colUsage columnID="335F1CD0-A3CF-5726-B656-DB05D9BD28AC"/>
-<colUsage columnID="FCE767AE-732A-998E-3DAB-1CD52F881746"/>
-</indexColumnUsage>
-</ind_PK_UK>
-<ind_PK_UK id="5FD03151-1ECD-5135-E468-552E6D40FD21" name="odpowiedz_ankiety_dokument_FK">
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:58:08 UTC</createdTime>
+<ind_PK_UK id="4C04337E-8EE1-D9FF-9A43-8F39A99B5F5F" name="odpowiedz_ankiety_pytanie_ankiety_FK">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 23:02:50 UTC</createdTime>
 <ownerDesignName>baza</ownerDesignName>
 <indexState>Foreign Key</indexState>
 <isSurrogateKey>false</isSurrogateKey>
 <indexColumnUsage>
-<colUsage columnID="335F1CD0-A3CF-5726-B656-DB05D9BD28AC"/>
-</indexColumnUsage>
-</ind_PK_UK>
-<ind_PK_UK id="02A3DE2E-C720-4F8E-5991-86F49BC5F748" name="odpowiedz_ankiety_pytanie_ankiety_FK">
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:58:18 UTC</createdTime>
-<ownerDesignName>baza</ownerDesignName>
-<indexState>Foreign Key</indexState>
-<isSurrogateKey>false</isSurrogateKey>
-<indexColumnUsage>
-<colUsage columnID="FCE767AE-732A-998E-3DAB-1CD52F881746"/>
+<colUsage columnID="4B790235-0110-3332-0F9E-0EF4CC45BCC5"/>
 </indexColumnUsage>
 </ind_PK_UK>
 </indexes>
