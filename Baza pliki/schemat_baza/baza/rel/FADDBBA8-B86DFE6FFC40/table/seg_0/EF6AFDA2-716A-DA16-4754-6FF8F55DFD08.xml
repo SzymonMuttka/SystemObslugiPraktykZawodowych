@@ -80,19 +80,19 @@
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 <autoIncrementCycle>false</autoIncrementCycle>
 </Column>
-<Column name="aktualny_etap" id="A7FFC577-6CE3-3B75-E465-892FCD25BFD5">
-<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:21:34 UTC</createdTime>
+<Column name="ostatni_edytor" id="F2AEB1D0-3A33-99E5-B616-08F18850B678">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 12:18:37 UTC</createdTime>
 <ownerDesignName>baza</ownerDesignName>
-<importedID>82D1907B-86CF-E836-E3F4-F81EAB1711B6</importedID>
 <use>0</use>
 <logicalDatatype>LOGDT011</logicalDatatype>
 <domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
-<usesDefaultValue>true</usesDefaultValue>
-<defaultValue>1</defaultValue>
 <ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
 <autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="58895A08-9575-BBE8-E55F-EEACC156D13E" referredColumn="D4CA6A6E-29C4-9725-3290-369DC2B7BF94"/>
+</associations>
 </Column>
 <Column name="jest_usuniety" id="961E542F-5668-56FB-F532-A9410131473E">
 <sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
@@ -226,6 +226,16 @@
 <isSurrogateKey>false</isSurrogateKey>
 <indexColumnUsage>
 <colUsage columnID="834DD560-05F3-0818-B35B-D9FD483B6F5A"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="450155BB-EC12-5048-71ED-BCAF523CF2A9" name="dokument_uzytkownik_FKv2">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 12:18:37 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="F2AEB1D0-3A33-99E5-B616-08F18850B678"/>
 </indexColumnUsage>
 </ind_PK_UK>
 </indexes>

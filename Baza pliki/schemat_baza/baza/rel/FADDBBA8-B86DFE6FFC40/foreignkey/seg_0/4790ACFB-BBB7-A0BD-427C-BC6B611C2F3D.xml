@@ -1,14 +1,14 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
-<FKIndexAssociation class="oracle.dbtools.crest.model.design.relational.FKIndexAssociation" directorySegmentName="seg_0" id="27363153-9878-26F9-2FFF-BC6611265586" containerWithKeyObject="E84068E8-27C4-7CAA-61DC-09C5F82BC499" localFKIndex="894F0568-5AE1-ADB9-C517-7653DB9E99A5" name="wpis_dziennika_uzytkownik_FK">
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:50:48 UTC</createdTime>
+<FKIndexAssociation class="oracle.dbtools.crest.model.design.relational.FKIndexAssociation" directorySegmentName="seg_0" id="4790ACFB-BBB7-A0BD-427C-BC6B611C2F3D" containerWithKeyObject="D73BB774-5C9A-7F7C-574B-18C4E90A1BEC" localFKIndex="BEA5F7C6-D68B-3CBB-6487-B8CFAEB41CDD" name="udostepniony_dokument_uzytkownik_FKv2">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 12:21:11 UTC</createdTime>
 <ownerDesignName>baza</ownerDesignName>
 <referredTableLongName>uzytkownik</referredTableLongName>
 <deleteRule>NO ACTION</deleteRule>
 <referredTableID>7BC42E30-145E-3651-CAA9-50272A73FED8</referredTableID>
 <keyObject>6E24D070-66BC-62CC-831A-1D9AF2A29679</keyObject>
 <referredKeyID>6E24D070-66BC-62CC-831A-1D9AF2A29679</referredKeyID>
-<mandatory>true</mandatory>
+<mandatory>false</mandatory>
 <refColNames>id</refColNames>
 <transferable>true</transferable>
 <rely>false</rely>

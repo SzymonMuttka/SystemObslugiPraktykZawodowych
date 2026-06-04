@@ -65,6 +65,7 @@
                         <th>Data</th>
                         <th>Opis wykonywanych prac</th>
                         <th>Nr efektów uczenia się</th>
+                        <th>Uwagi</th>
                         <th>Akcje</th>
                     </tr>
                 </thead>
@@ -74,6 +75,7 @@
                         <td><input type="date" name="data[]" required {% if role != 'student' %}readonly{% endif %}></td>
                         <td><input type="text" name="opis[]" required {% if role != 'student' %}readonly{% endif %}></td>
                         <td><input type="text" name="efekty[]" required {% if role != 'student' %}readonly{% endif %}></td>
+                        <td><input type="text" name="uwagi[]" {% if role != 'opiekun_firmowy' %}readonly{% endif %}></td>
                         <td>
                             {% if role == 'student' %}
                             <button type="button" class="dodaj_nowy" onclick="addAfter(this)">Dodaj wiersz poniżej</button>
@@ -86,14 +88,6 @@
             {% if role == 'student' %}
             <button type="button" onclick="addRow()">Dodaj wiersz na dole</button>
             {% endif %}
-        </fieldset>
-
-        <fieldset class="form-section">
-            <legend>Uwagi opiekuna firmowego</legend>
-            <div class="form-group">
-                <label for="uwagi_opiekuna_firmowego">Uwagi</label>
-                <textarea id="uwagi_opiekuna_firmowego" name="uwagi_opiekuna_firmowego" rows="4" {% if role != 'opiekun_firmowy' %}readonly{% endif %}>{{ uwagi_opiekuna_firmowego }}</textarea>
-            </div>
         </fieldset>
 
         <div class="form-actions">

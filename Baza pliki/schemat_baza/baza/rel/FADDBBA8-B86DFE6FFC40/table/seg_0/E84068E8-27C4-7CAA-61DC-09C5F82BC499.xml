@@ -72,32 +72,18 @@
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 <autoIncrementCycle>false</autoIncrementCycle>
 </Column>
-<Column name="numery_efektow" id="5FD6A211-8076-5F03-20EB-C9E1EB62133F">
-<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:21:34 UTC</createdTime>
-<ownerDesignName>baza</ownerDesignName>
-<importedID>D4B6A571-61A4-D02C-0D44-86A9D02FFDF0</importedID>
-<use>0</use>
-<logicalDatatype>LOGDT040</logicalDatatype>
-<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
-<ownDataTypeParameters>,,</ownDataTypeParameters>
-<autoIncrementCycle>false</autoIncrementCycle>
-</Column>
-<Column name="nadzorujacy_id" id="60815CDA-3CC4-2B99-926E-5DC784E54621">
+<Column name="uwagi_opiekuna" id="60815CDA-3CC4-2B99-926E-5DC784E54621">
 <sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
 <createdBy>Student</createdBy>
 <createdTime>2026-04-29 08:21:34 UTC</createdTime>
 <ownerDesignName>baza</ownerDesignName>
 <importedID>1E6D3EF7-6455-3728-1F68-9E5E0D22392D</importedID>
-<use>0</use>
-<logicalDatatype>LOGDT011</logicalDatatype>
-<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT040</logicalDatatype>
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 <autoIncrementCycle>false</autoIncrementCycle>
-<associations>
-<colAssociation fkAssociation="27363153-9878-26F9-2FFF-BC6611265586" referredColumn="D4CA6A6E-29C4-9725-3290-369DC2B7BF94"/>
-</associations>
 </Column>
 <Column name="jest_podpisany" id="7EE76219-CEC5-CF5C-EF31-96BF64B45816">
 <sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
@@ -201,16 +187,6 @@
 <isSurrogateKey>false</isSurrogateKey>
 <indexColumnUsage>
 <colUsage columnID="1DD53489-1BE5-4C78-CAEB-C5F15AF5E95F"/>
-</indexColumnUsage>
-</ind_PK_UK>
-<ind_PK_UK id="894F0568-5AE1-ADB9-C517-7653DB9E99A5" name="wpis_dziennika_uzytkownik_FK">
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:50:48 UTC</createdTime>
-<ownerDesignName>baza</ownerDesignName>
-<indexState>Foreign Key</indexState>
-<isSurrogateKey>false</isSurrogateKey>
-<indexColumnUsage>
-<colUsage columnID="60815CDA-3CC4-2B99-926E-5DC784E54621"/>
 </indexColumnUsage>
 </ind_PK_UK>
 </indexes>

@@ -72,18 +72,6 @@
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 <autoIncrementCycle>false</autoIncrementCycle>
 </Column>
-<Column name="rola_tworzaca" id="CC862FC0-0EFE-B3B1-B52D-7FAB640A9783">
-<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
-<createdBy>Student</createdBy>
-<createdTime>2026-04-29 08:21:34 UTC</createdTime>
-<ownerDesignName>baza</ownerDesignName>
-<importedID>9274B7A8-B683-5D87-3244-6930A255DA70</importedID>
-<use>0</use>
-<logicalDatatype>LOGDT040</logicalDatatype>
-<domain>0EAE56F4-0239-FAA6-5BAC-1B7CAA9B1DFA</domain>
-<ownDataTypeParameters>,,</ownDataTypeParameters>
-<autoIncrementCycle>false</autoIncrementCycle>
-</Column>
 <Column name="kolejnosc" id="40D08047-4706-5745-8707-A1A395476605">
 <sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
 <createdBy>Student</createdBy>

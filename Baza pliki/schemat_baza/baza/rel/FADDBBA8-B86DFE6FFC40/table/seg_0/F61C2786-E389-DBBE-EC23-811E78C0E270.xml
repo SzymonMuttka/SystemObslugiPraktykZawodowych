@@ -110,6 +110,19 @@
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 <autoIncrementCycle>false</autoIncrementCycle>
 </Column>
+<Column name="aktualny_etap" id="653741D8-EF90-2B8B-7F00-D453D84AA668">
+<sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 12:17:32 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<usesDefaultValue>true</usesDefaultValue>
+<defaultValue>1</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
 <Column name="data_rozpoczecia" id="2627BF91-9605-5392-B8DB-5D8887D9C224">
 <sourceDDLFile>baza_sqlite.sql</sourceDDLFile>
 <createdBy>Student</createdBy>

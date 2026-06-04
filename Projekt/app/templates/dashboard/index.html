@@ -28,7 +28,7 @@
     <div class="alert alert-info alert-action">
         <div>
             <strong>Uzupełnij dane studenta</strong>
-            <p>Aby korzystać z dokumenty praktyk i mieć poprawnie przypisane studia, uzupełnij brakujące dane.</p>
+            <p>Aby móc korzystać z serwisu, uzupełnij brakujące dane.</p>
         </div>
         <a href="{{ url_for('dashboard.profil_studenta') }}" class="btn-primary">
             Uzupełnij dane studenta
@@ -36,10 +36,137 @@
     </div>
     {% endif %}
 
-    <div class="dashboard-body">
-        <p>Panel główny jest w trakcie budowy.</p>
-        <p>Twój email: {{ uzytkownik.email }}</p>
-        <p>Twoja rola: {{ uzytkownik.rola.nazwa }}</p>
+    <div class="dashboard-layout">
+        {% if show_create_nav %}
+        <aside class="dashboard-sidebar">
+            <h3>Utwórz nowy dokument</h3>
+            {% if available_documents %}
+            <ul class="dashboard-nav-list">
+                {% for doc in available_documents %}
+                <li><a href="{{ doc.url }}">{{ doc.label }}</a></li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>Obecnie nie możesz utworzyć żadnego dokumentu.</p>
+            {% endif %}
+        </aside>
+        {% endif %}
+
+        <main class="dashboard-main">
+            {% if uzytkownik.rola.nazwa == 'student' or selected_practice %}
+            <section class="dashboard-section">
+                <h3>Moje dokumenty</h3>
+                {% if my_documents %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nazwa dokumentu</th>
+                            <th>Ostatni edytor</th>
+                            <th>Ostatnia zmiana</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in my_documents %}
+                        <tr>
+                            <td>{{ doc.label }}</td>
+                            <td>{{ doc.ostatni }}</td>
+                            <td>{{ doc.zaktualizowano }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>Brak dokumentów utworzonych lub udostępnionych.</p>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            {% if show_practice_selection %}
+            <section class="dashboard-section">
+                <h3>Wybierz praktykę</h3>
+                {% if practice_rows %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Nr indeksu</th>
+                            <th>Scieżka</th>
+                            <th>Status</th>
+                            <th>Akcja</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for practice in practice_rows %}
+                        <tr>
+                            <td>{{ practice.student_name }}</td>
+                            <td>{{ practice.numer_albumu }}</td>
+                            {% if practice.sciezka == 'standard' %}
+                                <td>standardowa</td>
+                            {% elif practice.sciezka == 'alternative' %}
+                                <td>alternatywna</td>
+                            {% endif %}
+                            {% if practice.status == 'pending' %}
+                                <td>oczekująca</td>
+                            {% elif practice.status == 'active' %}
+                                <td>aktywna</td>
+                            {% elif practice.status == 'completed' %}
+                                <td>zakończona</td>
+                            {% elif practice.status == 'rejected' %}
+                                <td>odrzucona</td>
+                            {% endif %}
+                            <td><a href="{{ url_for('dashboard.index', selected_praktyka_id=practice.id) }}">Wybierz</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>Brak przypisanych praktyk do wyświetlenia.</p>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            {% if selected_practice %}
+            <section class="dashboard-section">
+                <h3>Wybrana praktyka</h3>
+                <div class="efekty-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID praktyki</th>
+                            <th>Ścieżka</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ selected_practice.id }}</td>
+                            {% if selected_practice.sciezka == 'standard' %}
+                                <td>standardowa</td>
+                            {% elif selected_practice.sciezka == 'alternative' %}
+                                <td>alternatywna</td>
+                            {% endif %}
+                            {% if selected_practice.status == 'pending' %}
+                                <td>oczekująca</td>
+                            {% elif selected_practice.status == 'active' %}
+                                <td>aktywna</td>
+                            {% elif selected_practice.status == 'completed' %}
+                                <td>zakończona</td>
+                            {% elif selected_practice.status == 'rejected' %}
+                                <td>odrzucona</td>
+                            {% endif %}
+                        </tr>
+                    </tbody>
+                </table> 
+                </div>
+            </section>
+            {% endif %}
+
+            {% if show_company_edit %}
+            <div class="dashboard-action">
+                <a href="{{ url_for('dashboard.profil_firmy') }}" class="btn-primary">Edytuj dane swojej firmy</a>
+            </div>
+            {% endif %}
+        </main>
     </div>
 </div>
 {% endblock %}

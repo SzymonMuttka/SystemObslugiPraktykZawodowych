@@ -26,6 +26,20 @@ def generate_agreement_number():
     return f"POR-{next_number:04d}"
 
 
+def update_practice_stage_from_typ(praktyka_id, typ_id):
+    from app import db
+    from sqlalchemy import text
+
+    db.session.execute(
+        text(
+            "UPDATE praktyka "
+            "SET aktualny_etap = (SELECT aktualny_etap FROM typ_dokumentu WHERE id = :typ_id) "
+            "WHERE id = :praktyka_id"
+        ),
+        {'typ_id': typ_id, 'praktyka_id': praktyka_id}
+    )
+
+
 def save_attachment1_data(form_data):
     """Zapis danych załącznika 1 do bazy danych.
 
@@ -72,17 +86,18 @@ def save_attachment1_data(form_data):
         if praktyka_id and typ_id:
             db.session.execute(
                 text(
-                    "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap)"
-                    " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :etap)"
+                    "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
+                    " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
                 ),
                 {
                     'praktyka_id': praktyka_id,
                     'typ_id': typ_id,
                     'utworzony_przez': current_user.id,
                     'status': 'completed',
-                    'etap': 2,
+                    'ostatni_edytor': current_user.id,
                 }
             )
+            update_practice_stage_from_typ(praktyka_id, typ_id)
             db.session.commit()
 
             doc_row = db.session.execute(
@@ -119,9 +134,150 @@ def save_attachment1_data(form_data):
 @login_required
 def index():
     """Główna strona dashboardu po zalogowaniu."""
+    from app import db
+    from sqlalchemy import text
+
+    role = current_user.rola.nazwa
+    selected_practice_id = request.args.get('selected_praktyka_id', type=int)
+    practice_rows = []
+    selected_practice = None
+    available_documents = []
+    my_documents = []
+
+    if role == 'student':
+        practice_row = db.session.execute(
+            text(
+                "SELECT id, sciezka, status "
+                "FROM praktyka WHERE student_id = :student_id ORDER BY id DESC LIMIT 1"
+            ),
+            {'student_id': current_user.id}
+        ).fetchone()
+        if practice_row:
+            selected_practice = {
+                'id': practice_row[0],
+                'sciezka': practice_row[1] or '',
+                'status': practice_row[2] or '',
+            }
+            if selected_practice['sciezka'] == 'standard':
+                available_documents = [
+                    {'label': 'Załącznik 5', 'url': url_for('dashboard.zalacznik_5')},
+                    {'label': 'Załącznik 6', 'url': url_for('dashboard.zalacznik_6')},
+                    {'label': 'Załącznik 7', 'url': url_for('dashboard.zalacznik_7')},
+                ]
+            elif selected_practice['sciezka'] == 'alternative':
+                available_documents = [
+                    {'label': 'Załącznik 4b', 'url': url_for('dashboard.zalacznik_4b')},
+                    {'label': 'Załącznik 7a', 'url': url_for('dashboard.zalacznik_7a')},
+                ]
+    elif role in ['dziekanat', 'opiekun_firmowy', 'opiekun_uczelniany', 'dyrektor', 'czlonek_komisji']:
+        query = (
+            "SELECT p.id, u.imie || ' ' || u.nazwisko AS student_name, u.numer_albumu, p.status, p.sciezka "
+            "FROM praktyka p "
+            "JOIN uzytkownik u ON p.student_id = u.id "
+            "WHERE p.id IN (SELECT MAX(id) FROM praktyka GROUP BY student_id)"
+        )
+        params = {}
+        if role == 'opiekun_firmowy':
+            query += ' AND p.opiekun_firmowy_id = :user_id'
+            params['user_id'] = current_user.id
+        elif role == 'opiekun_uczelniany':
+            query += ' AND p.opiekun_uczelniany_id = :user_id'
+            params['user_id'] = current_user.id
+
+        rows = db.session.execute(text(query), params).fetchall()
+        for row in rows:
+            practice_rows.append({
+                'id': row[0],
+                'student_name': row[1],
+                'numer_albumu': row[2],
+                'status': row[3] or '',
+                'sciezka': row[4] or '',
+            })
+
+        if role == 'opiekun_firmowy':
+            available_documents = [
+                {'label': 'Załącznik 9', 'url': url_for('dashboard.zalacznik_9')},
+            ]
+
+        if selected_practice_id:
+            selected_row = next((r for r in practice_rows if r['id'] == selected_practice_id), None)
+            if selected_row:
+                selected_practice = selected_row
+                if role == 'dziekanat':
+                    if selected_practice['sciezka'] == 'standard':
+                        available_documents = ([
+                            {'label': 'Załącznik 1', 'url': url_for('dashboard.zalacznik_1', selected_praktyka_id=selected_practice_id)},
+                            {'label': 'Załącznik 2', 'url': url_for('dashboard.zalacznik_2', selected_praktyka_id=selected_practice_id)},
+                            {'label': 'Załącznik 2a', 'url': url_for('dashboard.zalacznik_2a', selected_praktyka_id=selected_practice_id)},
+                            {'label': 'Załącznik 3', 'url': url_for('dashboard.zalacznik_3', selected_praktyka_id=selected_practice_id)},
+                            {'label': 'Załącznik 4', 'url': url_for('dashboard.zalacznik_4', selected_praktyka_id=selected_practice_id)},
+                            {'label': 'Załącznik 8', 'url': url_for('dashboard.zalacznik_8', selected_praktyka_id=selected_practice_id)},
+                        ])
+                    elif selected_practice['sciezka'] == 'alternative':
+                        available_documents = ([
+                            {'label': 'Załącznik 4a', 'url': url_for('dashboard.zalacznik_4a', selected_praktyka_id=selected_practice_id)},
+                            {'label': 'Załącznik 8', 'url': url_for('dashboard.zalacznik_8', selected_praktyka_id=selected_practice_id)},
+                        ])
+                elif role == 'opiekun_firmowy':
+                    available_documents = [
+                        {'label': 'Załącznik 9', 'url': url_for('dashboard.zalacznik_9')},
+                    ]
+
+        # Pobierz dokumenty utworzone przez użytkownika lub udostępnione mu
+        try:
+            docs_params = {'user_id': current_user.id, 'rola_id': current_user.rola_id}
+            # dla roli student pokaż wszystkie dokumenty utworzone/udostępnione bez filtrowania po praktyce
+            if role == 'student':
+                docs_query = (
+                    "SELECT d.id, t.kod, oe.imie || ' ' || oe.nazwisko AS ostatni, d.zaktualizowano "
+                    "FROM dokument d "
+                    "JOIN typ_dokumentu t ON d.typ_dokumentu_id = t.id "
+                    "LEFT JOIN uzytkownik oe ON d.ostatni_edytor = oe.id "
+                    "WHERE (d.utworzony_przez = :user_id OR EXISTS(SELECT 1 FROM udostepniony_dokument ud WHERE ud.dokument_id = d.id "
+                    "AND (ud.udostepniajacy = :user_id OR ud.adresat = :user_id OR ud.rola_id = :rola_id))) "
+                )
+                docs_rows = db.session.execute(text(docs_query), docs_params).fetchall()
+            else:
+                # dla innych ról pokaż dokumenty tylko jeśli wybrano praktykę
+                docs_rows = []
+                if selected_practice_id:
+                    docs_query = (
+                        "SELECT d.id, t.kod, oe.imie || ' ' || oe.nazwisko AS ostatni, d.zaktualizowano "
+                        "FROM dokument d "
+                        "JOIN typ_dokumentu t ON d.typ_dokumentu_id = t.id "
+                        "LEFT JOIN uzytkownik oe ON d.ostatni_edytor = oe.id "
+                        "WHERE d.praktyka_id = :selected_practice_id AND (d.utworzony_przez = :user_id OR EXISTS(SELECT 1 FROM udostepniony_dokument ud WHERE ud.dokument_id = d.id "
+                        "AND (ud.udostepniajacy = :user_id OR ud.adresat = :user_id OR ud.rola_id = :rola_id))) "
+                    )
+                    docs_params['selected_practice_id'] = selected_practice_id
+                    docs_rows = db.session.execute(text(docs_query), docs_params).fetchall()
+
+            for dr in docs_rows:
+                kod = dr[1] or ''
+                label = kod.replace('ZAL_', 'Załącznik ') if kod.startswith('ZAL_') else kod
+                my_documents.append({
+                    'id': dr[0],
+                    'label': label,
+                    'ostatni': dr[2] or '',
+                    'zaktualizowano': dr[3] or '',
+                })
+        except Exception:
+            current_app.logger.exception('Błąd pobierania dokumentów użytkownika')
+
+    show_create_nav = role not in ['opiekun_uczelniany', 'dyrektor']
+    show_practice_selection = role in ['dziekanat', 'opiekun_firmowy', 'opiekun_uczelniany', 'dyrektor', 'czlonek_komisji']
+    show_company_edit = role == 'opiekun_firmowy'
+
     return render_template(
         'dashboard/index.html',
-        uzytkownik=current_user
+        uzytkownik=current_user,
+        practice_rows=practice_rows,
+        selected_practice=selected_practice,
+        available_documents=available_documents,
+        my_documents=my_documents,
+        show_create_nav=show_create_nav,
+        show_practice_selection=show_practice_selection,
+        show_company_edit=show_company_edit,
     )
 
 
@@ -294,17 +450,18 @@ def save_attachment2_data(form_data):
 
         db.session.execute(
             text(
-                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap)"
-                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :etap)"
+                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
+                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
             ),
             {
                 'praktyka_id': praktyka_id,
                 'typ_id': typ_id,
                 'utworzony_przez': current_user.id,
                 'status': 'completed',
-                'etap': 3,
+                'ostatni_edytor': current_user.id,
             }
         )
+        update_practice_stage_from_typ(praktyka_id, typ_id)
         db.session.commit()
         return True
     except Exception as e:
@@ -391,17 +548,18 @@ def save_attachment2a_data(form_data):
 
         db.session.execute(
             text(
-                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap)"
-                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :etap)"
+                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
+                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
             ),
             {
                 'praktyka_id': praktyka_id,
                 'typ_id': typ_id,
                 'utworzony_przez': current_user.id,
                 'status': 'completed',
-                'etap': 4,
+                'ostatni_edytor': current_user.id,
             }
         )
+        update_practice_stage_from_typ(praktyka_id, typ_id)
         db.session.commit()
 
         document_row = db.session.execute(
@@ -578,17 +736,18 @@ def save_attachment3_data(form_data):
 
         db.session.execute(
             text(
-                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap)"
-                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :etap)"
+                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
+                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
             ),
             {
                 'praktyka_id': praktyka_id,
                 'typ_id': typ_id,
                 'utworzony_przez': current_user.id,
                 'status': 'completed',
-                'etap': 5,
+                'ostatni_edytor': current_user.id,
             }
         )
+        update_practice_stage_from_typ(praktyka_id, typ_id)
         db.session.commit()
 
         document_row = db.session.execute(
@@ -796,17 +955,18 @@ def save_attachment4_data(form_data):
 
         db.session.execute(
             text(
-                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap)"
-                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :etap)"
+                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
+                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
             ),
             {
                 'praktyka_id': praktyka_id,
                 'typ_id': typ_id,
                 'utworzony_przez': current_user.id,
                 'status': 'completed',
-                'etap': 7,
+                'ostatni_edytor': current_user.id,
             }
         )
+        update_practice_stage_from_typ(praktyka_id, typ_id)
         db.session.commit()
 
         dokument_row = db.session.execute(
@@ -998,19 +1158,21 @@ def save_attachment4a_data(form_data):
                 """),
                 {'id': dokument_id}
             )
+            update_practice_stage_from_typ(praktyka_id, typ_id)
         else:
             db.session.execute(
                 text("""
-                    INSERT INTO dokument ( praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap )
-                    VALUES ( :praktyka_id, :typ_id, :uzytkownik_id, 'completed', 2 )
+                    INSERT INTO dokument ( praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor )
+                    VALUES ( :praktyka_id, :typ_id, :uzytkownik_id, 'completed', :ostatni_edytor )
                 """),
                 {
                     'praktyka_id': praktyka_id,
                     'typ_id': typ_id,
-                    'uzytkownik_id': current_user.id
+                    'uzytkownik_id': current_user.id,
+                    'ostatni_edytor': current_user.id
                 }
             )
-
+            update_practice_stage_from_typ(praktyka_id, typ_id)
             dokument_id = db.session.execute(text("SELECT last_insert_rowid()")).scalar()
 
         efekt_rows = db.session.execute(
@@ -1196,6 +1358,7 @@ def save_attachment4b_data(form_data):
 
     try:
         student_id = current_user.id
+        opiekun_uczelniany_id = int(form_data.get('opiekun_uczelniany_id')) if form_data.get('opiekun_uczelniany_id') else None
 
         rok_akademicki = f"{date.today().year - 1}/{date.today().year}"
 
@@ -1212,20 +1375,32 @@ def save_attachment4b_data(form_data):
 
             db.session.execute(
                 text("""
-                    UPDATE praktyka SET status = 'active', zaktualizowano = datetime('now') WHERE id = :id
+                    UPDATE praktyka SET status = 'active', zaktualizowano = datetime('now')
+                        WHERE id = :id
                 """),
                 {"id": praktyka_id}
             )
+            if opiekun_uczelniany_id:
+                db.session.execute(
+                    text("""
+                        UPDATE praktyka SET opiekun_uczelniany_id = :opiekun_id WHERE id = :id
+                    """),
+                    {
+                        "opiekun_id": opiekun_uczelniany_id,
+                        "id": praktyka_id
+                    }
+                )
         else:
             db.session.execute(
                 text("""
                     INSERT INTO praktyka ( student_id, firma_id, opiekun_firmowy_id, opiekun_uczelniany_id, sciezka, status,
                         liczba_dni_roboczych, liczba_godzin, rok_akademicki
                     )
-                    VALUES ( :student_id, NULL, NULL, NULL, 'alternative', 'active', NULL, NULL, :rok_akademicki )
+                    VALUES ( :student_id, NULL, NULL, :opiekun_uczelniany_id, 'alternative', 'active', NULL, NULL, :rok_akademicki )
                 """),
                 {
                     "student_id": student_id,
+                    "opiekun_uczelniany_id": opiekun_uczelniany_id,
                     "rok_akademicki": rok_akademicki
                 }
             )
@@ -1261,18 +1436,21 @@ def save_attachment4b_data(form_data):
                 """),
                 {"id": dokument_id}
             )
+            update_practice_stage_from_typ(praktyka_id, typ_dokumentu_id)
         else:
             db.session.execute(
                 text("""
-                    INSERT INTO dokument ( praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap )
-                    VALUES ( :praktyka_id, :typ_dokumentu_id, :uzytkownik_id, 'completed', 1 )
+                    INSERT INTO dokument ( praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor )
+                    VALUES ( :praktyka_id, :typ_dokumentu_id, :uzytkownik_id, 'completed', :ostatni_edytor )
                 """),
                 {
                     "praktyka_id": praktyka_id,
                     "typ_dokumentu_id": typ_dokumentu_id,
-                    "uzytkownik_id": current_user.id
+                    "uzytkownik_id": current_user.id,
+                    'ostatni_edytor': current_user.id
                 }
             )
+            update_practice_stage_from_typ(praktyka_id, typ_dokumentu_id)
 
             dokument_id = db.session.execute(
                 text("SELECT last_insert_rowid()")
@@ -1348,6 +1526,7 @@ def zalacznik_4b():
             return redirect(url_for('dashboard.index'))
 
         form_data = {
+            'opiekun_uczelniany_id': request.form.get('opiekun_uczelniany_id'),
             'uzasadnienie': request.form.get('uzasadnienie'),
             'data_uzasadnienia': request.form.get('data_uzasadnienia'),
             'opinia_komisji': request.form.get('opinia_komisji'),
@@ -1376,6 +1555,16 @@ def zalacznik_4b():
         {"student_id": current_user.id}
     ).fetchone()
 
+    from app.models.uzytkownik import Uzytkownik, Rola
+
+    rola_opiekun_uczelniany = Rola.query.filter_by(nazwa='opiekun_uczelniany').first()
+    opiekunowie_uczelni = (
+        Uzytkownik.query
+        .filter_by(rola_id=rola_opiekun_uczelniany.id, jest_aktywny=True)
+        .order_by(Uzytkownik.nazwisko, Uzytkownik.imie)
+        .all()
+    ) if rola_opiekun_uczelniany else []
+
     imie_nazwisko_studenta = ''
     nr_indeksu = ''
     specjalnosc = ''
@@ -1396,11 +1585,13 @@ def zalacznik_4b():
         'data_opinii_komisji': date.today().isoformat(),
         'decyzja_dyrektora': '',
         'data_decyzji_dyrektora': date.today().isoformat(),
+        'selected_opiekun_uczelniany_id': '',
     }
 
     return render_template(
         'forms/zalacznik_4b.html',
         role=role,
+        opiekunowie_uczelni=opiekunowie_uczelni,
         **prefilled
     )
 
@@ -1440,17 +1631,18 @@ def save_attachment5_data(form_data):
         # Utwórz dokument
         db.session.execute(
             text(
-                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap, jest_anonimowy)"
-                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :etap, 1)"
+                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor, jest_anonimowy)"
+                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor, 1)"
             ),
             {
                 'praktyka_id': praktyka_id,
                 'typ_id': typ_id,
                 'utworzony_przez': current_user.id,
                 'status': 'completed',
-                'etap': 10,
+                'ostatni_edytor': current_user.id,
             }
         )
+        update_practice_stage_from_typ(praktyka_id, typ_id)
         db.session.commit()
 
         # Pobierz ID utworzonego dokumentu
@@ -1633,11 +1825,10 @@ def save_attachment6_data(form_data):
 
         # find latest practice for student
         praktyka_row = db.session.execute(
-            text("SELECT id, opiekun_firmowy_id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
+            text("SELECT id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
             {'student_id': student_id}
         ).fetchone()
         praktyka_id = praktyka_row[0] if praktyka_row else None
-        nadzorujacy_id = praktyka_row[1] if praktyka_row and len(praktyka_row) > 1 else None
         if not praktyka_id:
             current_app.logger.error('Nie znaleziono praktyki dla studenta %s przy zapisie załącznika 6.', student_id)
             return False
@@ -1652,17 +1843,18 @@ def save_attachment6_data(form_data):
         # create dokument
         db.session.execute(
             text(
-                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap)"
-                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :etap)"
+                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
+                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
             ),
             {
                 'praktyka_id': praktyka_id,
                 'typ_id': typ_id,
                 'utworzony_przez': current_user.id,
                 'status': 'completed',
-                'etap': 6,
+                'ostatni_edytor': current_user.id,
             }
         )
+        update_practice_stage_from_typ(praktyka_id, typ_id)
         db.session.commit()
 
         document_row = db.session.execute(
@@ -1679,6 +1871,7 @@ def save_attachment6_data(form_data):
         data_list = form_data.get('data', []) or []
         opis_list = form_data.get('opis', []) or []
         efekty_list = form_data.get('efekty', []) or []
+        uwagi_list = form_data.get('uwagi', []) or []
 
         today = datetime.now().date().isoformat()
         for idx in range(len(dzien)):
@@ -1688,11 +1881,12 @@ def save_attachment6_data(form_data):
                 numer_dnia = idx + 1
             opis_prac = opis_list[idx].strip() if idx < len(opis_list) and opis_list[idx] else ''
             numery_efektow = efekty_list[idx].strip() if idx < len(efekty_list) and efekty_list[idx] else ''
+            uwagi_opiekuna = uwagi_list[idx].strip() if idx < len(uwagi_list) and uwagi_list[idx] else ''
 
             db.session.execute(
                 text(
-                    "INSERT INTO wpis_dziennika (dokument_id, numer_dnia, data_wpisu, opis_prac, numery_efektow, nadzorujacy_id, jest_podpisany)"
-                    " VALUES (:dokument_id, :numer_dnia, :data_wpisu, :opis_prac, :numery_efektow, :nadzorujacy_id, :jest_podpisany)"
+                    "INSERT INTO wpis_dziennika (dokument_id, numer_dnia, data_wpisu, opis_prac, numery_efektow, uwagi_opiekuna, jest_podpisany)"
+                    " VALUES (:dokument_id, :numer_dnia, :data_wpisu, :opis_prac, :numery_efektow, :uwagi_opiekuna, :jest_podpisany)"
                 ),
                 {
                     'dokument_id': dokument_id,
@@ -1700,7 +1894,7 @@ def save_attachment6_data(form_data):
                     'data_wpisu': today,
                     'opis_prac': opis_prac,
                     'numery_efektow': numery_efektow,
-                    'nadzorujacy_id': nadzorujacy_id,
+                    'uwagi_opiekuna': uwagi_opiekuna,
                     'jest_podpisany': 0,
                 }
             )
@@ -1721,20 +1915,6 @@ def save_attachment6_data(form_data):
                     'wypelniajacy': current_user.id,
                 }
             )
-
-        # Insert uwagi_opiekuna
-        uwagi = form_data.get('uwagi_opiekuna_firmowego', '') or ''
-        db.session.execute(
-            text(
-                "INSERT OR REPLACE INTO dane_dokumentu (dokument_id, klucz, wartosc, wypelnione_przez) VALUES (:doc_id, :klucz, :wartosc, :wypelniajacy)"
-            ),
-            {
-                'doc_id': dokument_id,
-                'klucz': 'uwagi_opiekuna',
-                'wartosc': uwagi,
-                'wypelniajacy': current_user.id,
-            }
-        )
 
         db.session.commit()
         return True
@@ -1762,10 +1942,16 @@ def zalacznik_6():
                 'data': request.form.getlist('data[]'),
                 'opis': request.form.getlist('opis[]'),
                 'efekty': request.form.getlist('efekty[]'),
+                'uwagi': request.form.getlist('uwagi[]'),
             }
         else:
             form_data = {
-                'uwagi_opiekuna_firmowego': request.form.get('uwagi_opiekuna_firmowego'),
+                'wykaz_zalacznikow': request.form.get('wykaz_zalacznikow'),
+                'dzien': request.form.getlist('dzien[]'),
+                'data': request.form.getlist('data[]'),
+                'opis': request.form.getlist('opis[]'),
+                'efekty': request.form.getlist('efekty[]'),
+                'uwagi': request.form.getlist('uwagi[]'),
             }
 
         saved = save_attachment6_data(form_data)
@@ -1844,17 +2030,18 @@ def save_attachment7_data(form_data):
 
         db.session.execute(
             text(
-                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap)"
-                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :etap)"
+                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
+                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
             ),
             {
                 'praktyka_id': praktyka_id,
                 'typ_id': typ_id,
                 'utworzony_przez': current_user.id,
                 'status': 'completed',
-                'etap': 8,
+                'ostatni_edytor': current_user.id,
             }
         )
+        update_practice_stage_from_typ(praktyka_id, typ_id)
         db.session.commit()
 
         document_row = db.session.execute(
@@ -2010,18 +2197,21 @@ def save_attachment7a_data(form_data):
                 """),
                 {'id': dokument_id}
             )
+            update_practice_stage_from_typ(praktyka_id, typ_id)
         else:
             db.session.execute(
                 text("""
-                    INSERT INTO dokument ( praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap )
-                    VALUES ( :praktyka_id, :typ_id, :utworzony_przez, 'completed', 3 )
+                    INSERT INTO dokument ( praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor )
+                    VALUES ( :praktyka_id, :typ_id, :utworzony_przez, 'completed', :ostatni_edytor )
                 """),
                 {
                     'praktyka_id': praktyka_id,
                     'typ_id': typ_id,
-                    'utworzony_przez': current_user.id
+                    'utworzony_przez': current_user.id,
+                    'ostatni_edytor': current_user.id
                 }
             )
+            update_practice_stage_from_typ(praktyka_id, typ_id)
 
             db.session.commit()
 
@@ -2216,14 +2406,16 @@ def save_attachment8_data(form_data):
 
         # Utwórz dokument
         doc_insert = text(
-            "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, aktualny_etap) "
-            "VALUES (:praktyka_id, :typ_dokumentu_id, :utworzony_przez, 'completed', 9)"
+            "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor) "
+            "VALUES (:praktyka_id, :typ_dokumentu_id, :utworzony_przez, 'completed', :ostatni_edytor)"
         )
         db.session.execute(doc_insert, {
             'praktyka_id': praktyka_id,
             'typ_dokumentu_id': typ_dokumentu_id,
             'utworzony_przez': current_user.id,
+            'ostatni_edytor': current_user.id,
         })
+        update_practice_stage_from_typ(praktyka_id, typ_dokumentu_id)
         db.session.commit()
 
         # Pobierz ID nowo utworzonego dokumentu
@@ -2466,14 +2658,15 @@ def save_attachment9_data(form_data):
         if praktyka_id and typ_id:
             db.session.execute(
                 text(
-                    "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status)"
-                    " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status)"
+                    "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
+                    " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
                 ),
                 {
                     'praktyka_id': praktyka_id,
                     'typ_id': typ_id,
                     'utworzony_przez': current_user.id,
-                    'status': 'pending'
+                    'status': 'completed',
+                    'ostatni_edytor': current_user.id
                 }
             )
             db.session.commit()
@@ -2493,6 +2686,66 @@ def save_attachment9_data(form_data):
                 text("INSERT OR REPLACE INTO dane_dokumentu (dokument_id, klucz, wartosc, wypelnione_przez) VALUES (:doc_id, :klucz, :wartosc, :wypelniajacy)"),
                 {'doc_id': dokument_id, 'klucz': 'data', 'wartosc': data_pola, 'wypelniajacy': current_user.id}
             )
+
+            role_rows = db.session.execute(
+                text("SELECT nazwa, id FROM role WHERE nazwa IN ('student', 'dziekanat', 'opiekun_firmowy', 'dyrektor')")
+            ).fetchall()
+            role_ids = {row[0]: row[1] for row in role_rows}
+
+            if student_id and role_ids.get('student'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'adresat': student_id,
+                        'rola_id': role_ids['student'],
+                    }
+                )
+
+            if role_ids.get('dziekanat'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 1)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'rola_id': role_ids['dziekanat'],
+                    }
+                )
+
+            if role_ids.get('dyrektor'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'rola_id': role_ids['dyrektor'],
+                    }
+                )
+
+            if role_ids.get('opiekun_firmowy'):
+                db.session.execute(
+                    text(
+                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 0)"
+                    ),
+                    {
+                        'udostepniajacy': current_user.id,
+                        'dokument_id': dokument_id,
+                        'adresat': current_user.id,
+                        'rola_id': role_ids['opiekun_firmowy'],
+                    }
+                )
+
             db.session.commit()
 
         # 4) Zaktualizuj nazwę firmy i numer telefonu opiekuna firmowego

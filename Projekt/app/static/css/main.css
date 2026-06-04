@@ -393,3 +393,68 @@ table tbody tr:nth-child(even) {
 .data-table table {
     min-width: 600px;
 }
+
+/* ============================================================
+   Dashboard layout
+   ============================================================ */
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.dashboard-sidebar {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    position: sticky;
+    top: 1rem;
+}
+
+.dashboard-sidebar h3 {
+    color: #1a3a6b;
+    font-size: 18px;
+    margin-bottom: 1rem;
+}
+
+.dashboard-nav-list {
+    list-style: none;
+}
+
+.dashboard-nav-list li + li {
+    margin-top: 0.5rem;
+}
+
+.dashboard-nav-list a {
+    display: block;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #374151;
+    background: #f8fafc;
+    transition: background 0.15s;
+}
+
+.dashboard-nav-list a:hover {
+    background: #e2e8f0;
+}
+
+.dashboard-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem; /* odstęp między sekcjami */
+}
+
+.dashboard-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.dashboard-section h3 {
+    color: #1a3a6b;
+    margin-bottom: 1rem;
+}

@@ -35,6 +35,19 @@
             <legend>Wypełniane przez studenta</legend>
 
             <div class="form-group">
+                <label for="opiekun_uczelniany_id">Opiekun uczelniany</label>
+                <select id="opiekun_uczelniany_id" name="opiekun_uczelniany_id">
+                    <option value="">— wybierz opiekuna uczelnianego —</option>
+                    {% for opiekun in opiekunowie_uczelni %}
+                    <option value="{{ opiekun.id }}"
+                        {% if opiekun.id|string == selected_opiekun_uczelniany_id|string %}selected{% endif %}>
+                        {{ opiekun.imie }} {{ opiekun.nazwisko }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label for="uzasadnienie">Uzasadnienie</label>
                 <textarea id="uzasadnienie" name="uzasadnienie" rows="4"
                     {% if role != 'student' %}readonly{% endif %}>{{ uzasadnienie }}</textarea>

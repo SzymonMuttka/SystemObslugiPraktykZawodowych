@@ -58,7 +58,6 @@ CREATE TABLE praktyka (
     status TEXT NOT NULL DEFAULT 'pending',
     -- 'pending', 'active', 'completed', 'rejected'
 	aktualny_etap INTEGER NOT NULL DEFAULT 0,
-	-- 'awaiting_review', 'returned', 'completed', 'archived'
     data_rozpoczecia TEXT,
     data_zakonczenia TEXT,
     liczba_dni_roboczych INTEGER DEFAULT 120,
@@ -82,7 +81,6 @@ CREATE TABLE typ_dokumentu (
     opis TEXT,
     sciezka TEXT NOT NULL DEFAULT 'both',
     -- 'standard', 'alternative', 'both'
-    rola_tworzaca TEXT NOT NULL,
     kolejnosc INTEGER NOT NULL
 );
 
@@ -92,7 +90,7 @@ CREATE TABLE dokument (
     typ_dokumentu_id INTEGER NOT NULL REFERENCES typ_dokumentu(id),
     utworzony_przez INTEGER NOT NULL REFERENCES uzytkownik(id),
     status TEXT NOT NULL DEFAULT 'draft',
-    -- 'draft', 'in_progress', 'awaiting_signature',
+    -- 'draft', 'in_progress', 'awaiting_signature', 'awaiting_approval', 'completed', 'rejected'
 	ostatni_edytor TEXT,
     jest_usuniety INTEGER NOT NULL DEFAULT 0,
     jest_anonimowy INTEGER NOT NULL DEFAULT 0,
@@ -105,7 +103,12 @@ CREATE TABLE udostepniony_dokument (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	udostepniajacy INTEGER NOT NULL REFERENCES uzytkownik(id),
 	dokument_id INTEGER NOT NULL REFERENCES dokument(id),
-	adresat INTEGER NOT NULL REFERENCES uzytkownik(id)
+	adresat INTEGER REFERENCES uzytkownik(id),
+	rola_id INTEGER NOT NULL REFERENCES rola(id),
+	moze_podgladac INTEGER NOT NULL,
+	moze_edytowac INTEGER NOT NULL,
+	moze_podpisac INTEGER NOT NULL,
+	moze_akceptowac INTEGER NOT NULL
 );
 
 -- ============================================================
@@ -118,23 +121,6 @@ CREATE TABLE zaleznosc_dokumentow (
     wymaga_typu_id INTEGER NOT NULL REFERENCES typ_dokumentu(id),
     wymagany_status TEXT NOT NULL DEFAULT 'completed'
     -- 'created', 'completed'
-);
-
--- ============================================================
--- UPRAWNIENIA DO DOKUMENTÓW
--- ============================================================
-
-CREATE TABLE uprawnienie_dokumentu (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    typ_dokumentu_id INTEGER NOT NULL REFERENCES typ_dokumentu(id),
-    rola_id INTEGER NOT NULL REFERENCES role(id),
-    moze_tworzyc INTEGER NOT NULL DEFAULT 0,
-    moze_edytowac INTEGER NOT NULL DEFAULT 0,
-    moze_przegladac INTEGER NOT NULL DEFAULT 0,
-    moze_podpisywac INTEGER NOT NULL DEFAULT 0,
-    moze_pobierac INTEGER NOT NULL DEFAULT 0,
-    moze_usuwac INTEGER NOT NULL DEFAULT 0,
-    moze_odsylac INTEGER NOT NULL DEFAULT 0
 );
 
 -- ============================================================
@@ -244,7 +230,7 @@ CREATE TABLE wpis_dziennika (
     numer_dnia INTEGER NOT NULL,
     data_wpisu TEXT NOT NULL,
     opis_prac TEXT NOT NULL,
-    nadzorujacy_id INTEGER REFERENCES uzytkownik(id),
+    uwagi_opiekuna TEXT,
     jest_podpisany INTEGER NOT NULL DEFAULT 0,
     podpisano TEXT,
     utworzono TEXT NOT NULL DEFAULT (datetime('now')),

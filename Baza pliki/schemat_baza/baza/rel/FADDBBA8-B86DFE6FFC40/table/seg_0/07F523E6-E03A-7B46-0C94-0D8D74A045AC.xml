@@ -1,0 +1,79 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="07F523E6-E03A-7B46-0C94-0D8D74A045AC" name="wpis_efekt">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 12:22:43 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<ordsAlias>table_28</ordsAlias>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="id" id="C1927234-D9B0-E625-676C-35A19C79A41B">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 12:22:56 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="dokument_id" id="09725C43-DE77-C01A-7E83-76D03C004BC4">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 12:24:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>B276B945-9224-0781-4AB0-65960FB4DED7</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="8F03FFF2-2C1D-FD51-DB30-D544F38B6390" referredColumn="E8923E12-E11E-34AF-DA99-F1BFC0EABE88"/>
+</associations>
+</Column>
+<Column name="numer_dnia" id="2599D8B1-1B6B-7B9D-43E4-1D72E7C699A4">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 12:25:51 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="nr_efektu" id="211D7B0C-FA10-39A7-5792-4579D6BA5EBD">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 12:25:51 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="AFD79638-D94C-FE0F-3E08-1C41A203FB03" name="wpis_efekt_PK">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 12:22:56 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="C1927234-D9B0-E625-676C-35A19C79A41B"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="B78FEFCD-FB51-F807-C599-921FDBADBC5A" name="wpis_efekt_dokument_FK">
+<createdBy>Szymo</createdBy>
+<createdTime>2026-06-04 12:24:34 UTC</createdTime>
+<ownerDesignName>baza</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="09725C43-DE77-C01A-7E83-76D03C004BC4"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>
