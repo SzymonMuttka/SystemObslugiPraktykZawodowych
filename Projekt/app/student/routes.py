@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 import json
 
 from flask import (
@@ -40,11 +40,11 @@ def update_practice_stage_from_typ(praktyka_id, typ_id):
     )
 
 
-def save_attachment1_data(form_data):
+def save_attachment1_data(form_data, dokument_id=None):
     """Zapis danych załącznika 1 do bazy danych.
 
     Aktualizuje praktykę opiekunem uczelnianym, tworzy dokument
-    i zapisuje dane dokumentu jako pola formularza.
+    lub odtwarza odrzucony dokument i zapisuje dane formularza.
     """
     from app import db
     from sqlalchemy import text
@@ -56,6 +56,10 @@ def save_attachment1_data(form_data):
         opiekun_uczelniany_id = int(form_data.get('reprezentant_uczelni_id')) if form_data.get('reprezentant_uczelni_id') else None
         nr_porozumienia = form_data.get('nr_porozumienia', '').strip()
         data_zawarcia = form_data.get('data_zawarcia', '').strip()
+        nazwa_zakladu_pracy = form_data.get('nazwa_zakladu_pracy', '').strip()
+        reprezentant_firmy = form_data.get('reprezentant_firmy', '').strip()
+        termin_od = form_data.get('termin_od', '').strip()
+        termin_do = form_data.get('termin_do', '').strip()
         wymiar_praktyki = form_data.get('wymiar_praktyki', '').strip()
 
         if not student_id:
@@ -77,14 +81,43 @@ def save_attachment1_data(form_data):
             )
             db.session.commit()
 
-        # 2) Utwórz wpis w tabeli dokument powiązany z załącznikiem 1
         typ_row = db.session.execute(
             text("SELECT id FROM typ_dokumentu WHERE kod='ZAL_1' LIMIT 1")
         ).fetchone()
         typ_id = typ_row[0] if typ_row else None
 
-        dokument_id = None
-        if praktyka_id and typ_id:
+        if not praktyka_id or not typ_id:
+            return False
+
+        if dokument_id:
+            existing_doc = db.session.execute(
+                text("SELECT status FROM dokument WHERE id=:doc_id AND typ_dokumentu_id=:typ_id"),
+                {'doc_id': dokument_id, 'typ_id': typ_id}
+            ).fetchone()
+            if not existing_doc or existing_doc[0] != 'rejected':
+                return False
+
+            db.session.execute(
+                text("UPDATE dokument SET status = 'awaiting_signature', ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+                {'doc_id': dokument_id, 'ostatni_edytor': current_user.id}
+            )
+            db.session.execute(
+                text("UPDATE dokument_podpis SET czy_podpisany = 0, podpisano = NULL WHERE dokument_id = :doc_id"),
+                {'doc_id': dokument_id}
+            )
+            db.session.execute(
+                text("UPDATE dokument_akceptacja SET czy_zaakceptowany = 0, zaakceptowano = NULL WHERE dokument_id = :doc_id"),
+                {'doc_id': dokument_id}
+            )
+            db.session.execute(
+                text(
+                    "UPDATE udostepniony_dokument SET moze_edytowac = 0 "
+                    "WHERE dokument_id = :doc_id AND rola_id = (SELECT id FROM role WHERE nazwa = 'dziekanat')"
+                ),
+                {'doc_id': dokument_id}
+            )
+            doc_id = dokument_id
+        else:
             db.session.execute(
                 text(
                     "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
@@ -94,21 +127,19 @@ def save_attachment1_data(form_data):
                     'praktyka_id': praktyka_id,
                     'typ_id': typ_id,
                     'utworzony_przez': current_user.id,
-                    'status': 'completed',
+                    'status': 'awaiting_signature',
                     'ostatni_edytor': current_user.id,
                 }
             )
-            update_practice_stage_from_typ(praktyka_id, typ_id)
             db.session.commit()
 
             doc_row = db.session.execute(
                 text("SELECT id FROM dokument WHERE praktyka_id=:praktyka_id AND typ_dokumentu_id=:typ_id ORDER BY id DESC LIMIT 1"),
                 {'praktyka_id': praktyka_id, 'typ_id': typ_id}
             ).fetchone()
-            dokument_id = doc_row[0] if doc_row else None
+            doc_id = doc_row[0] if doc_row else None
 
-        # 3) Utwórz wpisy udostępnionego dokumentu
-        if dokument_id:
+        if doc_id:
             role_rows = db.session.execute(
                 text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','dziekanat','opiekun_uczelniany','opiekun_firmowy','dyrektor')")
             ).fetchall()
@@ -117,12 +148,12 @@ def save_attachment1_data(form_data):
             if student_id and role_ids.get('student'):
                 db.session.execute(
                     text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
                         " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
                     ),
                     {
                         'udostepniajacy': current_user.id,
-                        'dokument_id': dokument_id,
+                        'dokument_id': doc_id,
                         'adresat': student_id,
                         'rola_id': role_ids['student'],
                     }
@@ -131,12 +162,12 @@ def save_attachment1_data(form_data):
             if role_ids.get('dziekanat'):
                 db.session.execute(
                     text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 1, 0, 0)"
+                        "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
                     ),
                     {
                         'udostepniajacy': current_user.id,
-                        'dokument_id': dokument_id,
+                        'dokument_id': doc_id,
                         'rola_id': role_ids['dziekanat'],
                     }
                 )
@@ -144,12 +175,12 @@ def save_attachment1_data(form_data):
             if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
                 db.session.execute(
                     text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
                         " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
                     ),
                     {
                         'udostepniajacy': current_user.id,
-                        'dokument_id': dokument_id,
+                        'dokument_id': doc_id,
                         'adresat': opiekun_uczelniany_id,
                         'rola_id': role_ids['opiekun_uczelniany'],
                     }
@@ -158,12 +189,12 @@ def save_attachment1_data(form_data):
             if opiekun_firmowy_id and role_ids.get('opiekun_firmowy'):
                 db.session.execute(
                     text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
                         " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 1, 1)"
                     ),
                     {
                         'udostepniajacy': current_user.id,
-                        'dokument_id': dokument_id,
+                        'dokument_id': doc_id,
                         'adresat': opiekun_firmowy_id,
                         'rola_id': role_ids['opiekun_firmowy'],
                     }
@@ -172,32 +203,43 @@ def save_attachment1_data(form_data):
             if role_ids.get('dyrektor'):
                 db.session.execute(
                     text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
                         " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 1, 1)"
                     ),
                     {
                         'udostepniajacy': current_user.id,
-                        'dokument_id': dokument_id,
+                        'dokument_id': doc_id,
                         'rola_id': role_ids['dyrektor'],
                     }
                 )
 
             db.session.commit()
 
-        # 4) Utwórz trzy wpisy w tabeli dane_dokumentu
-        if dokument_id:
-            db.session.execute(
-                text("INSERT OR REPLACE INTO dane_dokumentu (dokument_id, klucz, wartosc, wypelnione_przez) VALUES (:doc_id, :klucz, :wartosc, :wypelniajacy)"),
-                {'doc_id': dokument_id, 'klucz': 'nr_porozumienia', 'wartosc': nr_porozumienia, 'wypelniajacy': current_user.id}
-            )
-            db.session.execute(
-                text("INSERT OR REPLACE INTO dane_dokumentu (dokument_id, klucz, wartosc, wypelnione_przez) VALUES (:doc_id, :klucz, :wartosc, :wypelniajacy)"),
-                {'doc_id': dokument_id, 'klucz': 'data_zawarcia', 'wartosc': data_zawarcia, 'wypelniajacy': current_user.id}
-            )
-            db.session.execute(
-                text("INSERT OR REPLACE INTO dane_dokumentu (dokument_id, klucz, wartosc, wypelnione_przez) VALUES (:doc_id, :klucz, :wartosc, :wypelniajacy)"),
-                {'doc_id': dokument_id, 'klucz': 'wymiar_praktyki', 'wartosc': wymiar_praktyki, 'wypelniajacy': current_user.id}
-            )
+            fields = {
+                'nr_porozumienia': nr_porozumienia,
+                'data_zawarcia': data_zawarcia,
+                'nazwa_zakladu_pracy': nazwa_zakladu_pracy,
+                'reprezentant_firmy': reprezentant_firmy,
+                'termin_od': termin_od,
+                'termin_do': termin_do,
+                'wymiar_praktyki': wymiar_praktyki,
+                'imie_nazwisko_studenta': form_data.get('imie_nazwisko_studenta', ''),
+                'reprezentant_uczelni_id': form_data.get('reprezentant_uczelni_id', ''),
+            }
+
+            for key, value in fields.items():
+                db.session.execute(
+                    text(
+                        "INSERT OR REPLACE INTO dane_dokumentu (dokument_id, klucz, wartosc, wypelnione_przez)"
+                        " VALUES (:doc_id, :klucz, :wartosc, :wypelniajacy)"
+                    ),
+                    {
+                        'doc_id': doc_id,
+                        'klucz': key,
+                        'wartosc': value,
+                        'wypelniajacy': current_user.id,
+                    }
+                )
             db.session.commit()
 
         return True
@@ -205,6 +247,291 @@ def save_attachment1_data(form_data):
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f'Błąd zapisu załącznika 1: {e}')
+        return False
+
+
+def sign_and_accept_attachment1(dokument_id):
+    """Podpisanie i akceptacja załącznika 1 przez dyrektora lub opiekuna firmowego."""
+    from app import db
+    from sqlalchemy import text
+
+    try:
+        doc_row = db.session.execute(
+            text("SELECT praktyka_id, status, typ_dokumentu_id FROM dokument WHERE id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if not doc_row or doc_row[1] != 'awaiting_signature':
+            return False
+
+        role_name = current_user.rola.nazwa
+        if role_name not in ('dyrektor', 'opiekun_firmowy'):
+            return False
+
+        result = db.session.execute(
+            text(
+                "UPDATE dokument_podpis SET czy_podpisany = 1, podpisano = :podpisano "
+                "WHERE dokument_id = :doc_id AND podpisujacy_id = :podpisujacy_id"
+            ),
+            {
+                'doc_id': dokument_id,
+                'podpisujacy_id': current_user.id,
+                'podpisano': datetime.now(),
+            }
+        )
+        if result.rowcount == 0:
+            db.session.execute(
+                text(
+                    "INSERT INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany, podpisano)"
+                    " VALUES (:doc_id, :podpisujacy_id, 1, :podpisano)"
+                ),
+                {
+                    'doc_id': dokument_id,
+                    'podpisujacy_id': current_user.id,
+                    'podpisano': datetime.now(),
+                }
+            )
+
+        result = db.session.execute(
+            text(
+                "UPDATE dokument_akceptacja SET czy_zaakceptowany = 1, zaakceptowano = :zaakceptowano "
+                "WHERE dokument_id = :doc_id AND akceptujacy_id = :akceptujacy_id"
+            ),
+            {
+                'doc_id': dokument_id,
+                'akceptujacy_id': current_user.id,
+                'zaakceptowano': datetime.now(),
+            }
+        )
+        if result.rowcount == 0:
+            db.session.execute(
+                text(
+                    "INSERT INTO dokument_akceptacja (dokument_id, akceptujacy_id, czy_zaakceptowany, zaakceptowano)"
+                    " VALUES (:doc_id, :akceptujacy_id, 1, :zaakceptowano)"
+                ),
+                {
+                    'doc_id': dokument_id,
+                    'akceptujacy_id': current_user.id,
+                    'zaakceptowano': datetime.now(),
+                }
+            )
+
+        signed_count = db.session.execute(
+            text(
+                "SELECT COUNT(*) FROM dokument_podpis dp "
+                "JOIN uzytkownik u ON dp.podpisujacy_id = u.id "
+                "JOIN role r ON u.rola_id = r.id "
+                "WHERE dp.dokument_id = :doc_id AND dp.czy_podpisany = 1 "
+                "AND r.nazwa IN ('dyrektor','opiekun_firmowy')"
+            ),
+            {'doc_id': dokument_id}
+        ).scalar()
+
+        accepted_count = db.session.execute(
+            text(
+                "SELECT COUNT(*) FROM dokument_akceptacja da "
+                "JOIN uzytkownik u ON da.akceptujacy_id = u.id "
+                "JOIN role r ON u.rola_id = r.id "
+                "WHERE da.dokument_id = :doc_id AND da.czy_zaakceptowany = 1 "
+                "AND r.nazwa IN ('dyrektor','opiekun_firmowy')"
+            ),
+            {'doc_id': dokument_id}
+        ).scalar()
+
+        if signed_count == 2 and accepted_count == 2:
+            db.session.execute(
+                text("UPDATE dokument SET status = :status, ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+                {
+                    'doc_id': dokument_id,
+                    'status': 'completed',
+                    'ostatni_edytor': current_user.id,
+                }
+            )
+            update_practice_stage_from_typ(doc_row[0], doc_row[2])
+        else:
+            db.session.execute(
+                text("UPDATE dokument SET ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+                {
+                    'doc_id': dokument_id,
+                    'ostatni_edytor': current_user.id,
+                }
+            )
+
+        db.session.commit()
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Błąd podpisania i akceptacji załącznika 1: {e}')
+        return False
+
+
+def sign_and_accept_attachment2(dokument_id):
+    """Podpisanie i akceptacja załącznika 2 przez dyrektora lub opiekuna firmowego."""
+    from app import db
+    from sqlalchemy import text
+
+    try:
+        doc_row = db.session.execute(
+            text("SELECT praktyka_id, status, typ_dokumentu_id FROM dokument WHERE id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if not doc_row or doc_row[1] != 'awaiting_signature':
+            return False
+
+        role_name = current_user.rola.nazwa
+        if role_name not in ('dyrektor', 'opiekun_firmowy'):
+            return False
+
+        # zaznacz podpis
+        result = db.session.execute(
+            text(
+                "UPDATE dokument_podpis SET czy_podpisany = 1, podpisano = :podpisano "
+                "WHERE dokument_id = :doc_id AND podpisujacy_id = :podpisujacy_id"
+            ),
+            {
+                'doc_id': dokument_id,
+                'podpisujacy_id': current_user.id,
+                'podpisano': datetime.now(),
+            }
+        )
+        if result.rowcount == 0:
+            db.session.execute(
+                text(
+                    "INSERT INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany, podpisano)"
+                    " VALUES (:doc_id, :podpisujacy_id, 1, :podpisano)"
+                ),
+                {
+                    'doc_id': dokument_id,
+                    'podpisujacy_id': current_user.id,
+                    'podpisano': datetime.now(),
+                }
+            )
+
+        # zaznacz akceptację
+        result = db.session.execute(
+            text(
+                "UPDATE dokument_akceptacja SET czy_zaakceptowany = 1, zaakceptowano = :zaakceptowano "
+                "WHERE dokument_id = :doc_id AND akceptujacy_id = :akceptujacy_id"
+            ),
+            {
+                'doc_id': dokument_id,
+                'akceptujacy_id': current_user.id,
+                'zaakceptowano': datetime.now(),
+            }
+        )
+        if result.rowcount == 0:
+            db.session.execute(
+                text(
+                    "INSERT INTO dokument_akceptacja (dokument_id, akceptujacy_id, czy_zaakceptowany, zaakceptowano)"
+                    " VALUES (:doc_id, :akceptujacy_id, 1, :zaakceptowano)"
+                ),
+                {
+                    'doc_id': dokument_id,
+                    'akceptujacy_id': current_user.id,
+                    'zaakceptowano': datetime.now(),
+                }
+            )
+
+        signed_count = db.session.execute(
+            text(
+                "SELECT COUNT(*) FROM dokument_podpis dp "
+                "JOIN uzytkownik u ON dp.podpisujacy_id = u.id "
+                "JOIN role r ON u.rola_id = r.id "
+                "WHERE dp.dokument_id = :doc_id AND dp.czy_podpisany = 1 "
+                "AND r.nazwa IN ('dyrektor','opiekun_firmowy')"
+            ),
+            {'doc_id': dokument_id}
+        ).scalar()
+
+        accepted_count = db.session.execute(
+            text(
+                "SELECT COUNT(*) FROM dokument_akceptacja da "
+                "JOIN uzytkownik u ON da.akceptujacy_id = u.id "
+                "JOIN role r ON u.rola_id = r.id "
+                "WHERE da.dokument_id = :doc_id AND da.czy_zaakceptowany = 1 "
+                "AND r.nazwa IN ('dyrektor','opiekun_firmowy')"
+            ),
+            {'doc_id': dokument_id}
+        ).scalar()
+
+        if signed_count == 2 and accepted_count == 2:
+            db.session.execute(
+                text("UPDATE dokument SET status = :status, ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+                {
+                    'doc_id': dokument_id,
+                    'status': 'completed',
+                    'ostatni_edytor': current_user.id,
+                }
+            )
+            update_practice_stage_from_typ(doc_row[0], doc_row[2])
+        else:
+            db.session.execute(
+                text("UPDATE dokument SET ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+                {
+                    'doc_id': dokument_id,
+                    'ostatni_edytor': current_user.id,
+                }
+            )
+
+        db.session.commit()
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Błąd podpisania i akceptacji załącznika 2: {e}')
+        return False
+
+
+def reject_attachment1(dokument_id):
+    """Odrzucenie załącznika 1 przez dyrektora lub opiekuna firmowego."""
+    from app import db
+    from sqlalchemy import text
+
+    try:
+        doc_row = db.session.execute(
+            text("SELECT status FROM dokument WHERE id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if not doc_row or doc_row[0] != 'awaiting_signature':
+            return False
+
+        role_name = current_user.rola.nazwa
+        if role_name not in ('dyrektor', 'opiekun_firmowy'):
+            return False
+
+        db.session.execute(
+            text("UPDATE dokument SET status = :status, ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+            {
+                'doc_id': dokument_id,
+                'status': 'rejected',
+                'ostatni_edytor': current_user.id,
+            }
+        )
+        db.session.execute(
+            text("UPDATE dokument_podpis SET czy_podpisany = 0, podpisano = NULL WHERE dokument_id = :doc_id"),
+            {'doc_id': dokument_id}
+        )
+        db.session.execute(
+            text("UPDATE dokument_akceptacja SET czy_zaakceptowany = 0, zaakceptowano = NULL WHERE dokument_id = :doc_id"),
+            {'doc_id': dokument_id}
+        )
+        db.session.execute(
+            text(
+                "UPDATE udostepniony_dokument SET moze_edytowac = 1 "
+                "WHERE dokument_id = :doc_id AND rola_id = (SELECT id FROM role WHERE nazwa = 'dziekanat')"
+            ),
+            {'doc_id': dokument_id}
+        )
+
+        db.session.commit()
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Błąd odrzucenia załącznika 1: {e}')
         return False
 
 
@@ -412,6 +739,7 @@ def index():
             label = kod.replace('ZAL_', 'Załącznik ') if kod.startswith('ZAL_') else kod
             my_documents.append({
                 'id': dr[0],
+                'kod': kod,
                 'label': label,
                 'status': dr[2] or '',
                 'ostatni': dr[3] or '',
@@ -493,37 +821,133 @@ def profil_studenta():
 @login_required
 def zalacznik_1():
     """Formularz załącznika 1 - Porozumienie z zakładem pracy."""
-    if current_user.rola.nazwa != 'dziekanat':
-        flash('Tylko dziekanat może wypełniać załącznik 1.', 'danger')
-        return redirect(url_for('dashboard.index'))
-
-    selected_practice_id = request.args.get('selected_praktyka_id', type=int)
-    selected_student = None
-
-    if request.method == 'POST':
-        form_data = {
-            'nr_porozumienia': request.form.get('nr_porozumienia'),
-            'data_zawarcia': request.form.get('data_zawarcia'),
-            'nazwa_zakladu_pracy': request.form.get('nazwa_zakladu_pracy'),
-            'reprezentant_uczelni_id': request.form.get('reprezentant_uczelni_id'),
-            'reprezentant_firmy': request.form.get('reprezentant_firmy'),
-            'imie_nazwisko_studenta': request.form.get('imie_nazwisko_studenta'),
-            'student_id': request.form.get('student_id'),
-            'termin_od': request.form.get('termin_od'),
-            'termin_do': request.form.get('termin_do'),
-            'wymiar_praktyki': request.form.get('wymiar_praktyki'),
-        }
-
-        saved = save_attachment1_data(form_data)
-        if saved:
-            flash('Dane załącznika 1 zostały zapisane.', 'success')
-            return redirect(url_for('dashboard.index'))
-
-        flash('Wystąpił problem podczas zapisu formularza.', 'danger')
-
     from app import db
     from sqlalchemy import text
     from app.models.uzytkownik import Uzytkownik, Rola
+
+    selected_practice_id = request.args.get('selected_praktyka_id', type=int)
+    dokument_id = request.args.get('dokument_id', type=int) or request.form.get('dokument_id', type=int)
+    action_query = request.args.get('action')
+    selected_student = None
+    dokument = None
+    dokument_data = {}
+    status = None
+    editing_allowed = True
+    opiekun_prefill = ''
+
+    if current_user.rola.nazwa != 'dziekanat' and not dokument_id:
+        flash('Tylko dziekanat może wypełniać załącznik 1.', 'danger')
+        return redirect(url_for('dashboard.index'))
+
+    if action_query and dokument_id:
+        if action_query == 'sign':
+            if current_user.rola.nazwa not in ('dyrektor', 'opiekun_firmowy'):
+                flash('Tylko dyrektor lub opiekun firmowy może podpisać i zaakceptować załącznik 1.', 'danger')
+            elif sign_and_accept_attachment1(dokument_id):
+                flash('Załącznik 1 został podpisany i zaakceptowany.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można podpisać tego dokumentu.', 'danger')
+
+        elif action_query == 'reject':
+            if current_user.rola.nazwa not in ('dyrektor', 'opiekun_firmowy'):
+                flash('Tylko dyrektor lub opiekun firmowy może odrzucić załącznik 1.', 'danger')
+            elif reject_attachment1(dokument_id):
+                flash('Załącznik 1 został odrzucony.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można odrzucić tego dokumentu.', 'danger')
+
+    if dokument_id:
+        doc_row = db.session.execute(
+            text(
+                "SELECT id, status, praktyka_id FROM dokument "
+                "WHERE id = :doc_id AND typ_dokumentu_id = (SELECT id FROM typ_dokumentu WHERE kod='ZAL_1')"
+            ),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if doc_row:
+            dokument = {'id': doc_row[0], 'status': doc_row[1], 'praktyka_id': doc_row[2]}
+            status = doc_row[1]
+            selected_practice_id = selected_practice_id or dokument['praktyka_id']
+            editing_allowed = status == 'rejected'
+
+            dane = db.session.execute(
+                text("SELECT klucz, wartosc FROM dane_dokumentu WHERE dokument_id = :doc_id"),
+                {'doc_id': dokument_id}
+            ).fetchall()
+            dokument_data = {row[0]: row[1] for row in dane}
+
+            if selected_practice_id and not selected_student:
+                student_row = db.session.execute(
+                    text(
+                        "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu "
+                        "FROM praktyka p "
+                        "JOIN uzytkownik u ON p.student_id = u.id "
+                        "WHERE p.id = :praktyka_id"
+                    ),
+                    {'praktyka_id': selected_practice_id}
+                ).fetchone()
+                if student_row:
+                    selected_student = {
+                        'id': student_row[0],
+                        'imie': student_row[1] or '',
+                        'nazwisko': student_row[2] or '',
+                        'numer_albumu': student_row[3] or '',
+                    }
+        else:
+            flash('Nie znaleziono załącznika 1.', 'danger')
+            return redirect(url_for('dashboard.index'))
+
+    if request.method == 'POST':
+        action = request.form.get('action', 'save')
+
+        if action == 'save':
+            if current_user.rola.nazwa != 'dziekanat':
+                flash('Tylko dziekanat może zapisać załącznik 1.', 'danger')
+                return redirect(url_for('dashboard.index'))
+
+            if dokument_id and status != 'rejected':
+                flash('Ten dokument nie może być edytowany.', 'danger')
+                return redirect(url_for('dashboard.index'))
+
+            form_data = {
+                'nr_porozumienia': request.form.get('nr_porozumienia'),
+                'data_zawarcia': request.form.get('data_zawarcia'),
+                'nazwa_zakladu_pracy': request.form.get('nazwa_zakladu_pracy'),
+                'reprezentant_uczelni_id': request.form.get('reprezentant_uczelni_id'),
+                'reprezentant_firmy': request.form.get('reprezentant_firmy'),
+                'imie_nazwisko_studenta': request.form.get('imie_nazwisko_studenta'),
+                'student_id': request.form.get('student_id'),
+                'termin_od': request.form.get('termin_od'),
+                'termin_do': request.form.get('termin_do'),
+                'wymiar_praktyki': request.form.get('wymiar_praktyki'),
+            }
+
+            if save_attachment1_data(form_data, dokument_id):
+                flash('Dane załącznika 1 zostały zapisane.', 'success')
+                return redirect(url_for('dashboard.index'))
+
+            flash('Wystąpił problem podczas zapisu formularza.', 'danger')
+
+        elif action == 'sign' and dokument_id:
+            if current_user.rola.nazwa not in ('dyrektor', 'opiekun_firmowy'):
+                flash('Tylko dyrektor lub opiekun firmowy może podpisać i zaakceptować załącznik 1.', 'danger')
+            elif sign_and_accept_attachment1(dokument_id):
+                flash('Załącznik 1 został podpisany i zaakceptowany.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można podpisać tego dokumentu.', 'danger')
+
+        elif action == 'reject' and dokument_id:
+            if current_user.rola.nazwa not in ('dyrektor', 'opiekun_firmowy'):
+                flash('Tylko dyrektor lub opiekun firmowy może odrzucić załącznik 1.', 'danger')
+            elif reject_attachment1(dokument_id):
+                flash('Załącznik 1 został odrzucony.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można odrzucić tego dokumentu.', 'danger')
 
     rola_student = Rola.query.filter_by(nazwa='student').first()
     studenci = (
@@ -560,7 +984,6 @@ def zalacznik_1():
                 'numer_albumu': student_row[3] or '',
             }
         # Pobierz opiekuna uczelnianego z wybranej praktyki aby móc prefillować pole
-        opiekun_prefill = ''
         opiekun_row = db.session.execute(
             text("SELECT opiekun_uczelniany_id FROM praktyka WHERE id = :praktyka_id"),
             {'praktyka_id': selected_practice_id}
@@ -591,8 +1014,8 @@ def zalacznik_1():
             'termin_do': row[4] or ''
         }
 
-    nr_porozumienia = generate_agreement_number()
-    data_zawarcia = date.today().isoformat()
+    nr_porozumienia = dokument_data.get('nr_porozumienia', generate_agreement_number())
+    data_zawarcia = dokument_data.get('data_zawarcia', date.today().isoformat())
 
     return render_template(
         'forms/zalacznik_1.html',
@@ -603,6 +1026,10 @@ def zalacznik_1():
         student_practice=student_practice,
         student_practice_json=json.dumps(student_practice),
         selected_student=selected_student,
+        dokument=dokument,
+        dokument_data=dokument_data,
+        editing_allowed=editing_allowed,
+        opiekun_prefill=opiekun_prefill,
     )
 
 
@@ -642,6 +1069,7 @@ def save_attachment2_data(form_data):
             current_app.logger.error('Nie znaleziono typu dokumentu ZAL_2 przy zapisie załącznika 2.')
             return False
 
+        # Utwórz dokument w statusie awaiting_signature (po wypełnieniu przez dziekanat)
         db.session.execute(
             text(
                 "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
@@ -651,10 +1079,12 @@ def save_attachment2_data(form_data):
                 'praktyka_id': praktyka_id,
                 'typ_id': typ_id,
                 'utworzony_przez': current_user.id,
-                'status': 'completed',
+                'status': 'awaiting_signature',
                 'ostatni_edytor': current_user.id,
             }
         )
+
+        db.session.commit()
 
         doc_row = db.session.execute(
             text("SELECT id FROM dokument WHERE praktyka_id=:praktyka_id AND typ_dokumentu_id=:typ_id ORDER BY id DESC LIMIT 1"),
@@ -663,15 +1093,17 @@ def save_attachment2_data(form_data):
         dokument_id = doc_row[0] if doc_row else None
 
         if dokument_id:
+            # Utwórz wpisy udostępnionego dokumentu — na etapie oczekiwania nikt nie może edytować
             role_rows = db.session.execute(
                 text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','dziekanat','opiekun_uczelniany','opiekun_firmowy','dyrektor')")
             ).fetchall()
             role_ids = {row[0]: row[1] for row in role_rows}
 
+            # student: tylko podgląd
             if student_id and role_ids.get('student'):
                 db.session.execute(
                     text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
                         " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
                     ),
                     {
@@ -682,10 +1114,11 @@ def save_attachment2_data(form_data):
                     }
                 )
 
+            # dziekanat: po utworzeniu nie edytuje już dokumentu
             if role_ids.get('dziekanat'):
                 db.session.execute(
                     text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
                         " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
                     ),
                     {
@@ -695,10 +1128,11 @@ def save_attachment2_data(form_data):
                     }
                 )
 
+            # opiekun uczelniany: podgląd
             if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
                 db.session.execute(
                     text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
                         " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
                     ),
                     {
@@ -709,10 +1143,11 @@ def save_attachment2_data(form_data):
                     }
                 )
 
+            # opiekun firmowy: może podpisać i zaakceptować
             if opiekun_firmowy_id and role_ids.get('opiekun_firmowy'):
                 db.session.execute(
                     text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
                         " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 1, 1)"
                     ),
                     {
@@ -723,10 +1158,11 @@ def save_attachment2_data(form_data):
                     }
                 )
 
+            # dyrektor: może podpisać i zaakceptować
             if role_ids.get('dyrektor'):
                 db.session.execute(
                     text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                        "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
                         " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 1, 1)"
                     ),
                     {
@@ -736,8 +1172,20 @@ def save_attachment2_data(form_data):
                     }
                 )
 
-        update_practice_stage_from_typ(praktyka_id, typ_id)
-        db.session.commit()
+            # Utwórz wstępne wpisy dokument_podpis dla oczekiwanych podpisujących (0)
+            if role_ids.get('dyrektor'):
+                db.session.execute(
+                    text("INSERT OR IGNORE INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany) VALUES (:doc_id, (SELECT id FROM uzytkownik WHERE rola_id = :rola_id LIMIT 1), 0)"),
+                    {'doc_id': dokument_id, 'rola_id': role_ids['dyrektor']}
+                )
+            if opiekun_firmowy_id:
+                db.session.execute(
+                    text("INSERT OR IGNORE INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany) VALUES (:doc_id, :podpisujacy_id, 0)"),
+                    {'doc_id': dokument_id, 'podpisujacy_id': opiekun_firmowy_id}
+                )
+
+            db.session.commit()
+
         return True
     except Exception as e:
         db.session.rollback()
@@ -754,15 +1202,31 @@ def zalacznik_2():
     Inni użytkownicy mogą jedynie przeglądać istniejące dokumenty
     (widok przeglądowy niezaimplementowany tutaj).
     """
-    # Uprawnienia tworzenia
-    if current_user.rola.nazwa != 'dziekanat':
+    selected_practice_id = request.args.get('selected_praktyka_id', type=int)
+    dokument_id = request.args.get('dokument_id', type=int) or request.form.get('dokument_id', type=int)
+    action_query = request.args.get('action')
+    selected_student = None
+    dokument = None
+    dokument_data = {}
+
+    # Uprawnienia tworzenia: tylko dziekanat może tworzyć nowy dokument
+    if current_user.rola.nazwa != 'dziekanat' and not dokument_id:
         flash('Tylko dziekanat może utworzyć załącznik 2.', 'danger')
         return redirect(url_for('dashboard.index'))
 
-    selected_practice_id = request.args.get('selected_praktyka_id', type=int)
-    selected_student = None
+    # Obsługa akcji podpisania (GET linki z dashboard)
+    if action_query and dokument_id:
+        if action_query == 'sign':
+            if current_user.rola.nazwa not in ('dyrektor', 'opiekun_firmowy'):
+                flash('Tylko dyrektor lub opiekun firmowy może podpisać i zaakceptować załącznik 2.', 'danger')
+            elif sign_and_accept_attachment2(dokument_id):
+                flash('Załącznik 2 został podpisany i zaakceptowany.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można podpisać tego dokumentu.', 'danger')
 
     if request.method == 'POST':
+        # tworzenie dokumentu (dziekanat)
         form_data = {
             'student_id': request.form.get('student_id')
         }
@@ -793,6 +1257,27 @@ def zalacznik_2():
                 'numer_albumu': student_row[3] or '',
             }
 
+    # Jeśli podano dokument_id — pobierz dokument do podglądu (bez możliwości edycji)
+    if dokument_id:
+        doc_row = db.session.execute(
+            text(
+                "SELECT id, status, praktyka_id FROM dokument "
+                "WHERE id = :doc_id AND typ_dokumentu_id = (SELECT id FROM typ_dokumentu WHERE kod='ZAL_2')"
+            ),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if doc_row:
+            dokument = {'id': doc_row[0], 'status': doc_row[1], 'praktyka_id': doc_row[2]}
+            dane = db.session.execute(
+                text("SELECT klucz, wartosc FROM dane_dokumentu WHERE dokument_id = :doc_id"),
+                {'doc_id': dokument_id}
+            ).fetchall()
+            dokument_data = {row[0]: row[1] for row in dane}
+        else:
+            flash('Nie znaleziono załącznika 2.', 'danger')
+            return redirect(url_for('dashboard.index'))
+
     rola_student = Rola.query.filter_by(nazwa='student').first()
     studenci = []
     if not selected_student and rola_student:
@@ -803,8 +1288,8 @@ def zalacznik_2():
             .all()
         )
 
-    # GET: pokaż ekran potwierdzenia utworzenia dokumentu
-    return render_template('forms/zalacznik_2.html', studenci=studenci, selected_student=selected_student)
+    # GET: pokaż ekran potwierdzenia utworzenia dokumentu lub podgląd istniejącego
+    return render_template('forms/zalacznik_2.html', studenci=studenci, selected_student=selected_student, dokument=dokument, dokument_data=dokument_data)
 
 
 def save_attachment2a_data(form_data):
@@ -822,6 +1307,8 @@ def save_attachment2a_data(form_data):
         ppz_dzial = form_data.get('ppz_dzial', [])
         hpz_dzial = form_data.get('hpz_dzial', [])
         hpz_dni = form_data.get('hpz_dni', [])
+        nr_indeksu = form_data.get('nr_indeksu')
+        data_uzgodnienia = form_data.get('data_uzgodnienia') or date.today().isoformat()
 
         if not student_id:
             current_app.logger.error('Brak wybranego studenta przy zapisie załącznika 2a.')
@@ -846,131 +1333,455 @@ def save_attachment2a_data(form_data):
             current_app.logger.error('Nie znaleziono typu dokumentu ZAL_2A przy zapisie załącznika 2a.')
             return False
 
-        db.session.execute(
-            text(
-                "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
-                " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
-            ),
-            {
-                'praktyka_id': praktyka_id,
-                'typ_id': typ_id,
-                'utworzony_przez': current_user.id,
-                'status': 'completed',
-                'ostatni_edytor': current_user.id,
-            }
-        )
-        update_practice_stage_from_typ(praktyka_id, typ_id)
-        db.session.commit()
-
-        document_row = db.session.execute(
-            text("SELECT id FROM dokument WHERE praktyka_id=:praktyka_id AND typ_dokumentu_id=:typ_id ORDER BY id DESC LIMIT 1"),
+        # Sprawdź czy dokument już istnieje
+        existing = db.session.execute(
+            text("SELECT id, status FROM dokument WHERE praktyka_id = :praktyka_id AND typ_dokumentu_id = :typ_id ORDER BY id DESC LIMIT 1"),
             {'praktyka_id': praktyka_id, 'typ_id': typ_id}
         ).fetchone()
-        dokument_id = document_row[0] if document_row else None
+
+        dokument_id = existing[0] if existing else None
+        dokument_status = existing[1] if existing else None
+
+        # Jeśli dokument nie istnieje: tworzy go dziekanat w statusie in_progress
         if not dokument_id:
-            current_app.logger.error('Nie udało się pobrać dokumentu po zapisie załącznika 2a.')
+            db.session.execute(
+                text(
+                    "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
+                    " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
+                ),
+                {
+                    'praktyka_id': praktyka_id,
+                    'typ_id': typ_id,
+                    'utworzony_przez': current_user.id,
+                    'status': 'in_progress',
+                    'ostatni_edytor': current_user.id,
+                }
+            )
+            db.session.commit()
+
+            document_row = db.session.execute(
+                text("SELECT id FROM dokument WHERE praktyka_id=:praktyka_id AND typ_dokumentu_id=:typ_id ORDER BY id DESC LIMIT 1"),
+                {'praktyka_id': praktyka_id, 'typ_id': typ_id}
+            ).fetchone()
+            dokument_id = document_row[0] if document_row else None
+
+            if current_user.rola.nazwa == 'dziekanat' and dokument_id:
+                role_rows = db.session.execute(
+                    text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','dziekanat','opiekun_uczelniany','opiekun_firmowy','dyrektor')")
+                ).fetchall()
+                role_ids = {row[0]: row[1] for row in role_rows}
+
+                if student_id and role_ids.get('student'):
+                    db.session.execute(
+                        text(
+                            "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                            " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 1, 0)"
+                        ),
+                        {
+                            'udostepniajacy': current_user.id,
+                            'dokument_id': dokument_id,
+                            'adresat': student_id,
+                            'rola_id': role_ids['student'],
+                        }
+                    )
+
+                if role_ids.get('dziekanat'):
+                    db.session.execute(
+                        text(
+                            "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                            " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                        ),
+                        {
+                            'udostepniajacy': current_user.id,
+                            'dokument_id': dokument_id,
+                            'rola_id': role_ids['dziekanat'],
+                        }
+                    )
+
+                if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
+                    db.session.execute(
+                        text(
+                            "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                            " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 1, 1)"
+                        ),
+                        {
+                            'udostepniajacy': current_user.id,
+                            'dokument_id': dokument_id,
+                            'adresat': opiekun_uczelniany_id,
+                            'rola_id': role_ids['opiekun_uczelniany'],
+                        }
+                    )
+
+                if opiekun_firmowy_id and role_ids.get('opiekun_firmowy'):
+                    db.session.execute(
+                        text(
+                            "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                            " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 1)"
+                        ),
+                        {
+                            'udostepniajacy': current_user.id,
+                            'dokument_id': dokument_id,
+                            'adresat': opiekun_firmowy_id,
+                            'rola_id': role_ids['opiekun_firmowy'],
+                        }
+                    )
+
+                if role_ids.get('dyrektor'):
+                    db.session.execute(
+                        text(
+                            "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                            " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                        ),
+                        {
+                            'udostepniajacy': current_user.id,
+                            'dokument_id': dokument_id,
+                            'rola_id': role_ids['dyrektor'],
+                        }
+                    )
+
+        # If updating existing document
+        if dokument_id:
+            # If current user is opiekun_firmowy -> allow edits when in_progress or rejected
+            if current_user.rola.nazwa == 'opiekun_firmowy' and dokument_status in (None, 'in_progress', 'rejected'):
+                # remove old program entries
+                db.session.execute(text("DELETE FROM program_harmonogram_praktyki WHERE dokument_id = :doc_id"), {'doc_id': dokument_id})
+                # insert new program/harmonogram rows
+                for idx in range(13):
+                    numer = idx + 1
+                    ppz_value = ppz_dzial[idx].strip() if idx < len(ppz_dzial) else ''
+                    hpz_value = hpz_dzial[idx].strip() if idx < len(hpz_dzial) else ''
+                    hpz_value_days = hpz_dni[idx].strip() if idx < len(hpz_dni) else ''
+                    hpz_days = int(hpz_value_days) if str(hpz_value_days).isdigit() else 0
+
+                    db.session.execute(
+                        text(
+                            "INSERT INTO program_harmonogram_praktyki (dokument_id, numer, ppz_dzial, hpz_dzial, hpz_dni)"
+                            " VALUES (:dokument_id, :numer, :ppz, :hpz, :dni)"
+                        ),
+                        {
+                            'dokument_id': dokument_id,
+                            'numer': numer,
+                            'ppz': ppz_value,
+                            'hpz': hpz_value,
+                            'dni': hpz_days,
+                        }
+                    )
+
+                # zapisz dane dokumentu (nr indeksu)
+                db.session.execute(text("DELETE FROM dane_dokumentu WHERE dokument_id = :doc_id"), {'doc_id': dokument_id})
+                if nr_indeksu:
+                    db.session.execute(text("INSERT INTO dane_dokumentu (dokument_id, klucz, wartosc) VALUES (:doc_id, 'nr_indeksu', :val)"), {'doc_id': dokument_id, 'val': nr_indeksu})
+
+                # sprawdź kompletność: wszystkie pola ppz_dzial i hpz_dzial niepuste
+                complete = True
+                for idx in range(13):
+                    ppz_value = ppz_dzial[idx].strip() if idx < len(ppz_dzial) else ''
+                    hpz_value = hpz_dzial[idx].strip() if idx < len(hpz_dzial) else ''
+                    if not ppz_value or not hpz_value:
+                        complete = False
+                        break
+
+                if complete:
+                    # zamknij edycję i przejdź do awaiting_signature
+                    db.session.execute(text("UPDATE dokument SET status = 'awaiting_signature', ostatni_edytor = :ostatni WHERE id = :doc_id"), {'ostatni': current_user.id, 'doc_id': dokument_id})
+                    # zablokuj edycję opiekuna firmowego
+                    db.session.execute(text("UPDATE udostepniony_dokument SET moze_edytowac = 0 WHERE dokument_id = :doc_id AND rola_id = (SELECT id FROM role WHERE nazwa = 'opiekun_firmowy')"), {'doc_id': dokument_id})
+                    # utwórz wpisy podpisów i akceptacji dla oczekiwanych osób
+                    # student podpis
+                    if student_id:
+                        result = db.session.execute(
+                            text(
+                                "UPDATE dokument_podpis SET czy_podpisany = 0, podpisano = NULL "
+                                "WHERE dokument_id = :doc_id AND podpisujacy_id = :podpisujacy_id"
+                            ),
+                            {'doc_id': dokument_id, 'podpisujacy_id': student_id}
+                        )
+                        if result.rowcount == 0:
+                            db.session.execute(
+                                text(
+                                    "INSERT INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany) "
+                                    "VALUES (:doc_id, :podpisujacy_id, 0)"
+                                ),
+                                {'doc_id': dokument_id, 'podpisujacy_id': student_id}
+                            )
+                    # opiekun uczelniany
+                    if opiekun_uczelniany_id:
+                        result = db.session.execute(
+                            text(
+                                "UPDATE dokument_podpis SET czy_podpisany = 0, podpisano = NULL "
+                                "WHERE dokument_id = :doc_id AND podpisujacy_id = :podpisujacy_id"
+                            ),
+                            {'doc_id': dokument_id, 'podpisujacy_id': opiekun_uczelniany_id}
+                        )
+                        if result.rowcount == 0:
+                            db.session.execute(
+                                text(
+                                    "INSERT INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany) "
+                                    "VALUES (:doc_id, :podpisujacy_id, 0)"
+                                ),
+                                {'doc_id': dokument_id, 'podpisujacy_id': opiekun_uczelniany_id}
+                            )
+                        result = db.session.execute(
+                            text(
+                                "UPDATE dokument_akceptacja SET czy_zaakceptowany = 0, zaakceptowano = NULL "
+                                "WHERE dokument_id = :doc_id AND akceptujacy_id = :akceptujacy_id"
+                            ),
+                            {'doc_id': dokument_id, 'akceptujacy_id': opiekun_uczelniany_id}
+                        )
+                        if result.rowcount == 0:
+                            db.session.execute(
+                                text(
+                                    "INSERT INTO dokument_akceptacja (dokument_id, akceptujacy_id, czy_zaakceptowany) "
+                                    "VALUES (:doc_id, :akceptujacy_id, 0)"
+                                ),
+                                {'doc_id': dokument_id, 'akceptujacy_id': opiekun_uczelniany_id}
+                            )
+                    # opiekun firmowy
+                    if opiekun_firmowy_id:
+                        result = db.session.execute(
+                            text(
+                                "UPDATE dokument_podpis SET czy_podpisany = 0, podpisano = NULL "
+                                "WHERE dokument_id = :doc_id AND podpisujacy_id = :podpisujacy_id"
+                            ),
+                            {'doc_id': dokument_id, 'podpisujacy_id': opiekun_firmowy_id}
+                        )
+                        if result.rowcount == 0:
+                            db.session.execute(
+                                text(
+                                    "INSERT INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany) "
+                                    "VALUES (:doc_id, :podpisujacy_id, 0)"
+                                ),
+                                {'doc_id': dokument_id, 'podpisujacy_id': opiekun_firmowy_id}
+                            )
+                        result = db.session.execute(
+                            text(
+                                "UPDATE dokument_akceptacja SET czy_zaakceptowany = 0, zaakceptowano = NULL "
+                                "WHERE dokument_id = :doc_id AND akceptujacy_id = :akceptujacy_id"
+                            ),
+                            {'doc_id': dokument_id, 'akceptujacy_id': opiekun_firmowy_id}
+                        )
+                        if result.rowcount == 0:
+                            db.session.execute(
+                                text(
+                                    "INSERT INTO dokument_akceptacja (dokument_id, akceptujacy_id, czy_zaakceptowany) "
+                                    "VALUES (:doc_id, :akceptujacy_id, 0)"
+                                ),
+                                {'doc_id': dokument_id, 'akceptujacy_id': opiekun_firmowy_id}
+                            )
+
+                    # usuń ewentualne duplikaty
+                    db.session.execute(
+                        text(
+                            "DELETE FROM dokument_podpis "
+                            "WHERE dokument_id = :doc_id "
+                            "AND id NOT IN (SELECT MIN(id) FROM dokument_podpis WHERE dokument_id = :doc_id GROUP BY podpisujacy_id)"
+                        ),
+                        {'doc_id': dokument_id}
+                    )
+                    db.session.execute(
+                        text(
+                            "DELETE FROM dokument_akceptacja "
+                            "WHERE dokument_id = :doc_id "
+                            "AND id NOT IN (SELECT MIN(id) FROM dokument_akceptacja WHERE dokument_id = :doc_id GROUP BY akceptujacy_id)"
+                        ),
+                        {'doc_id': dokument_id}
+                    )
+                else:
+                    # tylko aktualizuj ostatniego edytora
+                    db.session.execute(text("UPDATE dokument SET ostatni_edytor = :ostatni WHERE id = :doc_id"), {'ostatni': current_user.id, 'doc_id': dokument_id})
+
+            elif current_user.rola.nazwa == 'dziekanat':
+                # dziekanat może tylko utworzyć dokument i zapisać podstawowe dane przy tworzeniu
+                db.session.execute(text("DELETE FROM dane_dokumentu WHERE dokument_id = :doc_id"), {'doc_id': dokument_id})
+                if nr_indeksu:
+                    db.session.execute(text("INSERT INTO dane_dokumentu (dokument_id, klucz, wartosc) VALUES (:doc_id, 'nr_indeksu', :val)"), {'doc_id': dokument_id, 'val': nr_indeksu})
+                db.session.execute(text("UPDATE dokument SET ostatni_edytor = :ostatni WHERE id = :doc_id"), {'ostatni': current_user.id, 'doc_id': dokument_id})
+            else:
+                # brak uprawnień do zapisu
+                return False
+
+            db.session.commit()
+            return True
+
+        return False
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Błąd zapisu załącznika 2a: {e}')
+        return False
+
+
+def sign_and_accept_attachment2a(dokument_id):
+    """Podpisanie i (dla uprawnionych) akceptacja załącznika 2a."""
+    from app import db
+    from sqlalchemy import text
+
+    try:
+        doc_row = db.session.execute(
+            text("SELECT praktyka_id, status, typ_dokumentu_id FROM dokument WHERE id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if not doc_row or doc_row[1] != 'awaiting_signature':
             return False
 
-        for idx in range(13):
-            numer = idx + 1
-            ppz_value = ppz_dzial[idx].strip() if idx < len(ppz_dzial) else ''
-            hpz_value = hpz_dzial[idx].strip() if idx < len(hpz_dzial) else ''
-            hpz_value_days = hpz_dni[idx].strip() if idx < len(hpz_dni) else ''
-            hpz_days = int(hpz_value_days) if hpz_value_days.isdigit() else 0
+        role_name = current_user.rola.nazwa
+        if role_name not in ('student', 'opiekun_uczelniany', 'opiekun_firmowy'):
+            return False
 
+        # student only signs
+        result = db.session.execute(
+            text(
+                "UPDATE dokument_podpis SET czy_podpisany = 1, podpisano = :podpisano "
+                "WHERE dokument_id = :doc_id AND podpisujacy_id = :podpisujacy_id"
+            ),
+            {
+                'doc_id': dokument_id,
+                'podpisujacy_id': current_user.id,
+                'podpisano': datetime.now(),
+            }
+        )
+        if result.rowcount == 0:
             db.session.execute(
                 text(
-                    "INSERT INTO program_harmonogram_praktyki (dokument_id, numer, ppz_dzial, hpz_dzial, hpz_dni)"
-                    " VALUES (:dokument_id, :numer, :ppz, :hpz, :dni)"
+                    "INSERT INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany, podpisano)"
+                    " VALUES (:doc_id, :podpisujacy_id, 1, :podpisano)"
                 ),
                 {
-                    'dokument_id': dokument_id,
-                    'numer': numer,
-                    'ppz': ppz_value,
-                    'hpz': hpz_value,
-                    'dni': hpz_days,
+                    'doc_id': dokument_id,
+                    'podpisujacy_id': current_user.id,
+                    'podpisano': datetime.now(),
                 }
             )
 
-        # Utwórz wpisy udostępnionego dokumentu
-        role_rows = db.session.execute(
-            text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','dziekanat','opiekun_uczelniany','opiekun_firmowy','dyrektor')")
-        ).fetchall()
-        role_ids = {row[0]: row[1] for row in role_rows}
-
-        if student_id and role_ids.get('student'):
-            db.session.execute(
+        # opiekun_uczelniany and opiekun_firmowy also accept
+        if role_name in ('opiekun_uczelniany', 'opiekun_firmowy'):
+            result = db.session.execute(
                 text(
-                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 1, 0)"
+                    "UPDATE dokument_akceptacja SET czy_zaakceptowany = 1, zaakceptowano = :zaakceptowano "
+                    "WHERE dokument_id = :doc_id AND akceptujacy_id = :akceptujacy_id"
                 ),
                 {
-                    'udostepniajacy': current_user.id,
-                    'dokument_id': dokument_id,
-                    'adresat': student_id,
-                    'rola_id': role_ids['student'],
+                    'doc_id': dokument_id,
+                    'akceptujacy_id': current_user.id,
+                    'zaakceptowano': datetime.now(),
                 }
             )
+            if result.rowcount == 0:
+                db.session.execute(
+                    text(
+                        "INSERT INTO dokument_akceptacja (dokument_id, akceptujacy_id, czy_zaakceptowany, zaakceptowano)"
+                        " VALUES (:doc_id, :akceptujacy_id, 1, :zaakceptowano)"
+                    ),
+                    {
+                        'doc_id': dokument_id,
+                        'akceptujacy_id': current_user.id,
+                        'zaakceptowano': datetime.now(),
+                    }
+                )
 
-        if role_ids.get('dziekanat'):
+        signed_count = db.session.execute(
+            text(
+                "SELECT COUNT(DISTINCT dp.podpisujacy_id) FROM dokument_podpis dp "
+                "JOIN uzytkownik u ON dp.podpisujacy_id = u.id "
+                "JOIN role r ON u.rola_id = r.id "
+                "WHERE dp.dokument_id = :doc_id AND dp.czy_podpisany = 1 "
+                "AND r.nazwa IN ('student','opiekun_uczelniany','opiekun_firmowy')"
+            ),
+            {'doc_id': dokument_id}
+        ).scalar()
+
+        accepted_count = db.session.execute(
+            text(
+                "SELECT COUNT(DISTINCT da.akceptujacy_id) FROM dokument_akceptacja da "
+                "JOIN uzytkownik u ON da.akceptujacy_id = u.id "
+                "JOIN role r ON u.rola_id = r.id "
+                "WHERE da.dokument_id = :doc_id AND da.czy_zaakceptowany = 1 "
+                "AND r.nazwa IN ('opiekun_uczelniany','opiekun_firmowy')"
+            ),
+            {'doc_id': dokument_id}
+        ).scalar()
+
+        if signed_count >= 3 and accepted_count >= 2:
             db.session.execute(
-                text(
-                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
-                ),
+                text("UPDATE dokument SET status = :status, ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
                 {
-                    'udostepniajacy': current_user.id,
-                    'dokument_id': dokument_id,
-                    'rola_id': role_ids['dziekanat'],
+                    'doc_id': dokument_id,
+                    'status': 'completed',
+                    'ostatni_edytor': current_user.id,
                 }
             )
-
-        if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
             db.session.execute(
-                text(
-                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 1, 1)"
-                ),
-                {
-                    'udostepniajacy': current_user.id,
-                    'dokument_id': dokument_id,
-                    'adresat': opiekun_uczelniany_id,
-                    'rola_id': role_ids['opiekun_uczelniany'],
-                }
+                text("INSERT OR IGNORE INTO dane_dokumentu (dokument_id, klucz, wartosc) VALUES (:doc_id, 'data_uzgodnienia', :val)"),
+                {'doc_id': dokument_id, 'val': date.today().isoformat()}
             )
-
-        if opiekun_firmowy_id and role_ids.get('opiekun_firmowy'):
+            update_practice_stage_from_typ(doc_row[0], doc_row[2])
+        else:
             db.session.execute(
-                text(
-                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 1)"
-                ),
+                text("UPDATE dokument SET ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
                 {
-                    'udostepniajacy': current_user.id,
-                    'dokument_id': dokument_id,
-                    'adresat': opiekun_firmowy_id,
-                    'rola_id': role_ids['opiekun_firmowy'],
-                }
-            )
-
-        if role_ids.get('dyrektor'):
-            db.session.execute(
-                text(
-                    "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
-                ),
-                {
-                    'udostepniajacy': current_user.id,
-                    'dokument_id': dokument_id,
-                    'rola_id': role_ids['dyrektor'],
+                    'doc_id': dokument_id,
+                    'ostatni_edytor': current_user.id,
                 }
             )
 
         db.session.commit()
         return True
+
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f'Błąd zapisu załącznika 2a: {e}')
+        current_app.logger.error(f'Błąd podpisania i akceptacji załącznika 2a: {e}')
+        return False
+
+
+def reject_attachment2a(dokument_id):
+    """Odrzucenie załącznika 2a przez opiekuna uczelnianego lub opiekuna firmowego."""
+    from app import db
+    from sqlalchemy import text
+
+    try:
+        doc_row = db.session.execute(
+            text("SELECT status FROM dokument WHERE id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if not doc_row or doc_row[0] != 'awaiting_signature':
+            return False
+
+        role_name = current_user.rola.nazwa
+        if role_name not in ('opiekun_uczelniany', 'opiekun_firmowy'):
+            return False
+
+        db.session.execute(
+            text("UPDATE dokument SET status = :status, ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+            {
+                'doc_id': dokument_id,
+                'status': 'rejected',
+                'ostatni_edytor': current_user.id,
+            }
+        )
+        db.session.execute(
+            text("UPDATE dokument_podpis SET czy_podpisany = 0, podpisano = NULL WHERE dokument_id = :doc_id"),
+            {'doc_id': dokument_id}
+        )
+        db.session.execute(
+            text("UPDATE dokument_akceptacja SET czy_zaakceptowany = 0, zaakceptowano = NULL WHERE dokument_id = :doc_id"),
+            {'doc_id': dokument_id}
+        )
+        # przywróć możliwość edycji opiekunowi firmowemu
+        db.session.execute(
+            text(
+                "UPDATE udostepniony_dokument SET moze_edytowac = 1 "
+                "WHERE dokument_id = :doc_id AND rola_id = (SELECT id FROM role WHERE nazwa = 'opiekun_firmowy')"
+            ),
+            {'doc_id': dokument_id}
+        )
+
+        db.session.commit()
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Błąd odrzucenia załącznika 2a: {e}')
         return False
 
 
@@ -984,11 +1795,34 @@ def zalacznik_2a():
     role = current_user.rola.nazwa
     selected_practice_id = request.args.get('selected_praktyka_id', type=int)
     selected_student = None
+    dokument = None
     # default fallbacks for prefilled opiekun (avoid NameError and provide id for template)
     opiekun_prefill = ''
     opiekun_prefill_id = None
     # default fallback for prefilled opiekun (avoids NameError when no practice selected)
     opiekun_prefill = ''
+    dokument_id = request.args.get('dokument_id', type=int) or request.form.get('dokument_id', type=int)
+    action_query = request.args.get('action')
+
+    # obsługa akcji podpisania/odrzucenia
+    if action_query and dokument_id:
+        if action_query == 'sign':
+            if current_user.rola.nazwa not in ('student', 'opiekun_uczelniany', 'opiekun_firmowy'):
+                flash('Nie masz uprawnień do podpisania tego dokumentu.', 'danger')
+            elif sign_and_accept_attachment2a(dokument_id):
+                flash('Dokument został podpisany/zaakceptowany.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można podpisać tego dokumentu.', 'danger')
+
+        elif action_query == 'reject':
+            if current_user.rola.nazwa not in ('opiekun_uczelniany', 'opiekun_firmowy'):
+                flash('Nie masz uprawnień do odrzucenia tego dokumentu.', 'danger')
+            elif reject_attachment2a(dokument_id):
+                flash('Dokument został odrzucony.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można odrzucić tego dokumentu.', 'danger')
 
     # Tworzenie dokumentu tylko przez dziekanat
     if request.method == 'POST':
@@ -1036,6 +1870,18 @@ def zalacznik_2a():
     from app import db
     from sqlalchemy import text
 
+    if dokument_id and not selected_practice_id:
+        existing_doc = db.session.execute(
+            text(
+                "SELECT praktyka_id, status FROM dokument "
+                "WHERE id = :doc_id AND typ_dokumentu_id = (SELECT id FROM typ_dokumentu WHERE kod='ZAL_2A')"
+            ),
+            {'doc_id': dokument_id}
+        ).fetchone()
+        if existing_doc:
+            selected_practice_id = existing_doc[0]
+            dokument = {'id': dokument_id, 'status': existing_doc[1]}
+
     rola_student = Rola.query.filter_by(nazwa='student').first()
     studenci = (
         Uzytkownik.query
@@ -1069,6 +1915,29 @@ def zalacznik_2a():
                 'termin_od': student_row[7] or '',
                 'termin_do': student_row[8] or '',
             }
+
+    # jeśli dokument został utworzony wcześniej, pobierz jego dane i wpisy programu
+    dokument = None
+    dokument_data = {}
+    program_entries = []
+    editing_allowed = False
+    if selected_practice_id:
+        doc_row = db.session.execute(
+            text("SELECT id, status FROM dokument WHERE praktyka_id = :praktyka_id AND typ_dokumentu_id = (SELECT id FROM typ_dokumentu WHERE kod='ZAL_2A') ORDER BY id DESC LIMIT 1"),
+            {'praktyka_id': selected_practice_id}
+        ).fetchone()
+        if doc_row:
+            dokument = {'id': doc_row[0], 'status': doc_row[1]}
+            dokument_id = dokument['id']
+            # pobierz dane dokumentu
+            dane = db.session.execute(text("SELECT klucz, wartosc FROM dane_dokumentu WHERE dokument_id = :doc_id"), {'doc_id': dokument_id}).fetchall()
+            dokument_data = {r[0]: r[1] for r in dane}
+            # pobierz wpisy programu/harmonogramu
+            rows = db.session.execute(text("SELECT numer, ppz_dzial, hpz_dzial, hpz_dni FROM program_harmonogram_praktyki WHERE dokument_id = :doc_id ORDER BY numer"), {'doc_id': dokument_id}).fetchall()
+            program_entries = [{'numer': r[0], 'ppz': r[1] or '', 'hpz': r[2] or '', 'dni': r[3] or 0} for r in rows]
+            # ustal uprawnienia edycji: opiekun_firmowy może edytować gdy status in_progress lub rejected
+            if current_user.rola.nazwa == 'opiekun_firmowy' and dokument['status'] in ('in_progress', 'rejected'):
+                editing_allowed = True
 
     practice_rows = db.session.execute(text(
         "SELECT p.student_id, f.nazwa AS firma_nazwa, u.imie || ' ' || u.nazwisko AS reprezentant_firmy, p.data_rozpoczecia, p.data_zakonczenia "
@@ -1106,6 +1975,10 @@ def zalacznik_2a():
         student_practice_json=json.dumps(student_practice),
         selected_student=selected_student,
         efekty=efekty,
+        dokument=dokument,
+        dokument_data=dokument_data,
+        program_entries=program_entries,
+        editing_allowed=editing_allowed,
     )
 
 
@@ -3705,7 +4578,11 @@ def zalacznik_8():
 
 
 def save_attachment9_data(form_data):
-    """Szkielet zapisu załącznika 9 (Oświadczenie instytucji w sprawie przyjęcia studenta)."""
+    """Zapis załącznika 9 (Oświadczenie instytucji w sprawie przyjęcia studenta).
+    
+    Tworzy dokument ze statusem 'in_progress' i wpis podpisu z czy_podpisano=0.
+    Tworzy praktykę ze statusem 'pending' (będzie aktywowana dopiero przy zatwierdzeniu).
+    """
     from app import db
     from sqlalchemy import text
     from app.models.uzytkownik import Uzytkownik
@@ -3722,69 +4599,185 @@ def save_attachment9_data(form_data):
         termin_od = form_data.get('termin_od')
         termin_do = form_data.get('termin_do')
 
+        if not student_id:
+            return False
+
         # Firma i opiekun firmowy
         firma_id = current_user.firma_id
         opiekun_id = current_user.id
 
         # Pobierz rok akademicki studenta
         rok_akademicki = None
-        if student_id:
-            student = Uzytkownik.query.get(student_id)
-            rok_akademicki = student.rok_akademicki if student else None
+        student = Uzytkownik.query.get(student_id)
+        rok_akademicki = student.rok_akademicki if student else None
 
-        # 1) Utwórz wpis w tabeli `praktyka`
-        ins_praktyka = text(
-            "INSERT INTO praktyka (student_id, firma_id, opiekun_firmowy_id, sciezka, status, data_rozpoczecia, data_zakonczenia, rok_akademicki)"
-            " VALUES (:student_id, :firma_id, :opiekun_id, :sciezka, :status, :data_rozp, :data_zak, :rok)"
-        )
-        db.session.execute(ins_praktyka, {
-            'student_id': student_id,
-            'firma_id': firma_id,
-            'opiekun_id': opiekun_id,
-            'sciezka': 'standard',
-            'status': 'pending',
-            'data_rozp': termin_od,
-            'data_zak': termin_do,
-            'rok': rok_akademicki,
-        })
-        db.session.commit()
-
-        # pobierz id właśnie utworzonej praktyki
-        praktyka_row = db.session.execute(
-            text("SELECT id FROM praktyka WHERE student_id=:student_id AND firma_id=:firma_id ORDER BY id DESC LIMIT 1"),
-            {'student_id': student_id, 'firma_id': firma_id}
+        # 1) Sprawdź czy już istnieje dokument ZAL_9 dla tego studenta
+        existing_doc = db.session.execute(
+            text("""
+                SELECT d.id, d.praktyka_id, d.status FROM dokument d
+                WHERE d.typ_dokumentu_id = (SELECT id FROM typ_dokumentu WHERE kod='ZAL_9')
+                AND d.praktyka_id IN (
+                    SELECT id FROM praktyka WHERE student_id = :student_id
+                )
+                ORDER BY d.id DESC LIMIT 1
+            """),
+            {'student_id': student_id}
         ).fetchone()
-        praktyka_id = praktyka_row[0] if praktyka_row else None
 
-        # 2) Utwórz wpis w tabeli `dokument` powiązany z załącznikiem 9
-        typ_row = db.session.execute(
-            text("SELECT id FROM typ_dokumentu WHERE kod='ZAL_9' LIMIT 1")
-        ).fetchone()
-        typ_id = typ_row[0] if typ_row else None
+        if existing_doc:
+            dokument_id = existing_doc[0]
+            praktyka_id = existing_doc[1]
+            dokument_status = existing_doc[2]
 
-        dokument_id = None
-        if praktyka_id and typ_id:
-            db.session.execute(
-                text(
-                    "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
-                    " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
-                ),
-                {
-                    'praktyka_id': praktyka_id,
-                    'typ_id': typ_id,
-                    'utworzony_przez': current_user.id,
-                    'status': 'completed',
-                    'ostatni_edytor': current_user.id
-                }
+            # Jeśli dokument był odrzucony, przywróć go do ponownej edycji
+            if dokument_status == 'rejected':
+                db.session.execute(
+                    text("UPDATE dokument SET status = 'in_progress', ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+                    {'ostatni_edytor': current_user.id, 'doc_id': dokument_id}
+                )
+                db.session.execute(
+                    text(
+                        "UPDATE udostepniony_dokument SET moze_edytowac = 1 WHERE dokument_id = :doc_id AND rola_id = (SELECT id FROM role WHERE nazwa = 'opiekun_firmowy')"
+                    ),
+                    {'doc_id': dokument_id}
+                )
+            else:
+                db.session.execute(
+                    text("UPDATE dokument SET ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+                    {'ostatni_edytor': current_user.id, 'doc_id': dokument_id}
+                )
+        else:
+            # Utwórz nową praktykę ze statusem 'pending' (zostanie aktywowana przy zatwierdzeniu)
+            ins_praktyka = text(
+                "INSERT INTO praktyka (student_id, firma_id, opiekun_firmowy_id, sciezka, status, data_rozpoczecia, data_zakonczenia, rok_akademicki)"
+                " VALUES (:student_id, :firma_id, :opiekun_id, :sciezka, :status, :data_rozp, :data_zak, :rok)"
             )
-            db.session.commit()
-            doc_row = db.session.execute(
-                text("SELECT id FROM dokument WHERE praktyka_id=:praktyka_id AND typ_dokumentu_id=:typ_id ORDER BY id DESC LIMIT 1"),
-                {'praktyka_id': praktyka_id, 'typ_id': typ_id}
-            ).fetchone()
-            dokument_id = doc_row[0] if doc_row else None
+            db.session.execute(ins_praktyka, {
+                'student_id': student_id,
+                'firma_id': firma_id,
+                'opiekun_id': opiekun_id,
+                'sciezka': 'standard',
+                'status': 'pending',
+                'data_rozp': termin_od,
+                'data_zak': termin_do,
+                'rok': rok_akademicki,
+            })
+            db.session.flush()
 
-        # 3) Utwórz dwa wpisy w `dane_dokumentu` (miejscowosc, data)
+            # Pobierz ID nowo utworzonej praktyki
+            praktyka_row = db.session.execute(
+                text("SELECT id FROM praktyka WHERE student_id=:student_id ORDER BY id DESC LIMIT 1"),
+                {'student_id': student_id}
+            ).fetchone()
+            praktyka_id = praktyka_row[0] if praktyka_row else None
+
+            # 2) Utwórz dokument ze statusem 'in_progress'
+            typ_row = db.session.execute(
+                text("SELECT id FROM typ_dokumentu WHERE kod='ZAL_9' LIMIT 1")
+            ).fetchone()
+            typ_id = typ_row[0] if typ_row else None
+
+            dokument_id = None
+            if praktyka_id and typ_id:
+                db.session.execute(
+                    text(
+                        "INSERT INTO dokument (praktyka_id, typ_dokumentu_id, utworzony_przez, status, ostatni_edytor)"
+                        " VALUES (:praktyka_id, :typ_id, :utworzony_przez, :status, :ostatni_edytor)"
+                    ),
+                    {
+                        'praktyka_id': praktyka_id,
+                        'typ_id': typ_id,
+                        'utworzony_przez': current_user.id,
+                        'status': 'in_progress',
+                        'ostatni_edytor': current_user.id
+                    }
+                )
+                db.session.flush()
+
+                doc_row = db.session.execute(
+                    text("SELECT id FROM dokument WHERE praktyka_id=:praktyka_id AND typ_dokumentu_id=:typ_id ORDER BY id DESC LIMIT 1"),
+                    {'praktyka_id': praktyka_id, 'typ_id': typ_id}
+                ).fetchone()
+                dokument_id = doc_row[0] if doc_row else None
+
+                # 3) Utwórz wpis w dokument_podpis z czy_podpisano=0
+                if dokument_id:
+                    db.session.execute(
+                        text("INSERT INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany) VALUES (:doc_id, :podpisujacy_id, 0)"),
+                        {'doc_id': dokument_id, 'podpisujacy_id': current_user.id}
+                    )
+
+                    # 4) Utwórz wpisy w `dane_dokumentu` (miejscowosc, data)
+                    db.session.execute(
+                        text("INSERT OR REPLACE INTO dane_dokumentu (dokument_id, klucz, wartosc, wypelnione_przez) VALUES (:doc_id, :klucz, :wartosc, :wypelniajacy)"),
+                        {'doc_id': dokument_id, 'klucz': 'miejscowosc', 'wartosc': miejscowosc, 'wypelniajacy': current_user.id}
+                    )
+                    db.session.execute(
+                        text("INSERT OR REPLACE INTO dane_dokumentu (dokument_id, klucz, wartosc, wypelnione_przez) VALUES (:doc_id, :klucz, :wartosc, :wypelniajacy)"),
+                        {'doc_id': dokument_id, 'klucz': 'data', 'wartosc': data_pola, 'wypelniajacy': current_user.id}
+                    )
+
+                    # 5) Udostępnij dokument
+                    role_rows = db.session.execute(
+                        text("SELECT nazwa, id FROM role WHERE nazwa IN ('student', 'dziekanat', 'opiekun_firmowy', 'dyrektor')")
+                    ).fetchall()
+                    role_ids = {row[0]: row[1] for row in role_rows}
+
+                    if student_id and role_ids.get('student'):
+                        db.session.execute(
+                            text(
+                                "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                                " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
+                            ),
+                            {
+                                'udostepniajacy': current_user.id,
+                                'dokument_id': dokument_id,
+                                'adresat': student_id,
+                                'rola_id': role_ids['student'],
+                            }
+                        )
+
+                    if role_ids.get('dziekanat'):
+                        db.session.execute(
+                            text(
+                                "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                                " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 1)"
+                            ),
+                            {
+                                'udostepniajacy': current_user.id,
+                                'dokument_id': dokument_id,
+                                'rola_id': role_ids['dziekanat'],
+                            }
+                        )
+
+                    if role_ids.get('dyrektor'):
+                        db.session.execute(
+                            text(
+                                "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                                " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                            ),
+                            {
+                                'udostepniajacy': current_user.id,
+                                'dokument_id': dokument_id,
+                                'rola_id': role_ids['dyrektor'],
+                            }
+                        )
+
+                    if role_ids.get('opiekun_firmowy'):
+                        db.session.execute(
+                            text(
+                                "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                                " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 0)"
+                            ),
+                            {
+                                'udostepniajacy': current_user.id,
+                                'dokument_id': dokument_id,
+                                'adresat': current_user.id,
+                                'rola_id': role_ids['opiekun_firmowy'],
+                            }
+                        )
+
+        # 6) Zaktualizuj dane dokumentu jeśli już istniał
         if dokument_id:
             db.session.execute(
                 text("INSERT OR REPLACE INTO dane_dokumentu (dokument_id, klucz, wartosc, wypelnione_przez) VALUES (:doc_id, :klucz, :wartosc, :wypelniajacy)"),
@@ -3795,77 +4788,15 @@ def save_attachment9_data(form_data):
                 {'doc_id': dokument_id, 'klucz': 'data', 'wartosc': data_pola, 'wypelniajacy': current_user.id}
             )
 
-            role_rows = db.session.execute(
-                text("SELECT nazwa, id FROM role WHERE nazwa IN ('student', 'dziekanat', 'opiekun_firmowy', 'dyrektor')")
-            ).fetchall()
-            role_ids = {row[0]: row[1] for row in role_rows}
-
-            if student_id and role_ids.get('student'):
-                db.session.execute(
-                    text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 0)"
-                    ),
-                    {
-                        'udostepniajacy': current_user.id,
-                        'dokument_id': dokument_id,
-                        'adresat': student_id,
-                        'rola_id': role_ids['student'],
-                    }
-                )
-
-            if role_ids.get('dziekanat'):
-                db.session.execute(
-                    text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 1)"
-                    ),
-                    {
-                        'udostepniajacy': current_user.id,
-                        'dokument_id': dokument_id,
-                        'rola_id': role_ids['dziekanat'],
-                    }
-                )
-
-            if role_ids.get('dyrektor'):
-                db.session.execute(
-                    text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
-                    ),
-                    {
-                        'udostepniajacy': current_user.id,
-                        'dokument_id': dokument_id,
-                        'rola_id': role_ids['dyrektor'],
-                    }
-                )
-
-            if role_ids.get('opiekun_firmowy'):
-                db.session.execute(
-                    text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 0)"
-                    ),
-                    {
-                        'udostepniajacy': current_user.id,
-                        'dokument_id': dokument_id,
-                        'adresat': current_user.id,
-                        'rola_id': role_ids['opiekun_firmowy'],
-                    }
-                )
-
-            db.session.commit()
-
-        # 4) Zaktualizuj nazwę firmy i numer telefonu opiekuna firmowego
+        # 7) Zaktualizuj nazwę firmy i numer telefonu opiekuna firmowego
         if firma_id:
             firma = Firma.query.get(firma_id)
             if firma and nazwa_firmy:
                 firma.nazwa = nazwa_firmy
-            # aktualizujemy telefon opiekuna (current_user)
             if telefon_opiekuna:
                 current_user.telefon = telefon_opiekuna
-            db.session.commit()
 
+        db.session.commit()
         return True
 
     except Exception as e:
@@ -3874,38 +4805,357 @@ def save_attachment9_data(form_data):
         return False
 
 
+def sign_attachment9(dokument_id):
+    """Podpisanie załącznika 9 przez opiekuna firmowego.
+    
+    Zmienia status na 'awaiting_approval' i dodaje podpis.
+    """
+    from app import db
+    from sqlalchemy import text
+    from datetime import datetime
+
+    try:
+        # Sprawdź uprawnienia
+        doc_row = db.session.execute(
+            text("SELECT praktyka_id, status FROM dokument WHERE id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if not doc_row or doc_row[1] not in ('in_progress', 'rejected'):
+            return False
+
+        # Przywróć odrzucony dokument do ponownej edycji, jeśli to konieczne
+        if doc_row[1] == 'rejected':
+            db.session.execute(
+                text("UPDATE dokument SET status = 'in_progress' WHERE id = :doc_id"),
+                {'doc_id': dokument_id}
+            )
+
+        # Zaktualizuj podpis
+        db.session.execute(
+            text(
+                "UPDATE dokument_podpis SET czy_podpisany = 1, podpisano = :podpisano WHERE dokument_id = :doc_id AND podpisujacy_id = :podpisujacy_id"
+            ),
+            {
+                'doc_id': dokument_id,
+                'podpisujacy_id': current_user.id,
+                'podpisano': datetime.now()
+            }
+        )
+
+        # Zmień status dokumentu
+        db.session.execute(
+            text("UPDATE dokument SET status = :status, ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+            {
+                'doc_id': dokument_id,
+                'status': 'awaiting_approval',
+                'ostatni_edytor': current_user.id
+            }
+        )
+
+        # Zabraniaj edycji opiekunowi firmowemu
+        db.session.execute(
+            text(
+                "UPDATE udostepniony_dokument SET moze_edytowac = 0 WHERE dokument_id = :doc_id AND rola_id = (SELECT id FROM role WHERE nazwa = 'opiekun_firmowy')"
+            ),
+            {'doc_id': dokument_id}
+        )
+
+        db.session.commit()
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Błąd podpisania załącznika 9: {e}')
+        return False
+
+
+def accept_attachment9(dokument_id):
+    """Zaakceptowanie załącznika 9 przez dziekanat.
+    
+    Zmienia status na 'completed', tworzy wpis w praktyka i dokument_akceptacja.
+    """
+    from app import db
+    from sqlalchemy import text
+    from datetime import datetime
+
+    try:
+        # Sprawdź status
+        doc_row = db.session.execute(
+            text("SELECT praktyka_id, status FROM dokument WHERE id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if not doc_row or doc_row[1] != 'awaiting_approval':
+            return False
+
+        praktyka_id = doc_row[0]
+
+        # Dodaj akceptację
+        db.session.execute(
+            text(
+                "INSERT INTO dokument_akceptacja (dokument_id, akceptujacy_id, czy_zaakceptowany, zaakceptowano) VALUES (:doc_id, :akceptujacy_id, 1, :zaakceptowano)"
+            ),
+            {
+                'doc_id': dokument_id,
+                'akceptujacy_id': current_user.id,
+                'zaakceptowano': datetime.now()
+            }
+        )
+
+        # Zmień status dokumentu na 'completed'
+        db.session.execute(
+            text("UPDATE dokument SET status = :status, ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+            {
+                'doc_id': dokument_id,
+                'status': 'completed',
+                'ostatni_edytor': current_user.id
+            }
+        )
+
+        # Zaktualizuj status praktyki na 'active' i aktualny etap na 1
+        db.session.execute(
+            text("UPDATE praktyka SET status = :status, aktualny_etap = 1 WHERE id = :praktyka_id"),
+            {
+                'praktyka_id': praktyka_id,
+                'status': 'active'
+            }
+        )
+
+        db.session.commit()
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Błąd akceptacji załącznika 9: {e}')
+        return False
+
+
+def reject_attachment9(dokument_id):
+    """Odrzucenie załącznika 9 przez dziekanat.
+    
+    Zmienia status na 'rejected', pozwala opiekunowi na edycję,
+    resetuje podpis na czy_podpisano=0.
+    """
+    from app import db
+    from sqlalchemy import text
+
+    try:
+        # Sprawdź status
+        doc_row = db.session.execute(
+            text("SELECT status FROM dokument WHERE id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if not doc_row or doc_row[0] != 'awaiting_approval':
+            return False
+
+        # Zmień status dokumentu na 'rejected'
+        db.session.execute(
+            text("UPDATE dokument SET status = :status, ostatni_edytor = :ostatni_edytor WHERE id = :doc_id"),
+            {
+                'doc_id': dokument_id,
+                'status': 'rejected',
+                'ostatni_edytor': current_user.id
+            }
+        )
+
+        # Resetuj podpis (jeśli istnieje)
+        db.session.execute(
+            text("UPDATE dokument_podpis SET czy_podpisany = 0, podpisano = NULL WHERE dokument_id = :doc_id"),
+            {'doc_id': dokument_id}
+        )
+
+        # Pozwól opiekunowi na edycję
+        db.session.execute(
+            text(
+                "UPDATE udostepniony_dokument SET moze_edytowac = 1 WHERE dokument_id = :doc_id AND rola_id = (SELECT id FROM role WHERE nazwa = 'opiekun_firmowy')"
+            ),
+            {'doc_id': dokument_id}
+        )
+
+        db.session.commit()
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Błąd odrzucenia załącznika 9: {e}')
+        return False
+
+
 @bp.route('/formularz/zalacznik-9', methods=['GET', 'POST'])
 @login_required
 def zalacznik_9():
     """Formularz załącznika 9 - Oświadczenie instytucji w sprawie przyjęcia studenta."""
+    from app import db
+    from sqlalchemy import text
     from app.models.uzytkownik import Uzytkownik, Rola
 
     role = current_user.rola.nazwa
+    # Pobierz dokument_id z GET lub POST
+    dokument_id = request.args.get('dokument_id', type=int) or request.form.get('dokument_id', type=int)
+    action_query = request.args.get('action')  # Akcja z query string (np. sign, accept, reject)
+    dokument = None
+    dokument_data = {}
+    status = None
+    czy_podpisany = False
+    czy_zaakceptowany = False
 
+    # Obsługa akcji z query string (GET requests z dashboardu)
+    if action_query and dokument_id:
+        if action_query == 'sign':
+            if role != 'opiekun_firmowy':
+                flash('Tylko opiekun firmowy może podpisać załącznik 9.', 'danger')
+            elif sign_attachment9(dokument_id):
+                flash('Załącznik 9 został podpisany.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można podpisać tego dokumentu.', 'danger')
+
+        elif action_query == 'accept':
+            if role != 'dziekanat':
+                flash('Tylko dziekanat może zaakceptować załącznik 9.', 'danger')
+            elif accept_attachment9(dokument_id):
+                flash('Załącznik 9 został zaakceptowany.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można zaakceptować tego dokumentu.', 'danger')
+
+        elif action_query == 'reject':
+            if role != 'dziekanat':
+                flash('Tylko dziekanat może odrzucić załącznik 9.', 'danger')
+            elif reject_attachment9(dokument_id):
+                flash('Załącznik 9 został odrzucony.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można odrzucić tego dokumentu.', 'danger')
+
+    # Jeśli edytujemy istniejący dokument
+    if dokument_id:
+        doc_row = db.session.execute(
+            text("SELECT id, status FROM dokument WHERE id = :doc_id AND typ_dokumentu_id = (SELECT id FROM typ_dokumentu WHERE kod='ZAL_9')"),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        if doc_row:
+            dokument = {'id': doc_row[0], 'status': doc_row[1]}
+            status = doc_row[1]
+
+            # Pobierz dane dokumentu
+            dane = db.session.execute(
+                text("SELECT klucz, wartosc FROM dane_dokumentu WHERE dokument_id = :doc_id"),
+                {'doc_id': dokument_id}
+            ).fetchall()
+            dokument_data = {row[0]: row[1] for row in dane}
+
+            # Sprawdź podpis
+            podpis_row = db.session.execute(
+                text("SELECT czy_podpisany FROM dokument_podpis WHERE dokument_id = :doc_id"),
+                {'doc_id': dokument_id}
+            ).fetchone()
+            czy_podpisany = podpis_row[0] if podpis_row else False
+
+            # Sprawdź akceptację
+            akcept_row = db.session.execute(
+                text("SELECT czy_zaakceptowany FROM dokument_akceptacja WHERE dokument_id = :doc_id"),
+                {'doc_id': dokument_id}
+            ).fetchone()
+            czy_zaakceptowany = akcept_row[0] if akcept_row else False
+
+    # Obsługa POST dla różnych akcji
     if request.method == 'POST':
-        if role != 'opiekun_firmowy':
-            flash('Tylko opiekun firmowy może zapisać załącznik 9.', 'danger')
-            return redirect(url_for('dashboard.index'))
+        action = request.form.get('action', 'save')
 
-        form_data = {
-            'student_id': request.form.get('student_id'),
-            'miejscowosc': request.form.get('miejscowosc'),
-            'data': request.form.get('data'),
-            'nazwa_firmy': request.form.get('nazwa_firmy'),
-            'termin_od': request.form.get('termin_od'),
-            'termin_do': request.form.get('termin_do'),
-            'nr_albumu': request.form.get('nr_albumu'),
-            'imie_nazwisko_opiekuna_firmowego': request.form.get('imie_nazwisko_opiekuna_firmowego'),
-            'telefon_opiekuna_firmowego': request.form.get('telefon_opiekuna_firmowego'),
-            'email_opiekuna_firmowego': request.form.get('email_opiekuna_firmowego'),
-            'osoba_upowazniona': request.form.get('osoba_upowazniona'),
-        }
+        if action == 'sign' and dokument_id:
+            if role != 'opiekun_firmowy':
+                flash('Tylko opiekun firmowy może podpisać załącznik 9.', 'danger')
+            elif sign_attachment9(dokument_id):
+                flash('Załącznik 9 został podpisany.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można podpisać tego dokumentu.', 'danger')
 
-        saved = save_attachment9_data(form_data)
-        if saved:
-            flash('Dane załącznika 9 zostały zapisane.', 'success')
-            return redirect(url_for('dashboard.index'))
-        flash('Wystąpił problem podczas zapisu formularza.', 'danger')
+        elif action == 'accept' and dokument_id:
+            if role != 'dziekanat':
+                flash('Tylko dziekanat może zaakceptować załącznik 9.', 'danger')
+            elif accept_attachment9(dokument_id):
+                flash('Załącznik 9 został zaakceptowany.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można zaakceptować tego dokumentu.', 'danger')
+
+        elif action == 'reject' and dokument_id:
+            if role != 'dziekanat':
+                flash('Tylko dziekanat może odrzucić załącznik 9.', 'danger')
+            elif reject_attachment9(dokument_id):
+                flash('Załącznik 9 został odrzucony.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Nie można odrzucić tego dokumentu.', 'danger')
+
+        elif action == 'save':
+            if role != 'opiekun_firmowy':
+                flash('Tylko opiekun firmowy może zapisać załącznik 9.', 'danger')
+                return redirect(url_for('dashboard.index'))
+
+            form_data = {
+                'student_id': request.form.get('student_id'),
+                'miejscowosc': request.form.get('miejscowosc'),
+                'data': request.form.get('data'),
+                'nazwa_firmy': request.form.get('nazwa_firmy'),
+                'termin_od': request.form.get('termin_od'),
+                'termin_do': request.form.get('termin_do'),
+                'nr_albumu': request.form.get('nr_albumu'),
+                'imie_nazwisko_opiekuna_firmowego': request.form.get('imie_nazwisko_opiekuna_firmowego'),
+                'telefon_opiekuna_firmowego': request.form.get('telefon_opiekuna_firmowego'),
+                'email_opiekuna_firmowego': request.form.get('email_opiekuna_firmowego'),
+                'osoba_upowazniona': request.form.get('osoba_upowazniona'),
+            }
+
+            if save_attachment9_data(form_data):
+                flash('Dane załącznika 9 zostały zapisane.', 'success')
+                return redirect(url_for('dashboard.index'))
+            else:
+                flash('Wystąpił problem podczas zapisu formularza.', 'danger')
+
+        elif action == 'save_and_sign':
+            if role != 'opiekun_firmowy':
+                flash('Tylko opiekun firmowy może zapisać i podpisać załącznik 9.', 'danger')
+                return redirect(url_for('dashboard.index'))
+
+            form_data = {
+                'student_id': request.form.get('student_id'),
+                'miejscowosc': request.form.get('miejscowosc'),
+                'data': request.form.get('data'),
+                'nazwa_firmy': request.form.get('nazwa_firmy'),
+                'termin_od': request.form.get('termin_od'),
+                'termin_do': request.form.get('termin_do'),
+                'nr_albumu': request.form.get('nr_albumu'),
+                'imie_nazwisko_opiekuna_firmowego': request.form.get('imie_nazwisko_opiekuna_firmowego'),
+                'telefon_opiekuna_firmowego': request.form.get('telefon_opiekuna_firmowego'),
+                'email_opiekuna_firmowego': request.form.get('email_opiekuna_firmowego'),
+                'osoba_upowazniona': request.form.get('osoba_upowazniona'),
+            }
+
+            if save_attachment9_data(form_data):
+                # Pobierz ID nowo utworzonego dokumentu
+                student_id = int(form_data.get('student_id')) if form_data.get('student_id') else None
+                if student_id:
+                    doc_row = db.session.execute(
+                        text("""
+                            SELECT d.id FROM dokument d
+                            JOIN praktyka p ON d.praktyka_id = p.id
+                            WHERE p.student_id = :student_id
+                            AND d.typ_dokumentu_id = (SELECT id FROM typ_dokumentu WHERE kod='ZAL_9')
+                            ORDER BY d.id DESC LIMIT 1
+                        """),
+                        {'student_id': student_id}
+                    ).fetchone()
+                    new_doc_id = doc_row[0] if doc_row else None
+                    if new_doc_id and sign_attachment9(new_doc_id):
+                        flash('Załącznik 9 został zapisany i podpisany.', 'success')
+                        return redirect(url_for('dashboard.index'))
+            flash('Wystąpił problem podczas zapisu i podpisu formularza.', 'danger')
 
     # Pobranie listy aktywnych studentów posortowanych po numerze albumu
     rola_student = Rola.query.filter_by(nazwa='student').first()
@@ -3928,11 +5178,12 @@ def zalacznik_9():
         elif firma.osoba_upowazniona_stanowisko:
             osoba_upowazniona = firma.osoba_upowazniona_stanowisko
 
+    # Załaduj dane dokumentu jeśli go edytujemy
     prefilled = {
         'imie_nazwisko_studenta': '',
         'wybrany_student_id': None,
-        'miejscowosc': miasto_firmy,
-        'data': date.today().isoformat(),
+        'miejscowosc': dokument_data.get('miejscowosc', miasto_firmy),
+        'data': dokument_data.get('data', date.today().isoformat()),
         'nazwa_firmy': nazwa_firmy,
         'termin_od': '',
         'termin_do': '',
@@ -3947,6 +5198,10 @@ def zalacznik_9():
         'forms/zalacznik_9.html',
         role=role,
         studenci=studenci,
+        dokument=dokument,
+        status=status,
+        czy_podpisany=czy_podpisany,
+        czy_zaakceptowany=czy_zaakceptowany,
         **prefilled
     )
 

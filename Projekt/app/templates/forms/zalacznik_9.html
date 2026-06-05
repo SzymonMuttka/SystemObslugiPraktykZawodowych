@@ -7,16 +7,100 @@
     <div class="form-header">
         <h2>Załącznik 9: Oświadczenie instytucji w sprawie przyjęcia studenta</h2>
         <p>Formularz dostępny do przeglądu dla studentów, administracji i opiekunów uczelnianych; edytowalny tylko przez opiekuna firmowego.</p>
+        {% if dokument and status %}
+        <div class="status-badge status-{{ status }}">
+            Status: 
+            {% if status == 'in_progress' %}
+                <span>Do uzupełnienia</span>
+            {% elif status == 'awaiting_approval' %}
+                <span>Oczekuje na zatwierdzenie</span>
+            {% elif status == 'completed' %}
+                <span>Zatwierdzony</span>
+            {% elif status == 'rejected' %}
+                <span>Odrzucony</span>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 
-    <form method="post" class="document-form">
+    <!-- Jeśli dokument jest ukończony, pokazuj read-only view -->
+    {% if dokument and status == 'completed' %}
+    <div class="view-only-mode">
+        <p><strong>Dokument został zatwierdzony i jest niedostępny do edycji.</strong></p>
+    </div>
+
+    <div class="form-data-display">
+        <fieldset class="form-section">
+            <legend>Dane studenta</legend>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nr albumu</label>
+                    <p>{{ nr_albumu }}</p>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+            <legend>Dane instytucji / opiekuna firmowego</legend>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Data</label>
+                    <p>{{ data }}</p>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nazwa firmy</label>
+                    <p>{{ nazwa_firmy }}</p>
+                </div>
+                <div class="form-group">
+                    <label>Miejscowość</label>
+                    <p>{{ miejscowosc }}</p>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Imię i nazwisko opiekuna firmowego</label>
+                    <p>{{ imie_nazwisko_opiekuna_firmowego }}</p>
+                </div>
+                <div class="form-group">
+                    <label>Telefon opiekuna firmowego</label>
+                    <p>{{ telefon_opiekuna_firmowego }}</p>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Email opiekuna firmowego</label>
+                    <p>{{ email_opiekuna_firmowego }}</p>
+                </div>
+                <div class="form-group">
+                    <label>Osoba upoważniona</label>
+                    <p>{{ osoba_upowazniona }}</p>
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            {% if role == 'dziekanat' %}
+                <p><strong>Dokument został zatwierdzony.</strong></p>
+            {% endif %}
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Powrót do dashboardu</a>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Edytowalny formularz -->
+    <form method="post" class="document-form" id="attachment9-form">
+        {% if dokument %}
+            <input type="hidden" name="dokument_id" value="{{ dokument.id }}">
+        {% endif %}
         <fieldset class="form-section">
             <legend>Dane studenta</legend>
 
             <div class="form-row">
                 <div class="form-group">
                     <label for="student_id">Student</label>
-                    {% if role == 'opiekun_firmowy' %}
+                    {% if role == 'opiekun_firmowy' and (not dokument or status == 'rejected') %}
                         <select id="student_id" name="student_id" required>
                             <option value="">— wybierz studenta —</option>
                             {% for student in studenci %}
@@ -35,7 +119,7 @@
                     <label for="nr_albumu">Nr albumu</label>
                     <input id="nr_albumu" name="nr_albumu" type="text"
                         value="{{ nr_albumu }}"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                        readonly>
                 </div>
             </div>
         </fieldset>
@@ -48,7 +132,7 @@
                     <label for="data">Data</label>
                     <input id="data" name="data" type="date"
                         value="{{ data }}"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                        {% if role != 'opiekun_firmowy' or (dokument and status not in ['in_progress', 'rejected']) %}readonly{% endif %}>
                 </div>
             </div>
 
@@ -57,13 +141,13 @@
                     <label for="nazwa_firmy">Nazwa firmy</label>
                     <input id="nazwa_firmy" name="nazwa_firmy" type="text"
                         value="{{ nazwa_firmy }}"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                        {% if role != 'opiekun_firmowy' or (dokument and status not in ['in_progress', 'rejected']) %}readonly{% endif %}>
                 </div>
                 <div class="form-group">
                     <label for="miejscowosc">Miejscowość</label>
                     <input id="miejscowosc" name="miejscowosc" type="text"
                         value="{{ miejscowosc }}"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                        {% if role != 'opiekun_firmowy' or (dokument and status not in ['in_progress', 'rejected']) %}readonly{% endif %}>
                 </div>
             </div>
 
@@ -72,13 +156,13 @@
                     <label for="termin_od">Termin od</label>
                     <input id="termin_od" name="termin_od" type="date"
                         value="{{ termin_od }}"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                        {% if role != 'opiekun_firmowy' or (dokument and status not in ['in_progress', 'rejected']) %}readonly{% endif %}>
                 </div>
                 <div class="form-group">
                     <label for="termin_do">Termin do</label>
                     <input id="termin_do" name="termin_do" type="date"
                         value="{{ termin_do }}"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                        {% if role != 'opiekun_firmowy' or (dokument and status not in ['in_progress', 'rejected']) %}readonly{% endif %}>
                 </div>
             </div>
 
@@ -92,7 +176,7 @@
                     <label for="telefon_opiekuna_firmowego">Telefon opiekuna firmowego</label>
                     <input id="telefon_opiekuna_firmowego" name="telefon_opiekuna_firmowego" type="tel"
                         value="{{ telefon_opiekuna_firmowego }}"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                        {% if role != 'opiekun_firmowy' or (dokument and status not in ['in_progress', 'rejected']) %}readonly{% endif %}>
                 </div>
             </div>
 
@@ -101,24 +185,44 @@
                     <label for="email_opiekuna_firmowego">Email opiekuna firmowego</label>
                     <input id="email_opiekuna_firmowego" name="email_opiekuna_firmowego" type="email"
                         value="{{ email_opiekuna_firmowego }}"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                        {% if role != 'opiekun_firmowy' or (dokument and status not in ['in_progress', 'rejected']) %}readonly{% endif %}>
                 </div>
                 <div class="form-group">
                     <label for="osoba_upowazniona">Imię, nazwisko i stanowisko osoby upoważnionej do podpisania porozumienia</label>
                     <input id="osoba_upowazniona" name="osoba_upowazniona" type="text"
                         value="{{ osoba_upowazniona }}"
-                        {% if role != 'opiekun_firmowy' %}readonly{% endif %}>
+                        {% if role != 'opiekun_firmowy' or (dokument and status not in ['in_progress', 'rejected']) %}readonly{% endif %}>
                 </div>
             </div>
         </fieldset>
 
         <div class="form-actions">
-            {% if role == 'opiekun_firmowy' %}
-                <button type="submit" class="btn-primary">Zapisz załącznik 9</button>
+            {% if role == 'opiekun_firmowy' and (not dokument or status in ['in_progress', 'rejected']) %}
+                <!-- Przycisk "Zapisz" -->
+                <button type="submit" name="action" value="save" class="btn-primary">Zapisz załącznik 9</button>
+
+                <!-- Przycisk do podpisu - jeśli dokument już istnieje i nie jest podpisany -->
+                {% if dokument and status in ['in_progress', 'rejected'] and not czy_podpisany %}
+                    <button type="submit" name="action" value="sign" class="btn-success">Podpisz załącznik 9</button>
+                {% endif %}
+
+                <!-- Przycisk "Zapisz i podpisz" - tylko dla nowych dokumentów -->
+                {% if not dokument %}
+                    <button type="submit" name="action" value="save_and_sign" class="btn-success">Zapisz i podpisz załącznik 9</button>
+                {% endif %}
             {% endif %}
+
+            {% if role == 'dziekanat' and dokument and status == 'awaiting_approval' %}
+                <!-- Przycisk zaakceptowania -->
+                <button type="submit" name="action" value="accept" class="btn-success">Zaakceptuj załącznik 9</button>
+                <!-- Przycisk odrzucenia -->
+                <button type="submit" name="action" value="reject" class="btn-danger">Odrzuć załącznik 9</button>
+            {% endif %}
+
             <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
         </div>
     </form>
+    {% endif %}
 </div>
 
 {% if role == 'opiekun_firmowy' %}
@@ -137,8 +241,10 @@
             albumInput.value = numerAlbumu;
         }
 
-        studentSelect.addEventListener('change', updateAlbum);
-        updateAlbum();
+        if (studentSelect) {
+            studentSelect.addEventListener('change', updateAlbum);
+            updateAlbum();
+        }
     })();
 </script>
 {% endif %}

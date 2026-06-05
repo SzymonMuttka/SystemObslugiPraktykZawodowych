@@ -70,6 +70,7 @@
                             <th>Status</th>
                             <th>Ostatni edytor</th>
                             <th>Ostatnia zmiana</th>
+                            <th>Akcje</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -99,6 +100,54 @@
                             {% endif %}
                             <td>{{ doc.ostatni }}</td>
                             <td>{{ doc.zaktualizowano }}</td>
+                            <td class="actions-cell">
+                                {% if doc.kod == 'ZAL_9' %}
+                                    {% if uzytkownik.rola.nazwa == 'opiekun_firmowy' and doc.status in ['in_progress', 'rejected'] %}
+                                        <a href="{{ url_for('dashboard.zalacznik_9', dokument_id=doc.id, action='sign') }}" class="btn-small btn-success" onclick="return confirm('Czy na pewno chcesz podpisać dokument?')">Podpisz</a>
+                                    {% endif %}
+
+                                    {% if uzytkownik.rola.nazwa == 'dziekanat' and doc.status == 'awaiting_approval' %}
+                                        <a href="{{ url_for('dashboard.zalacznik_9', dokument_id=doc.id, action='accept') }}" class="btn-small btn-success" onclick="return confirm('Czy na pewno chcesz zaakceptować dokument?')">Zaakceptuj</a>
+                                        <a href="{{ url_for('dashboard.zalacznik_9', dokument_id=doc.id, action='reject') }}" class="btn-small btn-danger" onclick="return confirm('Czy na pewno chcesz odrzucić dokument?')">Odrzuć</a>
+                                    {% endif %}
+
+                                    {% if doc.status in ['in_progress', 'rejected'] %}
+                                        <a href="{{ url_for('dashboard.zalacznik_9', dokument_id=doc.id) }}" class="btn-small btn-primary">Edytuj</a>
+                                    {% elif doc.status in ['awaiting_approval', 'completed'] %}
+                                        <a href="{{ url_for('dashboard.zalacznik_9', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
+                                    {% endif %}
+                                {% elif doc.kod == 'ZAL_1' %}
+                                    {% if uzytkownik.rola.nazwa in ['dyrektor', 'opiekun_firmowy'] and doc.status == 'awaiting_signature' %}
+                                        <a href="{{ url_for('dashboard.zalacznik_1', dokument_id=doc.id, action='sign') }}" class="btn-small btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować dokument?')">Podpisz i zaakceptuj</a>
+                                        <a href="{{ url_for('dashboard.zalacznik_1', dokument_id=doc.id, action='reject') }}" class="btn-small btn-danger" onclick="return confirm('Czy na pewno chcesz odrzucić dokument?')">Odrzuć</a>
+                                        <a href="{{ url_for('dashboard.zalacznik_1', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
+                                    {% elif uzytkownik.rola.nazwa == 'dziekanat' and doc.status == 'rejected' %}
+                                        <a href="{{ url_for('dashboard.zalacznik_1', dokument_id=doc.id) }}" class="btn-small btn-primary">Edytuj</a>
+                                    {% elif doc.status in ['awaiting_signature', 'completed', 'rejected'] %}
+                                        <a href="{{ url_for('dashboard.zalacznik_1', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
+                                    {% endif %}
+                                {% elif doc.kod == 'ZAL_2' %}
+                                    {% if uzytkownik.rola.nazwa in ['dyrektor', 'opiekun_firmowy'] and doc.status == 'awaiting_signature' %}
+                                        <a href="{{ url_for('dashboard.zalacznik_2', dokument_id=doc.id, action='sign') }}" class="btn-small btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować dokument?')">Podpisz i zaakceptuj</a>
+                                        <a href="{{ url_for('dashboard.zalacznik_2', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
+                                    {% elif doc.status in ['awaiting_signature', 'completed'] %}
+                                        <a href="{{ url_for('dashboard.zalacznik_2', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
+                                    {% endif %}
+                                {% elif doc.kod == 'ZAL_2A' %}
+                                    {% if uzytkownik.rola.nazwa == 'opiekun_firmowy' and doc.status in ['in_progress', 'rejected'] %}
+                                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=doc.id) }}" class="btn-small btn-primary">Edytuj</a>
+                                    {% elif uzytkownik.rola.nazwa == 'student' and doc.status == 'awaiting_signature' %}
+                                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=doc.id, action='sign') }}" class="btn-small btn-success" onclick="return confirm('Czy na pewno chcesz podpisać dokument?')">Podpisz</a>
+                                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
+                                    {% elif uzytkownik.rola.nazwa in ['opiekun_uczelniany','opiekun_firmowy'] and doc.status == 'awaiting_signature' %}
+                                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=doc.id, action='sign') }}" class="btn-small btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować dokument?')">Podpisz i zaakceptuj</a>
+                                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=doc.id, action='reject') }}" class="btn-small btn-danger" onclick="return confirm('Czy na pewno chcesz odrzucić dokument?')">Odrzuć</a>
+                                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
+                                    {% elif doc.status in ['in_progress', 'awaiting_signature', 'completed', 'rejected'] %}
+                                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -10,6 +10,10 @@
     </div>
 
     <form method="post" class="document-form">
+        {% if dokument %}
+            <input type="hidden" name="dokument_id" value="{{ dokument.id }}">
+        {% endif %}
+
         <fieldset class="form-section">
             <legend>Dane porozumienia</legend>
 
@@ -29,6 +33,12 @@
         <fieldset class="form-section">
             <legend>Dane wypełniane przez dziekanat</legend>
 
+            {% if dokument and not editing_allowed %}
+                <div class="form-note">
+                    Ten dokument jest w trakcie oczekiwania na podpisy i nie można go edytować.
+                </div>
+            {% endif %}
+
             <div class="form-group">
                 <label for="student_select">Imię i nazwisko studenta</label>
                 {% if selected_student %}
@@ -37,7 +47,7 @@
                         readonly>
                     <input type="hidden" id="student_id" name="student_id" value="{{ selected_student.id }}">
                 {% else %}
-                    <select id="student_select" name="imie_nazwisko_studenta" required>
+                    <select id="student_select" name="imie_nazwisko_studenta" required {% if not editing_allowed %}disabled{% endif %}>
                         <option value="">— wybierz studenta —</option>
                         {% for student in studenci %}
                             {% set practice = student_practice.get(student.id, {}) %}
@@ -57,10 +67,11 @@
 
             <div class="form-group">
                 <label for="reprezentant_uczelni">Reprezentant uczelni</label>
-                <select id="reprezentant_uczelni" name="reprezentant_uczelni_id" required>
+                <select id="reprezentant_uczelni" name="reprezentant_uczelni_id" required {% if not editing_allowed %}disabled{% endif %}>
                     <option value="">— wybierz reprezentanta uczelni —</option>
                     {% for reprezentant in reprezentanci_uczelni %}
-                        <option value="{{ reprezentant.id }}">
+                        <option value="{{ reprezentant.id }}"
+                            {% if dokument_data.reprezentant_uczelni_id == reprezentant.id|string %}selected{% endif %}>
                             {{ reprezentant.imie }} {{ reprezentant.nazwisko }}
                         </option>
                     {% endfor %}
@@ -69,33 +80,45 @@
 
             <div class="form-group">
                 <label for="nazwa_zakladu_pracy">Nazwa zakładu pracy</label>
-                <input id="nazwa_zakladu_pracy" name="nazwa_zakladu_pracy" type="text" required>
+                <input id="nazwa_zakladu_pracy" name="nazwa_zakladu_pracy" type="text" required
+                    value="{{ dokument_data.nazwa_zakladu_pracy or student_practice.get(selected_student.id, {}).firma_nazwa if selected_student else '' }}"
+                    {% if not editing_allowed %}readonly{% endif %}>
             </div>
 
             <div class="form-group">
                 <label for="reprezentant_firmy">Reprezentant firmy</label>
-                <input id="reprezentant_firmy" name="reprezentant_firmy" type="text" required>
+                <input id="reprezentant_firmy" name="reprezentant_firmy" type="text" required
+                    value="{{ dokument_data.reprezentant_firmy or student_practice.get(selected_student.id, {}).reprezentant_firmy if selected_student else '' }}"
+                    {% if not editing_allowed %}readonly{% endif %}>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label for="termin_od">Termin praktyki - od</label>
-                    <input id="termin_od" name="termin_od" type="date" required>
+                    <input id="termin_od" name="termin_od" type="date" required
+                        value="{{ dokument_data.termin_od or student_practice.get(selected_student.id, {}).termin_od if selected_student else '' }}"
+                        {% if not editing_allowed %}readonly{% endif %}>
                 </div>
                 <div class="form-group">
                     <label for="termin_do">Termin praktyki - do</label>
-                    <input id="termin_do" name="termin_do" type="date" required>
+                    <input id="termin_do" name="termin_do" type="date" required
+                        value="{{ dokument_data.termin_do or student_practice.get(selected_student.id, {}).termin_do if selected_student else '' }}"
+                        {% if not editing_allowed %}readonly{% endif %}>
                 </div>
             </div>
 
             <div class="form-group">
                 <label for="wymiar_praktyki">Wymiar praktyki zawodowej</label>
-                <input id="wymiar_praktyki" name="wymiar_praktyki" type="text" required>
+                <input id="wymiar_praktyki" name="wymiar_praktyki" type="text" required
+                    value="{{ dokument_data.wymiar_praktyki or '' }}"
+                    {% if not editing_allowed %}readonly{% endif %}>
             </div>
         </fieldset>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Zapisz załącznik 1</button>
+            {% if editing_allowed %}
+                <button type="submit" class="btn-primary">Zapisz załącznik 1</button>
+            {% endif %}
             <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
         </div>
     </form>

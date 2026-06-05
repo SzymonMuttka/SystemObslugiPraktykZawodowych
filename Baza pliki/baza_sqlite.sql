@@ -112,6 +112,22 @@ CREATE TABLE udostepniony_dokument (
 	moze_akceptowac INTEGER NOT NULL
 );
 
+CREATE TABLE dokument_podpis (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	dokument_id INTEGER NOT NULL REFERENCES dokument(id),
+	podpisujacy_id INTEGER REFERENCES uzytkownik(id),
+	czy_podpisany INTEGER NOT NULL,
+	podpisano TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE dokument_akceptacja (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	dokument_id INTEGER NOT NULL REFERENCES dokument(id),
+	akceptujacy_id INTEGER REFERENCES uzytkownik(id),
+	czy_zaakceptowany INTEGER NOT NULL,
+	zaakceptowano TEXT DEFAULT (datetime('now'))
+);
+
 -- ============================================================
 -- ZALEŻNOŚCI MIĘDZY DOKUMENTAMI
 -- ============================================================
@@ -122,19 +138,6 @@ CREATE TABLE zaleznosc_dokumentow (
     wymaga_typu_id INTEGER NOT NULL REFERENCES typ_dokumentu(id),
     wymagany_status TEXT NOT NULL DEFAULT 'completed'
     -- 'created', 'completed'
-);
-
--- ============================================================
--- DOSTĘP UŻYTKOWNIKA DO KONKRETNEGO DOKUMENTU
--- (rejestruje fakt dostępu - uprawnienia określa uprawnienie_dokumentu)
--- ============================================================
-
-CREATE TABLE dostep_do_dokumentu (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dokument_id INTEGER NOT NULL REFERENCES dokument(id),
-    uzytkownik_id INTEGER NOT NULL REFERENCES uzytkownik(id),
-    przyznano TEXT NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(dokument_id, uzytkownik_id)
 );
 
 -- ============================================================
@@ -159,17 +162,7 @@ CREATE TABLE dane_dokumentu (
 -- PODPISY
 -- ============================================================
 
-CREATE TABLE podpis_dokumentu (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dokument_id INTEGER NOT NULL REFERENCES dokument(id),
-    uzytkownik_id INTEGER NOT NULL REFERENCES uzytkownik(id),
-    rola_id INTEGER NOT NULL REFERENCES role(id),
-    etap INTEGER NOT NULL,
-    kolejnosc_podpisu INTEGER NOT NULL,
-    podpisano TEXT DEFAULT (datetime('now')),
-    jest_podpisany INTEGER NOT NULL DEFAULT 0,
-    UNIQUE(dokument_id, uzytkownik_id, etap)
-);
+
 
 -- ============================================================
 -- HISTORIA DOKUMENTU

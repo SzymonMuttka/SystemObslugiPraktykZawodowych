@@ -10,16 +10,19 @@
     </div>
 
     <form method="post" class="document-form">
+        {% if dokument %}
+            <input type="hidden" name="dokument_id" value="{{ dokument.id }}">
+        {% endif %}
         <fieldset class="form-section">
             <legend>Dane studenta (prefilled)</legend>
 
             <div class="form-group">
                 <label for="student_select">Imię i nazwisko studenta</label>
-                {% if selected_student %}
+                {% if selected_student or (dokument and current_user.rola.nazwa == 'dziekanat') %}
                     <input id="student_select" type="text"
-                        value="{{ selected_student.imie }} {{ selected_student.nazwisko }} ({{ selected_student.numer_albumu }})"
+                        value="{{ selected_student.imie if selected_student else '' }} {{ selected_student.nazwisko if selected_student else '' }} ({{ selected_student.numer_albumu if selected_student else '' }})"
                         readonly>
-                    <input type="hidden" id="student_id" name="student_id" value="{{ selected_student.id }}">
+                    <input type="hidden" id="student_id" name="student_id" value="{{ selected_student.id if selected_student else '' }}">
                 {% else %}
                     <select id="student_select" name="imie_nazwisko_studenta" required>
                         <option value="">— wybierz studenta —</option>
@@ -44,8 +47,8 @@
             <div class="form-group">
                 <label for="nr_indeksu">Numer indeksu</label>
                 <input id="nr_indeksu" name="nr_indeksu" type="text"
-                    value="{{ selected_student.numer_albumu if selected_student else '' }}"
-                    {% if current_user.rola.nazwa != 'dziekanat' %}readonly{% endif %}>
+                    value="{{ dokument_data.get('nr_indeksu') if dokument_data.get('nr_indeksu') else (selected_student.numer_albumu if selected_student else '') }}"
+                    {% if not (dokument is none and current_user.rola.nazwa == 'dziekanat') %}readonly{% endif %}>
             </div>
 
             <div class="form-group">
@@ -91,11 +94,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for efekt in efekty %}
+                        {% for i in range(0, efekty|length) %}
                         <tr>
-                            <td>{{ efekt.numer }}</td>
-                            <td>{{ efekt.opis }}</td>
-                            <td><textarea name="ppz_dzial[]" rows="2"></textarea></td>
+                            <td>{{ efekty[i].numer }}</td>
+                            <td>{{ efekty[i].opis }}</td>
+                            <td>
+                                <textarea name="ppz_dzial[]" rows="2" {% if not editing_allowed %}readonly{% endif %}>{{ program_entries[i].ppz if program_entries and program_entries|length > i else '' }}</textarea>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -113,11 +118,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for i in range(1, 14) %}
+                        {% for i in range(0, 13) %}
                         <tr>
-                            <td>{{ i }}</td>
-                            <td><textarea name="hpz_dzial[]" rows="2"></textarea></td>
-                            <td><input type="number" name="hpz_dni[]" min="0"></td>
+                            <td>{{ i + 1 }}</td>
+                            <td><textarea name="hpz_dzial[]" rows="2" {% if not editing_allowed %}readonly{% endif %}>{{ program_entries[i].hpz if program_entries and program_entries|length > i else '' }}</textarea></td>
+                            <td><input type="number" name="hpz_dni[]" min="0" value="{{ program_entries[i].dni if program_entries and program_entries|length > i else '' }}" {% if not editing_allowed %}readonly{% endif %}></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -129,14 +134,32 @@
             <div class="form-group">
                 <label for="data_uzgodnienia">Data uzgodnienia</label>
                 <input id="data_uzgodnienia" name="data_uzgodnienia" type="date"
-                    value="{{ data_uzgodnienia }}"
-                    {% if current_user.rola.nazwa != 'opiekun_firmowy' and current_user.rola.nazwa != 'dziekanat' %}readonly{% endif %}>
+                    value="{{ dokument_data.get('data_uzgodnienia') if dokument_data.get('data_uzgodnienia') else data_uzgodnienia }}"
+                    readonly>
             </div>
         </fieldset>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Zapisz załącznik 2a</button>
-            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+            {% if dokument %}
+                {% if current_user.rola.nazwa == 'opiekun_firmowy' and editing_allowed %}
+                    <button type="submit" class="btn-primary">Zapisz postęp</button>
+                {% else %}
+                    <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Powrót</a>
+                {% endif %}
+                {% if dokument.status == 'awaiting_signature' %}
+                    {% if current_user.rola.nazwa == 'student' %}
+                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=dokument.id, action='sign') }}" class="btn-primary" onclick="return confirm('Czy na pewno chcesz podpisać dokument?')">Podpisz</a>
+                    {% elif current_user.rola.nazwa in ['opiekun_uczelniany','opiekun_firmowy'] %}
+                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=dokument.id, action='sign') }}" class="btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować dokument?')">Podpisz i zaakceptuj</a>
+                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=dokument.id, action='reject') }}" class="btn-danger" onclick="return confirm('Czy na pewno chcesz odrzucić dokument?')">Odrzuć</a>
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                {% if current_user.rola.nazwa == 'dziekanat' %}
+                    <button type="submit" class="btn-primary">Utwórz dokument Załącznik 2a</button>
+                {% endif %}
+                <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+            {% endif %}
         </div>
     </form>
 </div>

@@ -9,6 +9,30 @@
         <p>Ten dokument tworzy dziekanat. Nie wymaga wypełniania pól.</p>
     </div>
 
+    {% if dokument %}
+    <div class="document-preview">
+        <h3>Podgląd dokumentu</h3>
+        <p><strong>Status:</strong> {{ dokument.status }}</p>
+        <fieldset class="form-section">
+            <legend>Dane studenta</legend>
+            <div class="form-group">
+                {% if dokument_data.get('student_id') %}
+                    {% set s = dokument_data.get('student_id') %}
+                    <input value="{{ s }}" readonly>
+                {% elif selected_student %}
+                    <input value="{{ selected_student.imie }} {{ selected_student.nazwisko }} ({{ selected_student.numer_albumu }})" readonly>
+                {% endif %}
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            {% if current_user.rola.nazwa in ['dyrektor', 'opiekun_firmowy'] and dokument.status == 'awaiting_signature' %}
+                <a href="{{ url_for('dashboard.zalacznik_2', dokument_id=dokument.id, action='sign') }}" class="btn-primary" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować dokument?')">Podpisz i zaakceptuj</a>
+            {% endif %}
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Powrót</a>
+        </div>
+    </div>
+    {% else %}
     <form method="post" class="document-form">
         <fieldset class="form-section">
             <legend>Dane studenta</legend>
@@ -30,12 +54,13 @@
             </div>
         </fieldset>
 
-        <p>Po utworzeniu dokumentu będzie dostępny do przeglądu przez studentów i opiekunów.</p>
+        <p>Po utworzeniu dokumentu będzie dostępny do przeglądu przez studentów i opiekunów. Dokument nie będzie już edytowalny.</p>
 
         <div class="form-actions">
             <button type="submit" class="btn-primary">Utwórz dokument Załącznik 2</button>
             <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
         </div>
     </form>
+    {% endif %}
 </div>
 {% endblock %}
