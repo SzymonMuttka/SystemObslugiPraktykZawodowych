@@ -225,7 +225,7 @@ def index():
     if role == 'student':
         practice_row = db.session.execute(
             text(
-                "SELECT id, sciezka, status "
+                "SELECT id, sciezka, status, aktualny_etap "
                 "FROM praktyka WHERE student_id = :student_id ORDER BY id DESC LIMIT 1"
             ),
             {'student_id': current_user.id}
@@ -235,23 +235,71 @@ def index():
                 'id': practice_row[0],
                 'sciezka': practice_row[1] or '',
                 'status': practice_row[2] or '',
+                'aktualny_etap': practice_row[3],
             }
-            if selected_practice['sciezka'] == 'standard':
-                available_documents = [
-                    {'label': 'Załącznik 5', 'url': url_for('dashboard.zalacznik_5')},
-                    {'label': 'Załącznik 6', 'url': url_for('dashboard.zalacznik_6')},
-                    {'label': 'Załącznik 7', 'url': url_for('dashboard.zalacznik_7')},
-                ]
-            elif selected_practice['sciezka'] == 'alternative':
-                available_documents = [
-                    {'label': 'Załącznik 4b', 'url': url_for('dashboard.zalacznik_4b')},
-                    {'label': 'Załącznik 7a', 'url': url_for('dashboard.zalacznik_7a')},
-                ]
-            else:
-                available_documents = [
-                    {'label': 'Załącznik 4b', 'url': url_for('dashboard.zalacznik_4b')},
-                    {'label': 'Załącznik 7a', 'url': url_for('dashboard.zalacznik_7a')},
-                ]
+
+        # helper to get last document status for a practice and document code
+        def get_doc_status(prak_id, kod):
+            if not prak_id:
+                return None
+            row = db.session.execute(text(
+                "SELECT d.status FROM dokument d JOIN typ_dokumentu t ON d.typ_dokumentu_id = t.id "
+                "WHERE d.praktyka_id = :prak_id AND t.kod = :kod ORDER BY d.id DESC LIMIT 1"
+            ), {'prak_id': prak_id, 'kod': kod}).fetchone()
+            return row[0] if row else None
+
+        prak_id = selected_practice['id'] if selected_practice else None
+
+        if not selected_practice:
+            # No practice: 4b enabled, 7a disabled
+            available_documents = [
+                {'label': 'Załącznik 4b', 'url': url_for('dashboard.zalacznik_4b'), 'disabled': False},
+                {'label': 'Załącznik 7a', 'url': url_for('dashboard.zalacznik_7a'), 'disabled': True, 'reason': 'Brak przypisanej praktyki'},
+            ]
+        elif selected_practice['sciezka'] == 'alternative':
+            # 4b enabled only if not already created; 7a enabled only if ZAL_4A completed and not already created
+            z4b_status = get_doc_status(prak_id, 'ZAL_4B')
+            z4a_status = get_doc_status(prak_id, 'ZAL_4A')
+            z7a_status = get_doc_status(prak_id, 'ZAL_7A')
+            available_documents = [
+                {
+                    'label': 'Załącznik 4b',
+                    'url': url_for('dashboard.zalacznik_4b', selected_praktyka_id=prak_id),
+                    'disabled': z4b_status is not None,
+                    'reason': 'Załącznik już utworzony' if z4b_status is not None else None,
+                },
+                {
+                    'label': 'Załącznik 7a',
+                    'url': url_for('dashboard.zalacznik_7a', selected_praktyka_id=prak_id),
+                    'disabled': not (z4a_status == 'completed') or (z7a_status is not None),
+                    'reason': ('Wymagany: ZAL_4A ukończony' if z4a_status != 'completed' else 'Załącznik już utworzony'),
+                },
+            ]
+        else:
+            # standard path: conditions based on other documents
+            z3_status = get_doc_status(prak_id, 'ZAL_3')
+            z6_status = get_doc_status(prak_id, 'ZAL_6')
+            z8_status = get_doc_status(prak_id, 'ZAL_8')
+            z5_status = get_doc_status(prak_id, 'ZAL_5')
+            z7_status = get_doc_status(prak_id, 'ZAL_7')
+
+            # Załącznik 6: requires ZAL_3 status 'doc3_step2'
+            can_create_6 = (z3_status == 'doc3_step2') and (z6_status is None)
+            # Załącznik 7: requires ZAL_6 completed
+            can_create_7 = (z6_status == 'completed') and (z7_status is None)
+            # Załącznik 5: requires ZAL_8 completed and praktyka nie jest już na etapie 10
+            can_create_5 = (z8_status == 'completed') and (z5_status is None) and (selected_practice.get('aktualny_etap') != 10)
+
+            available_documents = [
+                {
+                    'label': 'Załącznik 5',
+                    'url': url_for('dashboard.zalacznik_5', selected_praktyka_id=prak_id),
+                    'disabled': not can_create_5,
+                    'reason': ('Załącznik 5 został już utworzony, dziękujemy za wypełnienie ankiety' if selected_practice.get('aktualny_etap') == 10 else 'Wymagany: ZAL_8 ukończony lub już utworzony'),
+                },
+                {'label': 'Załącznik 6', 'url': url_for('dashboard.zalacznik_6', selected_praktyka_id=prak_id), 'disabled': not can_create_6, 'reason': 'Wymagany: ZAL_3 na etapie doc3_step2 lub już utworzony'},
+                {'label': 'Załącznik 7', 'url': url_for('dashboard.zalacznik_7', selected_praktyka_id=prak_id), 'disabled': not can_create_7, 'reason': 'Wymagany: ZAL_6 ukończony lub już utworzony'},
+            ]
 
     elif role in ['dziekanat', 'opiekun_firmowy', 'opiekun_uczelniany', 'dyrektor', 'czlonek_komisji']:
         query = (
@@ -288,20 +336,43 @@ def index():
             if selected_row:
                 selected_practice = selected_row
                 if role == 'dziekanat':
+                    # helper to get last document status for a practice and document code
+                    def get_doc_status(prak_id, kod):
+                        row = db.session.execute(text(
+                            "SELECT d.status FROM dokument d JOIN typ_dokumentu t ON d.typ_dokumentu_id = t.id "
+                            "WHERE d.praktyka_id = :prak_id AND t.kod = :kod ORDER BY d.id DESC LIMIT 1"
+                        ), {'prak_id': selected_practice_id, 'kod': kod}).fetchone()
+                        return row[0] if row else None
+
                     if selected_practice['sciezka'] == 'standard':
-                        available_documents = ([
-                            {'label': 'Załącznik 1', 'url': url_for('dashboard.zalacznik_1', selected_praktyka_id=selected_practice_id)},
-                            {'label': 'Załącznik 2', 'url': url_for('dashboard.zalacznik_2', selected_praktyka_id=selected_practice_id)},
-                            {'label': 'Załącznik 2a', 'url': url_for('dashboard.zalacznik_2a', selected_praktyka_id=selected_practice_id)},
-                            {'label': 'Załącznik 3', 'url': url_for('dashboard.zalacznik_3', selected_praktyka_id=selected_practice_id)},
-                            {'label': 'Załącznik 4', 'url': url_for('dashboard.zalacznik_4', selected_praktyka_id=selected_practice_id)},
-                            {'label': 'Załącznik 8', 'url': url_for('dashboard.zalacznik_8', selected_praktyka_id=selected_practice_id)},
-                        ])
+                        # compute statuses
+                        z9 = get_doc_status(selected_practice_id, 'ZAL_9')
+                        z1 = get_doc_status(selected_practice_id, 'ZAL_1')
+                        z2 = get_doc_status(selected_practice_id, 'ZAL_2')
+                        z2a = get_doc_status(selected_practice_id, 'ZAL_2A')
+                        z3 = get_doc_status(selected_practice_id, 'ZAL_3')
+                        z6 = get_doc_status(selected_practice_id, 'ZAL_6')
+                        z4 = get_doc_status(selected_practice_id, 'ZAL_4')
+                        z7 = get_doc_status(selected_practice_id, 'ZAL_7')
+                        z8 = get_doc_status(selected_practice_id, 'ZAL_8')
+
+                        available_documents = [
+                            {'label': 'Załącznik 1', 'url': url_for('dashboard.zalacznik_1', selected_praktyka_id=selected_practice_id), 'disabled': not (z9 == 'completed') or (z1 is not None)},
+                            {'label': 'Załącznik 2', 'url': url_for('dashboard.zalacznik_2', selected_praktyka_id=selected_practice_id), 'disabled': not (z1 == 'completed') or (z2 is not None)},
+                            {'label': 'Załącznik 2a', 'url': url_for('dashboard.zalacznik_2a', selected_praktyka_id=selected_practice_id), 'disabled': not (z2 == 'completed') or (z2a is not None)},
+                            {'label': 'Załącznik 3', 'url': url_for('dashboard.zalacznik_3', selected_praktyka_id=selected_practice_id), 'disabled': not (z2a == 'completed') or (z3 is not None)},
+                            {'label': 'Załącznik 4', 'url': url_for('dashboard.zalacznik_4', selected_praktyka_id=selected_practice_id), 'disabled': not (z6 == 'completed') or (z4 is not None)},
+                            {'label': 'Załącznik 8', 'url': url_for('dashboard.zalacznik_8', selected_praktyka_id=selected_practice_id), 'disabled': not ((z7 == 'completed') and (z3 == 'completed') and (z4 == 'completed')) or (z8 is not None), 'reason': ('Zablokowane' if z8 is not None else 'Wymagany: ZAL_7, ZAL_3 i ZAL_4 ukończone')},
+                        ]
                     elif selected_practice['sciezka'] == 'alternative':
-                        available_documents = ([
-                            {'label': 'Załącznik 4a', 'url': url_for('dashboard.zalacznik_4a', selected_praktyka_id=selected_practice_id)},
-                            {'label': 'Załącznik 8', 'url': url_for('dashboard.zalacznik_8', selected_praktyka_id=selected_practice_id)},
-                        ])
+                        z4b = get_doc_status(selected_practice_id, 'ZAL_4B')
+                        z4a = get_doc_status(selected_practice_id, 'ZAL_4A')
+                        z7a = get_doc_status(selected_practice_id, 'ZAL_7A')
+
+                        available_documents = [
+                            {'label': 'Załącznik 4a', 'url': url_for('dashboard.zalacznik_4a', selected_praktyka_id=selected_practice_id), 'disabled': not (z4b == 'completed') or (z4a is not None)},
+                            {'label': 'Załącznik 8', 'url': url_for('dashboard.zalacznik_8', selected_praktyka_id=selected_practice_id), 'disabled': not (z7a == 'completed') or (get_doc_status(selected_practice_id, 'ZAL_8') is not None)},
+                        ]
                 elif role == 'opiekun_firmowy':
                     available_documents = [
                         {'label': 'Załącznik 9', 'url': url_for('dashboard.zalacznik_9')},
@@ -313,7 +384,7 @@ def index():
         # dla roli student pokaż wszystkie dokumenty utworzone/udostępnione bez filtrowania po praktyce
         if role == 'student':
             docs_query = (
-                "SELECT d.id, t.kod, oe.imie || ' ' || oe.nazwisko AS ostatni, d.zaktualizowano "
+                "SELECT d.id, t.kod, d.status, oe.imie || ' ' || oe.nazwisko AS ostatni, d.zaktualizowano "
                 "FROM dokument d "
                 "JOIN typ_dokumentu t ON d.typ_dokumentu_id = t.id "
                 "LEFT JOIN uzytkownik oe ON d.ostatni_edytor = oe.id "
@@ -326,7 +397,7 @@ def index():
             docs_rows = []
             if selected_practice_id:
                 docs_query = (
-                    "SELECT d.id, t.kod, oe.imie || ' ' || oe.nazwisko AS ostatni, d.zaktualizowano "
+                    "SELECT d.id, t.kod, d.status, oe.imie || ' ' || oe.nazwisko AS ostatni, d.zaktualizowano "
                     "FROM dokument d "
                     "JOIN typ_dokumentu t ON d.typ_dokumentu_id = t.id "
                     "LEFT JOIN uzytkownik oe ON d.ostatni_edytor = oe.id "
@@ -342,8 +413,9 @@ def index():
             my_documents.append({
                 'id': dr[0],
                 'label': label,
-                'ostatni': dr[2] or '',
-                'zaktualizowano': dr[3] or '',
+                'status': dr[2] or '',
+                'ostatni': dr[3] or '',
+                'zaktualizowano': dr[4] or '',
             })
     except Exception:
         current_app.logger.exception('Błąd pobierania dokumentów użytkownika')

@@ -91,7 +91,7 @@ CREATE TABLE dokument (
     utworzony_przez INTEGER NOT NULL REFERENCES uzytkownik(id),
     status TEXT NOT NULL DEFAULT 'draft',
     -- 'draft', 'in_progress', 'awaiting_signature', 'awaiting_approval', 'completed', 'rejected'
-	-- add doc 3 specific
+	-- 'doc3_step1', 'doc3_step2', 'doc3_step3', 'doc3_step4'
 	ostatni_edytor TEXT,
     jest_usuniety INTEGER NOT NULL DEFAULT 0,
     jest_anonimowy INTEGER NOT NULL DEFAULT 0,

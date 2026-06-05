@@ -43,7 +43,13 @@
             {% if available_documents %}
             <ul class="dashboard-nav-list">
                 {% for doc in available_documents %}
-                <li><a href="{{ doc.url }}">{{ doc.label }}</a></li>
+                <li>
+                    {% if doc.disabled %}
+                        <span class="disabled" title="{{ doc.reason or 'Zablokowane' }}">{{ doc.label }}</span>
+                    {% else %}
+                        <a href="{{ doc.url }}">{{ doc.label }}</a>
+                    {% endif %}
+                </li>
                 {% endfor %}
             </ul>
             {% else %}
@@ -61,6 +67,7 @@
                     <thead>
                         <tr>
                             <th>Nazwa dokumentu</th>
+                            <th>Status</th>
                             <th>Ostatni edytor</th>
                             <th>Ostatnia zmiana</th>
                         </tr>
@@ -69,6 +76,27 @@
                         {% for doc in my_documents %}
                         <tr>
                             <td>{{ doc.label }}</td>
+                            {% if doc.status == 'draft' %}
+                                <td>utworzony</td>
+                            {% elif doc.status == 'in_progress' %}
+                                <td>potrzebuje uzupełnienia</td>
+                            {% elif doc.status == 'awaiting_signature' %}
+                                <td>potrzebny podpis</td>
+                            {% elif doc.status == 'awaiting_approval' %}
+                                <td>potrzebne zatwierdzenie</td>
+                            {% elif doc.status == 'completed' %}
+                                <td>ukończony</td>
+                            {% elif doc.status == 'rejected' %}
+                                <td>odrzucony</td>
+                            {% elif doc.status == 'doc3_step1' %}
+                                <td>student skierowany na praktykę</td>
+                            {% elif doc.status == 'doc3_step2' %}
+                                <td>student zgłosił się i odbył szkolenie</td>
+                            {% elif doc.status == 'doc3_step3' %}
+                                <td>opiekun firmowy ocenił przebieg praktyki</td>
+                            {% elif doc.status == 'doc3_step4' %}
+                                <td>opiekun uczelniany ocenił przebieg praktyki</td>
+                            {% endif %}
                             <td>{{ doc.ostatni }}</td>
                             <td>{{ doc.zaktualizowano }}</td>
                         </tr>

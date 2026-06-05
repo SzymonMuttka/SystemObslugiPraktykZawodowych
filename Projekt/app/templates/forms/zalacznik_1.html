@@ -114,9 +114,16 @@
         if (!studentSelect || !studentIdInput) {
             return;
         }
-
-        const option = studentSelect.options[studentSelect.selectedIndex];
-        const studentId = option?.dataset?.studentId || '';
+        // studentSelect can be a <select> (when dziekanat chooses) or an <input> (readonly when preselected)
+        let studentId = '';
+        if (studentSelect.tagName && studentSelect.tagName.toLowerCase() === 'select') {
+            const option = studentSelect.options[studentSelect.selectedIndex];
+            studentId = option?.dataset?.studentId || '';
+        } else {
+            // studentSelect is an input (readonly) and hidden student_id already contains id
+            studentId = studentIdInput.value || '';
+        }
+        // ensure hidden input is populated
         studentIdInput.value = studentId;
 
         if (studentId && practiceData[studentId]) {

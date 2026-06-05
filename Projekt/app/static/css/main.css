@@ -201,6 +201,17 @@ body {
     margin-top: 0.25rem;
 }
 
+.dashboard-nav-list .disabled {
+    display: block;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+    border: 1px solid #e2e8f0;
+    user-select: none;
+}
+
 /* ============================================================
    Strony błędów
    ============================================================ */
@@ -442,17 +453,24 @@ table tbody tr:nth-child(even) {
     text-decoration: none;
     color: #374151;
     background: #f8fafc;
-    transition: background 0.15s;
+    border: 1px solid #e2e8f0;
+    transition: background 0.15s, border-color 0.15s;
 }
 
 .dashboard-nav-list a:hover {
     background: #e2e8f0;
+    border-color: #cbd5e1;
 }
 
 .dashboard-main {
     display: flex;
     flex-direction: column;
     gap: 2rem; /* odstęp między sekcjami */
+    min-width: 0;
+}
+
+.dashboard-layout > .dashboard-main:only-child {
+    grid-column: 1 / -1;
 }
 
 .dashboard-section {
