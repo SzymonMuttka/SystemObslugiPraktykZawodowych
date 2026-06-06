@@ -7,9 +7,24 @@
     <div class="form-header">
         <h2>Załącznik 6: Dziennik praktyki zawodowej</h2>
         <p>Formularz dla dziennika praktyk z możliwością dodawania kolejnych wpisów.</p>
+        {% if document_status %}
+        <p><strong>Status dokumentu:</strong>
+            {% if document_status == 'in_progress' %}
+                potrzebuje uzupełnienia
+            {% elif document_status == 'awaiting_signature' %}
+                potrzebny podpis
+            {% elif document_status == 'completed' %}
+                ukończony
+            {% endif %}
+        </p>
+        {% endif %}
     </div>
 
     <form method="post" class="document-form">
+        {% if dokument_id %}
+        <input type="hidden" name="dokument_id" value="{{ dokument_id }}">
+        {% endif %}
+
         <fieldset class="form-section">
             <legend>Dane studenta / praktyki</legend>
 
@@ -52,7 +67,7 @@
 
             <div class="form-group">
                 <label for="wykaz_zalacznikow">Wykaz załączników</label>
-                <textarea id="wykaz_zalacznikow" name="wykaz_zalacznikow" rows="3" {% if role != 'student' %}readonly{% endif %}>{{ wykaz_zalacznikow }}</textarea>
+                <textarea id="wykaz_zalacznikow" name="wykaz_zalacznikow" rows="3" {% if not allow_edit %}readonly{% endif %}>{{ wykaz_zalacznikow }}</textarea>
             </div>
         </fieldset>
 
@@ -66,40 +81,92 @@
                         <th>Opis wykonywanych prac</th>
                         <th>Nr efektów uczenia się</th>
                         <th>Uwagi opiekuna / osoby nadzorującej</th>
+                        {% if role == 'opiekun_firmowy' and document_status != 'completed' %}<th>Status podpisu</th>{% endif %}
                         <th>Akcje</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr>
-                        <td><input type="number" name="dzien[]" min="1" required {% if role != 'student' %}readonly{% endif %}></td>
-                        <td><input type="date" name="data[]" required {% if role != 'student' %}readonly{% endif %}></td>
-                        <td><input type="text" name="opis[]" required {% if role != 'student' %}readonly{% endif %}></td>
-                        <td>
-                            <select class="efekty-select" name="efekty[]" multiple required {% if role != 'student' %}disabled{% endif %}>
-                                {% for i in range(1, 14) %}
-                                <option value="{{ i }}">{{ i }}</option>
-                                {% endfor %}
-                            </select>
-                            <input type="hidden" name="efekty_rows[]" value="">
-                        </td>
-                        <td><input type="text" name="uwagi[]" {% if role != 'opiekun_firmowy' %}readonly{% endif %}></td>
-                        <td>
-                            {% if role == 'student' %}
-                            <button type="button" class="dodaj_nowy" onclick="addAfter(this)">Dodaj wiersz poniżej</button>
-                            <button type="button" class="usun" onclick="deleteRow(this)">Usuń</button>
+                    {% if wpisy %}
+                        {% for wpis in wpisy %}
+                        <tr data-numer-dnia="{{ wpis.numer_dnia }}" data-signed="{{ wpis.jest_podpisany }}">
+                            <td><input type="number" name="dzien[]" value="{{ wpis.numer_dnia }}" min="1" required {% if not allow_edit or wpis.jest_podpisany %}readonly{% endif %}></td>
+                            <td><input type="date" name="data[]" value="{{ wpis.data_wpisu }}" required {% if not allow_edit or wpis.jest_podpisany %}readonly{% endif %}></td>
+                            <td><input type="text" name="opis[]" value="{{ wpis.opis_prac }}" required {% if not allow_edit or wpis.jest_podpisany %}readonly{% endif %}></td>
+                            <td>
+                                <select class="efekty-select" name="efekty[]" multiple {% if not allow_edit or wpis.jest_podpisany %}disabled{% endif %}>
+                                    {% for i in range(1, 14) %}
+                                    <option value="{{ i }}" {% if i|string in wpis.efekty %}selected{% endif %}>{{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="hidden" name="efekty_rows[]" value="{{ wpis.efekty | join(',') }}">
+                            </td>
+                            <td><input type="text" name="uwagi[]" value="{{ wpis.uwagi_opiekuna }}" {% if role != 'opiekun_firmowy' or document_status == 'completed' or wpis.jest_podpisany %}readonly{% endif %}></td>
+                            {% if role == 'opiekun_firmowy' and document_status != 'completed' %}
+                            <td>
+                                {% if wpis.jest_podpisany %}
+                                    <span style="color: green;">✓ Podpisany</span>
+                                    {% if wpis.podpisano %}<br><small>{{ wpis.podpisano }}</small>{% endif %}
+                                {% else %}
+                                    <span style="color: orange;">○ Oczekuje podpisu</span>
+                                {% endif %}
+                            </td>
                             {% endif %}
-                        </td>
-                    </tr>
+                            <td>
+                                {% if allow_edit %}
+                                    {% if not wpis.jest_podpisany %}
+                                        <button type="button" class="dodaj_nowy" onclick="addAfter(this)">Dodaj poniżej</button>
+                                        <button type="button" class="usun" onclick="deleteRow(this)">Usuń</button>
+                                    {% endif %}
+                                {% endif %}
+                                {% if role == 'opiekun_firmowy' and document_status == 'in_progress' and not wpis.jest_podpisany %}
+                                    <a href="{{ url_for('dashboard.zalacznik_6', dokument_id=dokument_id, action='sign_row', numer_dnia=wpis.numer_dnia) }}" class="btn-small btn-success" onclick="return confirm('Czy na pewno chcesz podpisać ten wiersz?')">Podpisz wiersz</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td><input type="number" name="dzien[]" min="1" required {% if not allow_edit %}readonly{% endif %}></td>
+                            <td><input type="date" name="data[]" required {% if not allow_edit %}readonly{% endif %}></td>
+                            <td><input type="text" name="opis[]" required {% if not allow_edit %}readonly{% endif %}></td>
+                            <td>
+                                <select class="efekty-select" name="efekty[]" multiple required {% if not allow_edit %}disabled{% endif %}>
+                                    {% for i in range(1, 14) %}
+                                    <option value="{{ i }}">{{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="hidden" name="efekty_rows[]" value="">
+                            </td>
+                            <td><input type="text" name="uwagi[]" {% if role != 'opiekun_firmowy' %}readonly{% endif %}></td>
+                            <td>
+                                {% if allow_edit %}
+                                    <button type="button" class="dodaj_nowy" onclick="addAfter(this)">Dodaj poniżej</button>
+                                    <button type="button" class="usun" onclick="deleteRow(this)">Usuń</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
-            {% if role == 'student' %}
+            {% if allow_edit %}
             <button type="button" onclick="addRow()">Dodaj wiersz na dole</button>
             {% endif %}
         </fieldset>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Zapisz załącznik 6</button>
-            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+            {% if allow_edit or (role == 'opiekun_firmowy' and document_status == 'in_progress') %}
+                <button type="submit" class="btn-primary">Zapisz załącznik 6</button>
+            {% endif %}
+
+            {% if role == 'opiekun_firmowy' and document_status == 'in_progress' %}
+                <a href="{{ url_for('dashboard.zalacznik_6', dokument_id=dokument_id, action='sign_all') }}" class="btn-success" onclick="return confirm('Czy na pewno chcesz podpisać wszystkie możliwe dni?')">Podpisz wszystkie dni</a>
+            {% endif %}
+            
+            {% if role == 'opiekun_firmowy' and document_status == 'awaiting_signature' %}
+                <a href="{{ url_for('dashboard.zalacznik_6', dokument_id=dokument_id, action='sign_accept') }}" class="btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować dokument?')">Podpisz i zaakceptuj dokument</a>
+            {% endif %}
+            
+            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">{{ 'Anuluj' if allow_edit else 'Wróć' }}</a>
         </div>
     </form>
 </div>
@@ -108,37 +175,31 @@
     function createRow() {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><input type="number" name="dzien[]" min="1" required {% if role != 'student' %}readonly{% endif %}></td>
-            <td><input type="date" name="data[]" required {% if role != 'student' %}readonly{% endif %}></td>
-            <td><input type="text" name="opis[]" required {% if role != 'student' %}readonly{% endif %}></td>
+            <td><input type="number" name="dzien[]" min="1" required {% if not allow_edit %}readonly{% endif %}></td>
+            <td><input type="date" name="data[]" required {% if not allow_edit %}readonly{% endif %}></td>
+            <td><input type="text" name="opis[]" required {% if not allow_edit %}readonly{% endif %}></td>
             <td>
-                <select class="efekty-select" name="efekty[]" multiple required {% if role != 'student' %}disabled{% endif %}>
+                <select class="efekty-select" name="efekty[]" multiple required {% if not allow_edit %}disabled{% endif %}>
                     {% for i in range(1, 14) %}
                     <option value="{{ i }}">{{ i }}</option>
                     {% endfor %}
                 </select>
                 <input type="hidden" name="efekty_rows[]" value="">
             </td>
-            <td><input type="text" name="uwagi[]" {% if role != 'opiekun_firmowy' %}readonly{% endif %}></td>
+            <td><input type="text" name="uwagi[]" {% if role != 'opiekun_firmowy' or document_status == 'completed' %}readonly{% endif %}></td>
             <td>
-                <button type="button" class="dodaj_nowy" onclick="addAfter(this)">Dodaj wiersz poniżej</button>
+                <button type="button" class="dodaj_nowy" onclick="addAfter(this)">Dodaj poniżej</button>
                 <button type="button" class="usun" onclick="deleteRow(this)">Usuń</button>
             </td>
         `;
 
         const role = '{{ role }}';
         if (role === 'student') {
-            const tempDiv = document.createElement('tbody');
-            tempDiv.innerHTML = row.innerHTML;
-            const dateInput = tempDiv.querySelector('input[name="data[]"]');
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = row.querySelector('input[name="data[]"]');
             if (dateInput) {
-                const today = new Date().toISOString().split('T')[0];
                 dateInput.value = today;
-                dateInput.defaultValue = today;
-                dateInput.setAttribute('value', today);
             }
-            // apply modified innerHTML back to row
-            row.innerHTML = tempDiv.innerHTML;
         }
         return row;
     }
@@ -179,9 +240,9 @@
         if (role === 'student') {
             const today = new Date().toISOString().split('T')[0];
             document.querySelectorAll('input[name="data[]"]').forEach(function(inp) {
-                inp.value = today;
-                inp.defaultValue = today;
-                inp.setAttribute('value', today);
+                if (!inp.value) {
+                    inp.value = today;
+                }
             });
         }
 

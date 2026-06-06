@@ -19,6 +19,7 @@
                     value="{{ imie_nazwisko_studenta }}" readonly>
                 <input type="hidden" id="student_id" name="student_id"
                     value="{{ selected_student.id if selected_student else '' }}">
+                <input type="hidden" name="dokument_id" value="{{ dokument.id if dokument else '' }}">
             </div>
 
             <div class="form-group">
@@ -56,9 +57,9 @@
                             <td>{{ efekt.numer }}</td>
                             <td>{{ efekt.opis }}</td>
                             <td>
-                                <select name="efekt_uzyskany[]">
-                                    <option value="0" selected>nie uzyskał/a</option>
-                                    <option value="1">uzyskał/a</option>
+                                <select name="efekt_uzyskany[]" {% if not can_edit_firmowy %}disabled{% endif %}>
+                                    <option value="0" {% if efekt.status != 'achieved' %}selected{% endif %}>nie uzyskał/a</option>
+                                    <option value="1" {% if efekt.status == 'achieved' %}selected{% endif %}>uzyskał/a</option>
                                 </select>
                             </td>
                         </tr>
@@ -73,18 +74,28 @@
 
             <div class="form-group">
                 <label for="opinia_opiekuna_uczelnianego">Opinia opiekuna uczelnianego</label>
-                <textarea id="opinia_opiekuna_uczelnianego" name="opinia_opiekuna_uczelnianego" rows="4">{{ opinia_opiekuna_uczelnianego }}</textarea>
+                <textarea id="opinia_opiekuna_uczelnianego" name="opinia_opiekuna_uczelnianego" rows="4" {% if not can_edit_uczelniany %}readonly{% endif %}>{{ opinia_opiekuna_uczelnianego }}</textarea>
             </div>
 
             <div class="form-group">
                 <label for="data_opinii">Data opinii</label>
                 <input id="data_opinii" name="data_opinii" type="date"
-                    value="{{ data_opinii }}">
+                    value="{{ data_opinii }}" {% if not can_edit_uczelniany %}readonly{% endif %}>
             </div>
         </fieldset>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Zapisz załącznik 4</button>
+            {% if not dokument and role == 'dziekanat' %}
+                <button type="submit" class="btn-primary">Utwórz załącznik 4</button>
+            {% elif dokument and can_edit_firmowy %}
+                <button type="submit" class="btn-primary">Zapisz zmiany</button>
+                <a href="{{ url_for('dashboard.zalacznik_4', dokument_id=dokument.id, action='sign_accept') }}" class="btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować ten dokument?')">Podpisz i zaakceptuj</a>
+            {% elif dokument and can_edit_uczelniany %}
+                <button type="submit" class="btn-primary">Zapisz zmiany</button>
+                <a href="{{ url_for('dashboard.zalacznik_4', dokument_id=dokument.id, action='sign_accept') }}" class="btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować ten dokument?')">Podpisz i zaakceptuj</a>
+            {% else %}
+                <p class="info">Dokument został zapisany. Możesz go teraz jedynie podglądać.</p>
+            {% endif %}
             <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
         </div>
     </form>

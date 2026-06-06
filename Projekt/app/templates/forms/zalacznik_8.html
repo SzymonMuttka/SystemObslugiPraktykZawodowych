@@ -19,6 +19,7 @@
                     <input id="student_name" name="imie_nazwisko_studenta" type="text"
                         value="{{ imie_nazwisko_studenta }}" readonly>
                     <input type="hidden" id="student_id" name="student_id" value="{{ student_id }}">
+                    <input type="hidden" id="dokument_id" name="dokument_id" value="{{ dokument.id if dokument else '' }}">
                 </div>
                 <div class="form-group">
                     <label>Numer indeksu</label>
@@ -32,12 +33,12 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="ocena_sprawozdania_s">Ocena za sprawozdanie S*</label>
-                    <input id="ocena_sprawozdania_s" name="ocena_sprawozdania_s" type="text">
+                    <input id="ocena_sprawozdania_s" name="ocena_sprawozdania_s" type="text" value="{{ ocena_sprawozdania_s }}" {% if not can_edit %}readonly{% endif %}>
                 </div>
                 <div class="form-group">
                     <label for="data_oceny_s">Data oceny S*</label>
                     <input id="data_oceny_s" name="data_oceny_s" type="date"
-                        value="{{ data_oceny_s }}">
+                        value="{{ data_oceny_s }}" {% if not can_edit %}readonly{% endif %}>
                 </div>
             </div>
         </fieldset>
@@ -47,11 +48,11 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Ocena U*</label>
-                    <input id="ocena_u" name="ocena_u" type="text" value="{{ ocena_u }}">
+                    <input id="ocena_u" name="ocena_u" type="text" value="{{ ocena_u }}" {% if not can_edit %}readonly{% endif %}>
                 </div>
                 <div class="form-group">
                     <label>Ocena Z*</label>
-                    <input id="ocena_z" name="ocena_z" type="text" value="{{ ocena_z }}">
+                    <input id="ocena_z" name="ocena_z" type="text" value="{{ ocena_z }}" {% if not can_edit %}readonly{% endif %}>
                 </div>
             </div>
         </fieldset>
@@ -62,11 +63,7 @@
                 <label for="data_zaliczenia">Data zaliczenia</label>
                 <input id="data_zaliczenia" name="data_zaliczenia" type="date"
                     value="{{ data_zaliczenia }}"
-                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>
-            </div>
-
-            <div class="form-group">
-                <div class="sklad-komisji-table">
+                        {% if not can_edit %}readonly{% endif %}>
                 <table>
                     <thead>
                         <tr>
@@ -76,31 +73,31 @@
                     <tbody>
                         <tr>
                             <td>
-                                <select id="imie_nazwisko_1" name="imie_nazwisko_1">
+                                <select id="imie_nazwisko_1" name="imie_nazwisko_1" {% if not can_edit %}disabled{% endif %}>
                                     <option value="">-- Wybierz osobę --</option>
                                 </select>
                             </td>
                             <td><input type="text" id="funkcja_1" name="funkcja_1" value="Przewodniczący Komisji" readonly></td>
                         </tr>
                         <tr>
-                            <td><input type="text" id="imie_nazwisko_2" name="imie_nazwisko_2"></td>
-                            <td><input type="text" id="funkcja_2" name="funkcja_2" value="Uczelniany opiekun praktyki zawodowej" readonly></td>
+                            <td><input type="text" id="imie_nazwisko_2" name="imie_nazwisko_2" value="{{ imie_nazwisko_2 }}" {% if not can_edit %}readonly{% endif %}></td>
+                            <td><input type="text" id="funkcja_2" name="funkcja_2" value="{{ funkcja_2 or 'Uczelniany opiekun praktyki zawodowej' }}" readonly></td>
                         </tr>
                         <tr>
                             <td>
-                                <select id="imie_nazwisko_3" name="imie_nazwisko_3">
+                                <select id="imie_nazwisko_3" name="imie_nazwisko_3" {% if not can_edit %}disabled{% endif %}>
                                     <option value="">-- Wybierz osobę --</option>
                                 </select>
                             </td>
-                            <td><input type="text" id="funkcja_3" name="funkcja_3" readonly></td>
+                            <td><input type="text" id="funkcja_3" name="funkcja_3" value="{{ funkcja_3 }}" readonly></td>
                         </tr>
                         <tr>
                             <td>
-                                <select id="imie_nazwisko_4" name="imie_nazwisko_4">
+                                <select id="imie_nazwisko_4" name="imie_nazwisko_4" {% if not can_edit %}disabled{% endif %}>
                                     <option value="">-- Wybierz osobę --</option>
                                 </select>
                             </td>
-                            <td><input type="text" id="funkcja_4" name="funkcja_4" readonly></td>
+                            <td><input type="text" id="funkcja_4" name="funkcja_4" value="{{ funkcja_4 }}" readonly></td>
                         </tr>
                     </tbody>
                 </table>
@@ -120,18 +117,18 @@
                     <tbody>
                         <tr>
                             <td>1</td>
-                            <td><input type="text" id="pytanie_1" name="pytanie_1"></td>
-                            <td><input type="number" id="ocena_cz_1" name="ocena_cz_1" min="2" max="5"></td>
+                            <td><input type="text" id="pytanie_1" name="pytanie_1" value="{{ pytanie_1 }}" {% if not can_edit %}readonly{% endif %}></td>
+                            <td><input type="number" id="ocena_cz_1" name="ocena_cz_1" min="2" max="5" value="{{ ocena_cz_1 }}" {% if not can_edit %}readonly{% endif %}></td>
                         </tr>
                         <tr>
                             <td>2</td>
-                            <td><input type="text" id="pytanie_2" name="pytanie_2"></td>
-                            <td><input type="number" id="ocena_cz_2" name="ocena_cz_2" min="2" max="5"></td>
+                            <td><input type="text" id="pytanie_2" name="pytanie_2" value="{{ pytanie_2 }}" {% if not can_edit %}readonly{% endif %}></td>
+                            <td><input type="number" id="ocena_cz_2" name="ocena_cz_2" min="2" max="5" value="{{ ocena_cz_2 }}" {% if not can_edit %}readonly{% endif %}></td>
                         </tr>
                         <tr>
                             <td>3</td>
-                            <td><input type="text" id="pytanie_3" name="pytanie_3"></td>
-                            <td><input type="number" id="ocena_cz_3" name="ocena_cz_3" min="2" max="5"></td>
+                            <td><input type="text" id="pytanie_3" name="pytanie_3" value="{{ pytanie_3 }}" {% if not can_edit %}readonly{% endif %}></td>
+                            <td><input type="number" id="ocena_cz_3" name="ocena_cz_3" min="2" max="5" value="{{ ocena_cz_3 }}" {% if not can_edit %}readonly{% endif %}></td>
                         </tr>
                         <tr>
                     </tbody>
@@ -141,22 +138,25 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="ocena_za_mini_zadania_e">Łączna ocena za mini zadania zawodowe E</label>
-                    <input id="ocena_za_mini_zadania_e" name="ocena_za_mini_zadania_e" type="text"
+                    <input id="ocena_za_mini_zadania_e" name="ocena_za_mini_zadania_e" type="number" min="2" max="5" step="0.01"
                         value="{{ ocena_za_mini_zadania_e }}"
-                        {% if role != 'czlonek_komisji' %}readonly{% endif %}>
+                        {% if not can_edit %}readonly{% endif %}>
                 </div>
                 <div class="form-group">
                     <label for="ocena_koncowa">Ocena końcowa K</label>
-                    <input id="ocena_koncowa" name="ocena_koncowa" type="text"
+                    <input id="ocena_koncowa" name="ocena_koncowa" type="number" min="2" max="5" step="0.01"
                         value="{{ ocena_koncowa }}"
-                        {% if role != 'czlonek_komisji' %}readonly{% endif %}>
+                        {% if not can_edit %}readonly{% endif %}>
                 </div>
             </div>
         </fieldset>
 
         <div class="form-actions">
-            {% if role in ['dziekanat', 'opiekun_uczelniany', 'czlonek_komisji'] %}
+            {% if can_create or can_edit %}
                 <button type="submit" class="btn-primary">Zapisz załącznik 8</button>
+            {% endif %}
+            {% if can_sign %}
+                <a href="{{ url_for('dashboard.zalacznik_8', dokument_id=dokument.id, action='sign') }}" class="btn-primary">Podpisz dokument</a>
             {% endif %}
             <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
         </div>
@@ -191,6 +191,12 @@
     const komisjaOsoby = {{ komisja_osoby_json|safe }};
     const prefilledOpiekun = {{ prefilled_opiekun|tojson|safe }};
     const prefilledOpiekunId = {{ prefilled_opiekun_id|tojson|safe }};
+    const selectedImieNazwisko1 = {{ imie_nazwisko_1|default('')|tojson|safe }};
+    const selectedImieNazwisko2 = {{ imie_nazwisko_2|default('')|tojson|safe }};
+    const selectedImieNazwisko3 = {{ imie_nazwisko_3|default('')|tojson|safe }};
+    const selectedImieNazwisko4 = {{ imie_nazwisko_4|default('')|tojson|safe }};
+    const selectedFunkcja3 = {{ funkcja_3|default('')|tojson|safe }};
+    const selectedFunkcja4 = {{ funkcja_4|default('')|tojson|safe }};
     
     // Przechowywanie oryginalnych opcji
     const allSelectOptions = {};
@@ -317,8 +323,10 @@
             dataOcenyS8.value = zal3.data_sprawozdania || '';
         }
 
-        // Wypełnij opiekuna uczelnianego: najpierw z ZAL_3, potem fallback do prefilled id, potem do prefilled name
-        if (zal3.opiekun_id && komisjaOsoby[zal3.opiekun_id]) {
+        // Wypełnij opiekuna uczelnianego: najpierw z formularza (jeśli istnieje), potem ZAL_3, potem fallback do prefilled id, potem do prefilled name
+        if (selectedImieNazwisko2) {
+            imieNazwisko2.value = selectedImieNazwisko2;
+        } else if (zal3.opiekun_id && komisjaOsoby[zal3.opiekun_id]) {
             imieNazwisko2.value = komisjaOsoby[zal3.opiekun_id].imie_nazwisko;
         } else if (prefilledOpiekunId && komisjaOsoby[prefilledOpiekunId]) {
             imieNazwisko2.value = komisjaOsoby[prefilledOpiekunId].imie_nazwisko;
@@ -363,8 +371,27 @@
 
     // Inicjalizacja
     populateKomisjaSelects();
+    if (selectedImieNazwisko1) {
+        select1.value = selectedImieNazwisko1;
+    }
+    if (selectedImieNazwisko3) {
+        select3.value = selectedImieNazwisko3;
+    }
+    if (selectedImieNazwisko4) {
+        select4.value = selectedImieNazwisko4;
+    }
+    if (selectedFunkcja3) {
+        funkcja3.value = selectedFunkcja3;
+    }
+    if (selectedFunkcja4) {
+        funkcja4.value = selectedFunkcja4;
+    }
     updateZalacznik8Fields();
     updateSelectAvailability();
+
+    if (selectedImieNazwisko1) select1.dispatchEvent(new Event('change'));
+    if (selectedImieNazwisko3) select3.dispatchEvent(new Event('change'));
+    if (selectedImieNazwisko4) select4.dispatchEvent(new Event('change'));
 
     if (ocenaCz1) ocenaCz1.addEventListener('change', calculateOcenaE);
     if (ocenaCz2) ocenaCz2.addEventListener('change', calculateOcenaE);

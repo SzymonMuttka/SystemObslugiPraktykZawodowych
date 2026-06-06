@@ -21,6 +21,9 @@
                         value="{{ selected_student.imie }} {{ selected_student.nazwisko }} ({{ selected_student.numer_albumu }})"
                         readonly>
                     <input type="hidden" id="student_id" name="student_id" value="{{ selected_student.id }}">
+                    {% if dokument %}
+                        <input type="hidden" name="dokument_id" value="{{ dokument.id }}">
+                    {% endif %}
                 {% else %}
                     <select id="student_select" name="student_select" required>
                         <option value="">— wybierz studenta —</option>
@@ -51,7 +54,7 @@
 
             <div class="form-group">
                 <label for="nr_indeksu">Numer indeksu</label>
-                <input id="nr_indeksu" name="nr_indeksu" type="text"
+                    <input id="nr_indeksu" name="nr_indeksu" type="text"
                     value="{{ selected_student.numer_albumu if selected_student else '' }}" readonly>
             </div>
 
@@ -134,32 +137,38 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="miejscowosc">Miejscowość</label>
-                    <input id="miejscowosc" name="miejscowosc" type="text">
-                </div>
-                <div class="form-group">
-                    <label for="data_podpisu_firmowego">Data</label>
-                    <input id="data_podpisu_firmowego" name="data_podpisu_firmowego" type="date">
-                </div>
+                <input id="miejscowosc" name="miejscowosc" type="text"
+                    value="{{ dokument_data.get('miejscowość', '') }}"
+                    {{ 'readonly' if (dokument and not firmowy_can_edit) or role == 'dziekanat' else '' }}>
+            </div>
+            <div class="form-group">
+                <label for="data_podpisu_firmowego">Data</label>
+                <input id="data_podpisu_firmowego" name="data_podpisu_firmowego" type="date"
+                    value="{{ dokument_data.get('data_kier', '') }}"
+                    {{ 'readonly' if (dokument and not firmowy_can_edit) or role == 'dziekanat' else '' }}>
+            </div>
             </div>
 
             <div class="form-group">
                 <label for="uwagi">Uwagi kierownika zakładu</label>
-                <textarea id="uwagi" name="uwagi" rows="4"></textarea>
-            </div>
-
+                <textarea id="uwagi" name="uwagi" rows="4" {{ 'readonly' if (dokument and not firmowy_can_edit) or role == 'dziekanat' else '' }}>{{ dokument_data.get('uwagi_kier', '') }}</textarea>
             <div class="form-row">
                 <div class="form-group">
                     <label for="ocena_przebiegu_1">Ocena parametryczna</label>
-                    <input id="ocena_przebiegu_1" name="ocena_przebiegu_1" type="number" min="2" max="5" step="1">
+                    <input id="ocena_przebiegu_1" name="ocena_przebiegu_1" type="number" min="2" max="5" step="1"
+                        value="{{ dokument_data.get('ocena_przebiegu_of', '') }}"
+                        {{ 'readonly' if (dokument and not firmowy_can_edit) or role == 'dziekanat' else '' }}>
                 </div>
                 <div class="form-group">
                     <label for="data_przebiegu_1">Data na koniec 1</label>
-                    <input id="data_przebiegu_1" name="data_przebiegu_1" type="date">
+                    <input id="data_przebiegu_1" name="data_przebiegu_1" type="date"
+                        value="{{ dokument_data.get('data_przebiegu_of', '') }}"
+                        {{ 'readonly' if (dokument and not firmowy_can_edit) or role == 'dziekanat' else '' }}>
                 </div>
             </div>
             <div class="form-group">
                 <label for="ocena_opisowa_1">Ocena opisowa</label>
-                <textarea id="ocena_opisowa_1" name="ocena_opisowa_1" rows="3"></textarea>
+                <textarea id="ocena_opisowa_1" name="ocena_opisowa_1" rows="3" {{ 'readonly' if (dokument and not firmowy_can_edit) or role == 'dziekanat' else '' }}>{{ dokument_data.get('ocena_opisowa_of', '') }}</textarea>
             </div>
         </fieldset>
 
@@ -169,32 +178,52 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="ocena_przebiegu_2">Ocena parametryczna</label>
-                    <input id="ocena_przebiegu_2" name="ocena_przebiegu_2" type="number" min="2" max="5" step="1">
+                    <input id="ocena_przebiegu_2" name="ocena_przebiegu_2" type="number" min="2" max="5" step="1"
+                        value="{{ dokument_data.get('ocena_przebiegu_ou', '') }}"
+                        readonly>
                 </div>
                 <div class="form-group">
                     <label for="data_przebiegu_2">Data na koniec 2</label>
-                    <input id="data_przebiegu_2" name="data_przebiegu_2" type="date">
+                    <input id="data_przebiegu_2" name="data_przebiegu_2" type="date"
+                        value="{{ dokument_data.get('data_przebiegu_ou', '') }}"
+                        readonly>
                 </div>
             </div>
             <div class="form-group">
                 <label for="ocena_opisowa_2">Ocena opisowa</label>
-                <textarea id="ocena_opisowa_2" name="ocena_opisowa_2" rows="3"></textarea>
+                <textarea id="ocena_opisowa_2" name="ocena_opisowa_2" rows="3" readonly>{{ dokument_data.get('ocena_opisowa_ou', '') }}</textarea>
             </div>
 
             <div class="form-group">
                 <label for="ocena_sprawozdania">Ocena sprawozdania z praktyki</label>
-                <input id="ocena_sprawozdania" name="ocena_sprawozdania" type="number" min="2" max="5" step="1">
+                <input id="ocena_sprawozdania" name="ocena_sprawozdania" type="number" min="2" max="5" step="1"
+                    value="{{ dokument_data.get('ocena_sprawozdania', '') }}"
+                    {{ 'readonly' if (dokument and not uczelniany_can_edit) or role == 'dziekanat' else '' }}>
             </div>
 
             <div class="form-group">
                 <label for="data_sprawozdania">Data na koniec</label>
-                <input id="data_sprawozdania" name="data_sprawozdania" type="date">
+                <input id="data_sprawozdania" name="data_sprawozdania" type="date"
+                    value="{{ dokument_data.get('data_sprawozdania', '') }}"
+                    readonly>
             </div>
         </fieldset>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Zapisz załącznik 3</button>
-            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+            {% if not dokument and role == 'dziekanat' %}
+                <button type="submit" class="btn-primary">Utwórz załącznik 3</button>
+                <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+            {% elif dokument and firmowy_can_edit %}
+                <button type="submit" class="btn-primary">Zapisz zmiany</button>
+                <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+            {% elif dokument and uczelniany_can_edit %}
+                <button type="submit" class="btn-primary">Zapisz zmiany</button>
+                <a href="{{ url_for('dashboard.zalacznik_3', dokument_id=dokument.id, action='sign_accept') }}" class="btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować ten dokument?')">Podpisz i zaakceptuj</a>
+                <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+            {% else %}
+                <p class="info">Dokument został zapisany. Możesz go teraz jedynie podglądać.</p>
+                <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Powrót</a>
+            {% endif %}
         </div>
     </form>
 </div>
