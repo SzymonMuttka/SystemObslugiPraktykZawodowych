@@ -10,6 +10,10 @@
     </div>
 
     <form method="post" class="document-form">
+        {% if dokument_id %}
+        <input type="hidden" name="dokument_id" value="{{ dokument_id }}">
+        {% endif %}
+
         <fieldset class="form-section">
             <legend>Dane studenta (prefilled)</legend>
 
@@ -21,8 +25,7 @@
             <div class="form-group">
                 <label for="nr_indeksu">Numer indeksu</label>
                 <input id="nr_indeksu" name="nr_indeksu" type="text"
-                    {% if role != 'student' %}readonly{% endif %}
-                    value="{{ nr_indeksu }}">
+                    value="{{ nr_indeksu }}" readonly>
             </div>
 
             <div class="form-group">
@@ -36,7 +39,8 @@
 
             <div class="form-group">
                 <label for="opiekun_uczelniany_id">Opiekun uczelniany</label>
-                <select id="opiekun_uczelniany_id" name="opiekun_uczelniany_id">
+                <select id="opiekun_uczelniany_id" name="opiekun_uczelniany_id"
+                    {% if role != 'student' %}disabled{% endif %}>
                     <option value="">— wybierz opiekuna uczelnianego —</option>
                     {% for opiekun in opiekunowie_uczelni %}
                     <option value="{{ opiekun.id }}"
@@ -66,13 +70,15 @@
 
             <div class="form-group">
                 <label for="opinia_komisji">Opinia komisji</label>
-                <textarea id="opinia_komisji" name="opinia_komisji" rows="4">{{ opinia_komisji }}</textarea>
+                <textarea id="opinia_komisji" name="opinia_komisji" rows="4"
+                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>{{ opinia_komisji }}</textarea>
             </div>
             
             <div class="form-group">
                 <label for="data_opinii_komisji">Data opinii komisji</label>
                 <input id="data_opinii_komisji" name="data_opinii_komisji" type="date"
-                    value="{{ data_opinii_komisji }}">
+                    value="{{ data_opinii_komisji }}"
+                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>
             </div>
         </fieldset>
 
@@ -81,7 +87,8 @@
 
             <div class="form-group">
                 <label for="decyzja_dyrektora">Decyzja</label>
-                <select id="decyzja_dyrektora" name="decyzja_dyrektora">
+                <select id="decyzja_dyrektora" name="decyzja_dyrektora"
+                    {% if role != 'dyrektor' %}disabled{% endif %}>
                     <option value="">Wybierz</option>
                     <option value="uznanie" {% if decyzja_dyrektora == 'uznanie' %}selected{% endif %}>Uznanie</option>
                     <option value="czesciowe_uznanie" {% if decyzja_dyrektora == 'czesciowe_uznanie' %}selected{% endif %}>Częściowe uznanie</option>
@@ -92,18 +99,29 @@
 
             <div class="form-group">
                 <label for="efekty_do_zaliczenia">Dodatkowe efekty uczenia się do zaliczenia</label>
-                <textarea id="efekty_do_zaliczenia" name="efekty_do_zaliczenia" rows="4">{{ efekty_do_zaliczenia }}</textarea>
+                <textarea id="efekty_do_zaliczenia" name="efekty_do_zaliczenia" rows="4"
+                    {% if role != 'dyrektor' %}readonly{% endif %}>{{ efekty_do_zaliczenia }}</textarea>
             </div>
 
             <div class="form-group">
                 <label for="data_decyzji_dyrektora">Data decyzji</label>
                 <input id="data_decyzji_dyrektora" name="data_decyzji_dyrektora" type="date"
-                    value="{{ data_decyzji_dyrektora }}">
+                    value="{{ data_decyzji_dyrektora }}"
+                    {% if role != 'dyrektor' %}readonly{% endif %}>
             </div>
         </fieldset>
 
         <div class="form-actions">
+            {% if can_save %}
             <button type="submit" class="btn-primary">Zapisz załącznik 4b</button>
+            {% endif %}
+            {% if can_sign and dokument_id %}
+            <a href="{{ url_for('dashboard.zalacznik_4b', dokument_id=dokument_id, action='sign') }}" class="btn-primary">Podpisz jako komisja</a>
+            {% endif %}
+            {% if can_accept and dokument_id %}
+            <a href="{{ url_for('dashboard.zalacznik_4b', dokument_id=dokument_id, action='accept') }}" class="btn-primary">Akceptuj jako dyrektor</a>
+            <a href="{{ url_for('dashboard.zalacznik_4b', dokument_id=dokument_id, action='reject') }}" class="btn-danger">Odrzuć jako dyrektor</a>
+            {% endif %}
             <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
         </div>
     </form>

@@ -313,13 +313,17 @@
     function updateZalacznik8Fields() {
         const studentId = studentId8?.value || '';
         const zal3 = studentZal3Data[studentId] || {};
-        ocenaU8.value = zal3.ocena_przebiegu_ou || '';
-        ocenaZ8.value = zal3.ocena_przebiegu_of || '';
+        if (!ocenaU8.value) {
+            ocenaU8.value = zal3.ocena_przebiegu_ou || '';
+        }
+        if (!ocenaZ8.value) {
+            ocenaZ8.value = zal3.ocena_przebiegu_of || '';
+        }
         const ocenaS = zal3.ocena_sprawozdania || '';
-        if (ocenaSprawozdaniaS8) {
+        if (ocenaSprawozdaniaS8 && !ocenaSprawozdaniaS8.value) {
             ocenaSprawozdaniaS8.value = ocenaS;
         }
-        if (dataOcenyS8) {
+        if (dataOcenyS8 && !dataOcenyS8.value) {
             dataOcenyS8.value = zal3.data_sprawozdania || '';
         }
 

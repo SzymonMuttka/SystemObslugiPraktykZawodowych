@@ -6,44 +6,45 @@
 <div class="form-page">
     <div class="form-header">
         <h2>Załącznik 4a: Potwierdzenie uzyskania efektów uczenia się</h2>
-        <p>Formularz z numerem indeksu dla dziekanatu i decyzją komisji.</p>
+        <p>Formularz dla dziekanatu i komisji.</p>
     </div>
 
     <form method="post" class="document-form">
+        {% if dokument_id %}
+        <input type="hidden" name="dokument_id" value="{{ dokument_id }}">
+        {% endif %}
+
         <fieldset class="form-section">
             <legend>Dane studenta (prefilled)</legend>
 
             <div class="form-group">
-                <label for="student_select">
-                    Imię i nazwisko studenta
-                </label>
-
-                <input id="student_select" type="text"
-                    value="{{ selected_student.imie }} {{ selected_student.nazwisko }} ({{ selected_student.numer_albumu }})"
-                    readonly>
-                <input type="hidden" id="student_id" name="student_id" value="{{ selected_student.id }}">
+                <label>Imię i nazwisko studenta</label>
+                <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+                <input type="hidden" id="student_id" name="student_id" value="{{ student_id }}">
             </div>
 
             <div class="form-group">
                 <label for="nr_indeksu">Numer indeksu</label>
                 <input id="nr_indeksu" name="nr_indeksu" type="text"
-                    {% if role != 'dziekanat' %}readonly{% endif %}
-                    value="{{ nr_indeksu }}">
+                    value="{{ nr_indeksu }}" readonly>
             </div>
 
             <div class="form-group">
-                <label for="specjalnosc">Specjalność</label>
-                <input id="specjalnosc" name="specjalnosc" type="text" value="{{ specjalnosc }}" readonly>
+                <label>Specjalność</label>
+                <input type="text" value="{{ specjalnosc }}" readonly>
             </div>
 
             <div class="form-group">
                 <label for="ilosc_godzin_praktyk">Ilość godzin praktyk</label>
-                <input id="ilosc_godzin_praktyk" name="ilosc_godzin_praktyk" type="number" value="{{ ilosc_godzin_praktyk }}" min="0">
+                <input id="ilosc_godzin_praktyk" name="ilosc_godzin_praktyk" type="number"
+                    value="{{ ilosc_godzin_praktyk }}"
+                    {% if role != 'czlonek_komisji' or is_completed %}readonly{% endif %}
+                    min="0">
             </div>
         </fieldset>
 
         <fieldset class="form-section">
-            <legend>Wypełniane przez komisję</legend>
+            <legend>Efekty uczenia się - Ocena komisji</legend>
 
             <div class="form-group">
                 <div class="efekty-table">
@@ -60,10 +61,11 @@
                                 <td>{{ efekt.numer }}</td>
                                 <td>{{ efekt.opis }}</td>
                                 <td>
-                                    <select name="efekt_uzyskany[]">
-                                        <option value="0" selected>nie uzyskał/a</option>
-                                        <option value="1">uzyskał/a częściowo</option>
-                                        <option value="2">uzyskał/a</option>
+                                    <select name="efekt_uzyskany[]"
+                                        {% if role != 'czlonek_komisji' or is_completed %}disabled{% endif %}>
+                                        <option value="0" {% if efekt.status == 'not_achieved' %}selected{% endif %}>nie uzyskał/a</option>
+                                        <option value="1" {% if efekt.status == 'partial' %}selected{% endif %}>uzyskał/a częściowo</option>
+                                        <option value="2" {% if efekt.status == 'achieved' %}selected{% endif %}>uzyskał/a</option>
                                     </select>
                                 </td>
                             </tr>
@@ -77,18 +79,22 @@
                 <label for="data_wyniku_komisji">Data decyzji komisji</label>
                 <input id="data_wyniku_komisji" name="data_wyniku_komisji" type="date"
                     value="{{ data_wyniku_komisji }}"
-                    {% if role != 'czlonek_komisji' %}readonly{% endif %}>
+                    {% if role != 'czlonek_komisji' or is_completed %}readonly{% endif %}>
             </div>
         </fieldset>
 
         <div class="form-actions">
+            {% if can_create and role == 'dziekanat' %}
+            <button type="submit" class="btn-primary">Utwórz załącznik 4a</button>
+            {% endif %}
+            {% if can_edit and role == 'czlonek_komisji' %}
             <button type="submit" class="btn-primary">Zapisz załącznik 4a</button>
+            {% endif %}
+            {% if can_sign_accept and dokument_id %}
+            <a href="{{ url_for('dashboard.zalacznik_4a', dokument_id=dokument_id, action='sign_accept') }}" class="btn-primary" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować dokument?')">Podpisz i zaakceptuj</a>
+            {% endif %}
             <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
         </div>
     </form>
 </div>
-
-<script>
-    // Pole studenta jest readonly, żaden JavaScript nie jest wymagany
-</script>
 {% endblock %}
