@@ -225,6 +225,7 @@ def save_attachment1_data(form_data, dokument_id=None):
                 'wymiar_praktyki': wymiar_praktyki,
                 'imie_nazwisko_studenta': form_data.get('imie_nazwisko_studenta', ''),
                 'reprezentant_uczelni_id': form_data.get('reprezentant_uczelni_id', ''),
+                'dyrektor': form_data.get('dyrektor', ''),
             }
 
             for key, value in fields.items():
@@ -771,10 +772,32 @@ def index():
     )
 
 
+def record_document_download(dokument_id, pobierajacy_id):
+    """Zapisz wpis o pobraniu dokumentu w tabeli dokument_pobranie."""
+    from app import db
+    from sqlalchemy import text
+
+    try:
+        db.session.execute(
+            text(
+                "INSERT INTO dokument_pobranie (dokument_id, pobierajacy_id) "
+                "VALUES (:doc_id, :user_id)"
+            ),
+            {'doc_id': dokument_id, 'user_id': pobierajacy_id}
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Błąd zapisu pobrania dokumentu')
+
+
 @bp.route('/pobierz-dokument', methods=['GET'])
 @login_required
 def download_document():
-    """Pobierz ukończony dokument jako plik .docx."""
+    """Pobierz ukończony dokument jako plik PDF.
+
+    Dla ZAL_1 na Windows otwiera okno zapisu PDF poprzez docx2pdf.
+    """
     from app import db
     from sqlalchemy import text
     import os
@@ -808,20 +831,52 @@ def download_document():
     docx_path = os.path.join(docs_dir, filename_docx)
     pdf_path = os.path.join(docs_dir, filename_pdf)
 
-    # If PDF already exists, serve it
+    # Always regenerate ZAL_2 files on download to avoid stale cached PDFs
+    if doc_row[1] == 'ZAL_2':
+        try:
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
+            if os.path.exists(docx_path):
+                os.remove(docx_path)
+        except Exception:
+            current_app.logger.exception('Nie udało się usunąć starego pliku ZAL_2 przed regeneracją')
+
+    def convert_docx_to_pdf(input_path, output_path):
+        try:
+            from docx2pdf import convert as docx2pdf_convert
+            try:
+                import pythoncom
+                pythoncom.CoInitialize()
+            except Exception:
+                pythoncom = None
+
+            try:
+                docx2pdf_convert(input_path, output_path)
+            finally:
+                if pythoncom:
+                    try:
+                        pythoncom.CoUninitialize()
+                    except Exception:
+                        pass
+        except Exception:
+            current_app.logger.exception('Błąd konwersji DOCX->PDF')
+            raise
+
     if os.path.exists(pdf_path):
+        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_9'):
+            record_document_download(dokument_id, current_user.id)
         return send_file(pdf_path, as_attachment=True)
 
-    # If DOCX exists, convert to PDF and serve
     try:
         if os.path.exists(docx_path):
             try:
-                from docx2pdf import convert as docx2pdf_convert
-                docx2pdf_convert(docx_path, pdf_path)
+                convert_docx_to_pdf(docx_path, pdf_path)
                 if os.path.exists(pdf_path):
+                    if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_9'):
+                        record_document_download(dokument_id, current_user.id)
                     return send_file(pdf_path, as_attachment=True)
             except Exception:
-                current_app.logger.exception('Błąd konwersji DOCX->PDF')
+                pass
 
         # Otherwise generate DOCX from template using docxtpl
         try:
@@ -841,7 +896,7 @@ def download_document():
         # get practice/student/company/opiekun info
         info = db.session.execute(
             text(
-                "SELECT p.student_id, s.imie, s.nazwisko, s.numer_albumu, p.data_rozpoczecia, p.data_zakonczenia, p.opiekun_firmowy_id, f.nazwa, f.miasto "
+                "SELECT p.student_id, s.imie, s.nazwisko, s.numer_albumu, p.data_rozpoczecia, p.data_zakonczenia, p.opiekun_firmowy_id, f.nazwa, f.miasto, f.osoba_upowazniona_imie_nazwisko, f.osoba_upowazniona_stanowisko "
                 "FROM dokument d JOIN praktyka p ON d.praktyka_id = p.id "
                 "LEFT JOIN uzytkownik s ON p.student_id = s.id "
                 "LEFT JOIN firma f ON p.firma_id = f.id "
@@ -850,35 +905,130 @@ def download_document():
             {'doc_id': dokument_id}
         ).fetchone()
 
-        context = {}
-        # basic fields from dane_dokumentu
-        context.update(dokument_data)
+        director_full_name = ''
+        if doc_row[1] == 'ZAL_1':
+            director = db.session.execute(
+                text(
+                    "SELECT u.imie, u.nazwisko FROM uzytkownik u "
+                    "JOIN role r ON u.rola_id = r.id "
+                    "WHERE r.nazwa = 'dyrektor' LIMIT 1"
+                )
+            ).fetchone()
+            if director:
+                director_full_name = f"{director[0] or ''} {director[1] or ''}".strip()
+
+            context = {
+                'dokument_data': dokument_data,
+                'director_full_name': director_full_name,
+                'nr_porozumienia': dokument_data.get('nr_porozumienia', ''),
+                'data_zawarcia': dokument_data.get('data_zawarcia', ''),
+                'reprezentant': {'imie': '', 'nazwisko': ''},
+                'student': {'imie': '', 'nazwisko': ''},
+            }
+        elif doc_row[1] == 'ZAL_2':
+            director = db.session.execute(
+                text(
+                    "SELECT u.imie, u.nazwisko FROM uzytkownik u "
+                    "JOIN role r ON u.rola_id = r.id "
+                    "WHERE r.nazwa = 'dyrektor' LIMIT 1"
+                )
+            ).fetchone()
+            director_full_name = f"{director[0] or ''} {director[1] or ''}".strip() if director else ''
+
+            context = {
+                'dokument_data': dokument_data,
+                'director_full_name': director_full_name,
+                'imie_nazwisko_studenta': '',
+                'nr_albumu': '',
+                'termin_od': '',
+                'termin_do': '',
+                'nazwa_firmy': '',
+                'miejscowosc': '',
+                'osoba_upowazniona': '',
+                'imie_nazwisko_opiekuna_firmowego': '',
+                'opiekun_firmowy_full_name': '',
+                'telefon_opiekuna_firmowego': '',
+                'email_opiekuna_firmowego': '',
+                'stanowisko_opiekuna_firmowego': '',
+            }
+        else:
+            context = {}
+            # basic fields from dane_dokumentu
+            context.update(dokument_data)
 
         if info:
-            student_id, imie, nazwisko, numer_albumu, data_rozp, data_zak, opiekun_id, firma_nazwa, firma_miasto = info
-            context.setdefault('imie_nazwisko_studenta', f"{imie or ''} {nazwisko or ''}".strip())
-            context.setdefault('nr_albumu', numer_albumu or '')
-            context.setdefault('miejscowosc', firma_miasto or '')
-            context.setdefault('nazwa_firmy', firma_nazwa or '')
-            context.setdefault('termin_od', data_rozp or '')
-            context.setdefault('termin_do', data_zak or '')
-            if opiekun_id:
-                from app.models.uzytkownik import Uzytkownik
-                opiekun = Uzytkownik.query.get(opiekun_id)
-                if opiekun:
-                    context.setdefault('imie_nazwisko_opiekuna_firmowego', opiekun.pelne_imie or '')
-                    context.setdefault('telefon_opiekuna_firmowego', opiekun.telefon or '')
-                    context.setdefault('email_opiekuna_firmowego', opiekun.email or '')
-                    context.setdefault('stanowisko_opiekuna_firmowego', getattr(opiekun, 'stanowisko', '') or '')
+            student_id, imie, nazwisko, numer_albumu, data_rozp, data_zak, opiekun_id, firma_nazwa, firma_miasto, osoba_imie_naz, osoba_stan = info
+            if doc_row[1] == 'ZAL_1':
+                context['student'] = {
+                    'imie': imie or '',
+                    'nazwisko': nazwisko or '',
+                }
+                context['dokument_data'].setdefault('termin_od', data_rozp or '')
+                context['dokument_data'].setdefault('termin_do', data_zak or '')
+                context['dokument_data'].setdefault('nazwa_zakladu_pracy', dokument_data.get('nazwa_zakladu_pracy', ''))
+                context['dokument_data'].setdefault('reprezentant_firmy', dokument_data.get('reprezentant_firmy', ''))
+                context['dokument_data'].setdefault('wymiar_praktyki', dokument_data.get('wymiar_praktyki', ''))
+                rep_id = dokument_data.get('reprezentant_uczelni_id')
+                if rep_id:
+                    rep_row = db.session.execute(
+                        text("SELECT imie, nazwisko FROM uzytkownik WHERE id = :id"),
+                        {'id': rep_id}
+                    ).fetchone()
+                    if rep_row:
+                        context['reprezentant'] = {
+                            'imie': rep_row[0] or '',
+                            'nazwisko': rep_row[1] or '',
+                        }
+            else:
+                context.setdefault('imie_nazwisko_studenta', f"{imie or ''} {nazwisko or ''}".strip())
+                context.setdefault('nr_albumu', numer_albumu or '')
+                context.setdefault('miejscowosc', firma_miasto or '')
+                context.setdefault('nazwa_firmy', firma_nazwa or '')
+                context.setdefault('termin_od', data_rozp or '')
+                context.setdefault('termin_do', data_zak or '')
+                # Build osoba_upowazniona from firma data if not already in dokument_data
+                if osoba_imie_naz or osoba_stan:
+                    osoba_upowazniona_str = f"{osoba_imie_naz or ''}, {osoba_stan or ''}".strip(', ')
+                    context.setdefault('osoba_upowazniona', osoba_upowazniona_str)
+                if opiekun_id:
+                    from app.models.uzytkownik import Uzytkownik
+                    opiekun = Uzytkownik.query.get(opiekun_id)
+                    if opiekun:
+                        context['imie_nazwisko_opiekuna_firmowego'] = opiekun.pelne_imie or ''
+                        context['opiekun_firmowy_full_name'] = opiekun.pelne_imie or ''
+                        context['telefon_opiekuna_firmowego'] = opiekun.telefon or ''
+                        context['email_opiekuna_firmowego'] = opiekun.email or ''
+                        context['stanowisko_opiekuna_firmowego'] = getattr(opiekun, 'stanowisko', '') or ''
+
+                if doc_row[1] == 'ZAL_2':
+                    context.setdefault('imie_nazwisko_studenta', f"{imie or ''} {nazwisko or ''}".strip())
+                    context.setdefault('nr_albumu', numer_albumu or '')
+                    context.setdefault('termin_od', data_rozp or '')
+                    context.setdefault('termin_do', data_zak or '')
+                    context.setdefault('nazwa_firmy', firma_nazwa or '')
+                    context.setdefault('miejscowosc', firma_miasto or '')
+                    if osoba_imie_naz or osoba_stan:
+                        osoba_upowazniona_str = f"{osoba_imie_naz or ''}, {osoba_stan or ''}".strip(', ')
+                        context.setdefault('osoba_upowazniona', osoba_upowazniona_str)
 
         # Render template
-        template_path = os.path.join(current_app.root_path, 'docs', 'Zal_9.docx')
+        template_name = (
+            'Zal_9.docx' if doc_row[1] == 'ZAL_9' else
+            'Zal_1.docx' if doc_row[1] == 'ZAL_1' else
+            'Zal_2.docx' if doc_row[1] == 'ZAL_2' else
+            None
+        )
+        if not template_name:
+            current_app.logger.error('Nieobsługiwany typ dokumentu do pobrania: %s', doc_row[1])
+            flash('Nieobsługiwany typ dokumentu do pobrania.', 'danger')
+            return redirect(url_for('dashboard.index'))
+
+        template_path = os.path.join(current_app.root_path, 'docs', template_name)
         if not os.path.exists(template_path):
-            # fallback to app-level docs path
-            template_path = os.path.join(current_app.root_path, 'docs', 'Zal_9.docx')
+            template_path = os.path.join(current_app.root_path, 'docs', template_name)
 
         if not os.path.exists(template_path):
-            current_app.logger.error('Brak szablonu Zal_9.docx w app/docs')
+            current_app.logger.error('Brak szablonu %s w app/docs', template_name)
             flash('Szablon dokumentu nie został znaleziony na serwerze.', 'danger')
             return redirect(url_for('dashboard.index'))
 
@@ -893,12 +1043,13 @@ def download_document():
 
         # Convert generated DOCX to PDF
         try:
-            from docx2pdf import convert as docx2pdf_convert
-            docx2pdf_convert(docx_path, pdf_path)
+            convert_docx_to_pdf(docx_path, pdf_path)
         except Exception:
-            current_app.logger.exception('Błąd konwersji DOCX->PDF')
+            pass
 
         if os.path.exists(pdf_path):
+            if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_9'):
+                record_document_download(dokument_id, current_user.id)
             return send_file(pdf_path, as_attachment=True)
 
     except Exception:
@@ -1066,6 +1217,7 @@ def zalacznik_1():
                 'termin_od': request.form.get('termin_od'),
                 'termin_do': request.form.get('termin_do'),
                 'wymiar_praktyki': request.form.get('wymiar_praktyki'),
+                'dyrektor': request.form.get('dyrektor'),
             }
 
             if save_attachment1_data(form_data, dokument_id):
@@ -1140,6 +1292,11 @@ def zalacznik_1():
             if user_row:
                 opiekun_prefill = f"{user_row[0]} {user_row[1]}"
 
+    director_user = Uzytkownik.query.join(Rola).filter(Rola.nazwa == 'dyrektor').first()
+    director_full_name = ''
+    if director_user:
+        director_full_name = f"{director_user.imie or ''} {director_user.nazwisko or ''}".strip()
+
     practice_rows = db.session.execute(text(
         "SELECT p.student_id, f.nazwa AS firma_nazwa, u.imie || ' ' || u.nazwisko AS reprezentant_firmy, p.data_rozpoczecia, p.data_zakonczenia "
         "FROM praktyka p "
@@ -1173,6 +1330,7 @@ def zalacznik_1():
         dokument_data=dokument_data,
         editing_allowed=editing_allowed,
         opiekun_prefill=opiekun_prefill,
+        director_full_name=director_full_name,
     )
 
 
@@ -1382,10 +1540,14 @@ def zalacznik_2():
     from app.models.uzytkownik import Uzytkownik, Rola
     from app import db
 
+    director_user = Uzytkownik.query.join(Rola).filter(Rola.nazwa == 'dyrektor').first()
+    director_full_name = f"{director_user.imie or ''} {director_user.nazwisko or ''}".strip() if director_user else ''
+    opiekun_firmowy_full_name = ''
+
     if selected_practice_id:
         student_row = db.session.execute(
             text(
-                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu "
+                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu, p.opiekun_firmowy_id "
                 "FROM praktyka p "
                 "JOIN uzytkownik u ON p.student_id = u.id "
                 "WHERE p.id = :praktyka_id"
@@ -1399,6 +1561,14 @@ def zalacznik_2():
                 'nazwisko': student_row[2] or '',
                 'numer_albumu': student_row[3] or '',
             }
+            opiekun_id = student_row[4]
+            if opiekun_id:
+                opiekun_row = db.session.execute(
+                    text("SELECT imie, nazwisko FROM uzytkownik WHERE id = :id"),
+                    {'id': opiekun_id}
+                ).fetchone()
+                if opiekun_row:
+                    opiekun_firmowy_full_name = f"{opiekun_row[0] or ''} {opiekun_row[1] or ''}".strip()
 
     # Jeśli podano dokument_id — pobierz dokument do podglądu (bez możliwości edycji)
     if dokument_id:
@@ -1453,7 +1623,15 @@ def zalacznik_2():
         )
 
     # GET: pokaż ekran potwierdzenia utworzenia dokumentu lub podgląd istniejącego
-    return render_template('forms/zalacznik_2.html', studenci=studenci, selected_student=selected_student, dokument=dokument, dokument_data=dokument_data)
+    return render_template(
+        'forms/zalacznik_2.html',
+        studenci=studenci,
+        selected_student=selected_student,
+        dokument=dokument,
+        dokument_data=dokument_data,
+        director_full_name=director_full_name,
+        opiekun_firmowy_full_name=opiekun_firmowy_full_name,
+    )
 
 
 def save_attachment2a_data(form_data):

@@ -128,6 +128,13 @@ CREATE TABLE dokument_akceptacja (
 	zaakceptowano TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE dokument_pobranie (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	dokument_id INTEGER NOT NULL REFERENCES dokument(id),
+	pobierajacy_id INTEGER REFERENCES uzytkownik(id),
+	data_pobrania TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- ============================================================
 -- ZALEŻNOŚCI MIĘDZY DOKUMENTAMI
 -- ============================================================
