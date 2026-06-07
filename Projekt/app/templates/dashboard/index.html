@@ -147,10 +147,12 @@
                                         <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
                                     {% endif %}
                                 {% elif doc.kod == 'ZAL_3' %}
-                                    {% if uzytkownik.rola.nazwa == 'dziekanat' and doc.status == 'awaiting_signature' %}
+                                    {% if uzytkownik.rola.nazwa == 'dziekanat' and doc.status in ['awaiting_signature', 'completed', 'rejected'] %}
                                         <a href="{{ url_for('dashboard.zalacznik_3', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
-                                    {% elif uzytkownik.rola.nazwa == 'dyrektor' and doc.status == 'awaiting_signature' %}
+                                    {% elif uzytkownik.rola.nazwa == 'dyrektor' and doc.status in ['awaiting_signature', 'completed'] %}
+                                        {% if doc.status == 'awaiting_signature' %}
                                         <a href="{{ url_for('dashboard.zalacznik_3', dokument_id=doc.id, action='sign') }}" class="btn-small btn-success" onclick="return confirm('Czy na pewno chcesz podpisać dokument?')">Podpisz</a>
+                                        {% endif %}
                                         <a href="{{ url_for('dashboard.zalacznik_3', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
                                     {% elif uzytkownik.rola.nazwa == 'opiekun_firmowy' and doc.status == 'doc3_step2' and doc.z6_status == 'completed' %}
                                         <a href="{{ url_for('dashboard.zalacznik_3', dokument_id=doc.id, action='sign_accept') }}" class="btn-small btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować dokument?')">Podpisz i zaakceptuj</a>
@@ -164,7 +166,7 @@
                                     {% elif uzytkownik.rola.nazwa == 'opiekun_uczelniany' and doc.status == 'doc3_step3' %}
                                         <a href="{{ url_for('dashboard.zalacznik_3', dokument_id=doc.id) }}" class="btn-small btn-primary">Edytuj</a>
                                         <a href="{{ url_for('dashboard.zalacznik_3', dokument_id=doc.id, action='sign_accept') }}" class="btn-small btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować dokument?')">Podpisz i zaakceptuj</a>
-                                    {% elif doc.status in ['awaiting_signature', 'doc3_step1', 'doc3_step2', 'doc3_step3', 'doc3_step4'] %}
+                                    {% elif doc.status in ['awaiting_signature', 'doc3_step1', 'doc3_step2', 'doc3_step3', 'doc3_step4', 'completed'] %}
                                         <a href="{{ url_for('dashboard.zalacznik_3', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
                                     {% endif %}
                                 {% elif doc.kod == 'ZAL_4' %}
@@ -279,44 +281,6 @@
                 <p>Brak przypisanych praktyk do wyświetlenia.</p>
                 {% endif %}
             </section>
-            {% endif %}
-
-            {% if uzytkownik.rola.nazwa != 'student' %}
-            {% if selected_practice %}
-            <section class="dashboard-section">
-                <h3>Wybrana praktyka</h3>
-                <div class="efekty-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID praktyki</th>
-                            <th>Ścieżka</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ selected_practice.id }}</td>
-                            {% if selected_practice.sciezka == 'standard' %}
-                                <td>standardowa</td>
-                            {% elif selected_practice.sciezka == 'alternative' %}
-                                <td>alternatywna</td>
-                            {% endif %}
-                            {% if selected_practice.status == 'pending' %}
-                                <td>oczekująca</td>
-                            {% elif selected_practice.status == 'active' %}
-                                <td>aktywna</td>
-                            {% elif selected_practice.status == 'completed' %}
-                                <td>zakończona</td>
-                            {% elif selected_practice.status == 'rejected' %}
-                                <td>odrzucona</td>
-                            {% endif %}
-                        </tr>
-                    </tbody>
-                </table> 
-                </div>
-            </section>
-            {% endif %}
             {% endif %}
 
             {% if show_company_edit %}

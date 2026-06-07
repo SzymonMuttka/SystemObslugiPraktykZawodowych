@@ -88,7 +88,7 @@
             <div class="form-group">
                 <label for="decyzja_dyrektora">Decyzja</label>
                 <select id="decyzja_dyrektora" name="decyzja_dyrektora"
-                    {% if role != 'dyrektor' %}disabled{% endif %}>
+                    {% if role != 'dyrektor' or status == 'completed' %}disabled{% endif %}>
                     <option value="">Wybierz</option>
                     <option value="uznanie" {% if decyzja_dyrektora == 'uznanie' %}selected{% endif %}>Uznanie</option>
                     <option value="czesciowe_uznanie" {% if decyzja_dyrektora == 'czesciowe_uznanie' %}selected{% endif %}>Częściowe uznanie</option>
@@ -100,14 +100,14 @@
             <div class="form-group">
                 <label for="efekty_do_zaliczenia">Dodatkowe efekty uczenia się do zaliczenia</label>
                 <textarea id="efekty_do_zaliczenia" name="efekty_do_zaliczenia" rows="4"
-                    {% if role != 'dyrektor' %}readonly{% endif %}>{{ efekty_do_zaliczenia }}</textarea>
+                    {% if role != 'dyrektor' or status == 'completed' %}readonly{% endif %}>{{ efekty_do_zaliczenia }}</textarea>
             </div>
 
             <div class="form-group">
                 <label for="data_decyzji_dyrektora">Data decyzji</label>
                 <input id="data_decyzji_dyrektora" name="data_decyzji_dyrektora" type="date"
                     value="{{ data_decyzji_dyrektora }}"
-                    {% if role != 'dyrektor' %}readonly{% endif %}>
+                    {% if role != 'dyrektor' or status == 'completed' %}readonly{% endif %}>
             </div>
         </fieldset>
 

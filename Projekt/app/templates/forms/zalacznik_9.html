@@ -34,8 +34,12 @@
             <legend>Dane studenta</legend>
             <div class="form-row">
                 <div class="form-group">
+                    <label>Student</label>
+                    <input type="text" value="{{ imie_nazwisko_studenta }}" readonly>
+                </div>
+                <div class="form-group">
                     <label>Nr albumu</label>
-                    <p>{{ nr_albumu }}</p>
+                    <input type="text" value="{{ nr_albumu }}" readonly>
                 </div>
             </div>
         </fieldset>
@@ -45,37 +49,47 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Data</label>
-                    <p>{{ data }}</p>
+                    <input type="date" value="{{ data }}" readonly>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label>Nazwa firmy</label>
-                    <p>{{ nazwa_firmy }}</p>
+                    <input type="text" value="{{ nazwa_firmy }}" readonly>
                 </div>
                 <div class="form-group">
                     <label>Miejscowość</label>
-                    <p>{{ miejscowosc }}</p>
+                    <input type="text" value="{{ miejscowosc }}" readonly>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Termin od</label>
+                    <input type="date" value="{{ termin_od }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Termin do</label>
+                    <input type="date" value="{{ termin_do }}" readonly>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label>Imię i nazwisko opiekuna firmowego</label>
-                    <p>{{ imie_nazwisko_opiekuna_firmowego }}</p>
+                    <input type="text" value="{{ imie_nazwisko_opiekuna_firmowego }}" readonly>
                 </div>
                 <div class="form-group">
                     <label>Telefon opiekuna firmowego</label>
-                    <p>{{ telefon_opiekuna_firmowego }}</p>
+                    <input type="tel" value="{{ telefon_opiekuna_firmowego }}" readonly>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label>Email opiekuna firmowego</label>
-                    <p>{{ email_opiekuna_firmowego }}</p>
+                    <input type="email" value="{{ email_opiekuna_firmowego }}" readonly>
                 </div>
                 <div class="form-group">
                     <label>Osoba upoważniona</label>
-                    <p>{{ osoba_upowazniona }}</p>
+                    <input type="text" value="{{ osoba_upowazniona }}" readonly>
                 </div>
             </div>
         </fieldset>

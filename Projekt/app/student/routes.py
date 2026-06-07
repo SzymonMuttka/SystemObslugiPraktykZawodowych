@@ -1280,6 +1280,27 @@ def zalacznik_2():
                 {'doc_id': dokument_id}
             ).fetchall()
             dokument_data = {row[0]: row[1] for row in dane}
+            # Pobierz dane studenta powiązanego z praktyką, aby poprawnie wyświetlić sekcję 'Dane studenta'
+            try:
+                praktik_row = db.session.execute(
+                    text(
+                        "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu "
+                        "FROM praktyka p JOIN uzytkownik u ON p.student_id = u.id "
+                        "WHERE p.id = :praktyka_id"
+                    ),
+                    {'praktyka_id': dokument['praktyka_id']}
+                ).fetchone()
+                if praktik_row:
+                    selected_student = {
+                        'id': praktik_row[0],
+                        'imie': praktik_row[1] or '',
+                        'nazwisko': praktik_row[2] or '',
+                        'numer_albumu': praktik_row[3] or '',
+                    }
+                    # Ensure dokument_data carries student_id for template compatibility
+                    dokument_data.setdefault('student_id', str(selected_student['id']))
+            except Exception:
+                current_app.logger.exception('Błąd pobierania danych studenta dla załącznika 2')
         else:
             flash('Nie znaleziono załącznika 2.', 'danger')
             return redirect(url_for('dashboard.index'))
@@ -4660,6 +4681,7 @@ def zalacznik_4b():
 
     prefilled = {
         'dokument_id': dokument['id'] if dokument else '',
+        'status': dokument['status'] if dokument else '',
         'imie_nazwisko_studenta': imie_nazwisko_studenta,
         'specjalnosc': specjalnosc,
         'nr_indeksu': nr_indeksu,
@@ -5378,12 +5400,13 @@ def zalacznik_6():
 
     if dokument_id:
         doc_row = db.session.execute(
-            text("SELECT status FROM dokument WHERE id = :doc_id"),
+            text("SELECT status, praktyka_id FROM dokument WHERE id = :doc_id"),
             {'doc_id': dokument_id}
         ).fetchone()
 
         if doc_row:
             document_status = doc_row[0]
+            dokument_praktyka_id = doc_row[1] if len(doc_row) > 1 else None
             # Allow student to edit only if status is 'in_progress'
             # Allow opiekun_firmowy to edit notes in 'in_progress' status
             allow_edit = (role == 'student' and document_status == 'in_progress') or \
@@ -5651,19 +5674,51 @@ def zalacznik_6():
     data_zak = ''
     wykaz_zalacznikow = ''
 
-    practice_row = db.session.execute(
-        text(
-            "SELECT f.nazwa AS firma_nazwa, p.data_rozpoczecia, p.data_zakonczenia "
-            "FROM praktyka p "
-            "JOIN firma f ON p.firma_id = f.id "
-            "WHERE p.student_id = :student_id ORDER BY p.id DESC LIMIT 1"
-        ),
-        {'student_id': current_user.id}
-    ).fetchone()
+    # Prefer practice linked to document when viewing existing document, otherwise use latest practice for current_user
+    prak_id_to_use = None
+    if dokument_id and 'dokument_praktyka_id' in locals() and dokument_praktyka_id:
+        prak_id_to_use = dokument_praktyka_id
+    else:
+        prak_id_to_use = None
+
+    if prak_id_to_use:
+        practice_row = db.session.execute(
+            text(
+                "SELECT u.imie, u.nazwisko, u.numer_albumu, u.specjalnosc, p.rok_akademicki, f.nazwa AS firma_nazwa, p.data_rozpoczecia, p.data_zakonczenia "
+                "FROM praktyka p "
+                "JOIN uzytkownik u ON p.student_id = u.id "
+                "LEFT JOIN firma f ON p.firma_id = f.id "
+                "WHERE p.id = :prak_id LIMIT 1"
+            ),
+            {'prak_id': prak_id_to_use}
+        ).fetchone()
+    else:
+        practice_row = db.session.execute(
+            text(
+                "SELECT u.imie, u.nazwisko, u.numer_albumu, u.specjalnosc, p.rok_akademicki, f.nazwa AS firma_nazwa, p.data_rozpoczecia, p.data_zakonczenia "
+                "FROM praktyka p "
+                "JOIN uzytkownik u ON p.student_id = u.id "
+                "LEFT JOIN firma f ON p.firma_id = f.id "
+                "WHERE p.student_id = :student_id ORDER BY p.id DESC LIMIT 1"
+            ),
+            {'student_id': current_user.id}
+        ).fetchone()
+
     if practice_row:
-        miejsce_praktyki = practice_row[0] or ''
-        data_rozp = practice_row[1] or ''
-        data_zak = practice_row[2] or ''
+        imie = practice_row[0] or ''
+        nazwisko = practice_row[1] or ''
+        nr_indeksu = practice_row[2] or ''
+        specjalnosc = practice_row[3] or ''
+        rok_akademicki = practice_row[4] or ''
+        miejsce_praktyki = practice_row[5] or ''
+        data_rozp = practice_row[6] or ''
+        data_zak = practice_row[7] or ''
+    else:
+        imie = getattr(current_user, 'imie', '') or ''
+        nazwisko = getattr(current_user, 'nazwisko', '') or ''
+        nr_indeksu = getattr(current_user, 'numer_albumu', '') or ''
+        specjalnosc = getattr(current_user, 'specjalnosc', '') or ''
+        rok_akademicki = getattr(current_user, 'rok_akademicki', '') or ''
 
     # Load wykaz_zalacznikow if document exists
     if dokument_id:
@@ -5675,10 +5730,10 @@ def zalacznik_6():
             wykaz_zalacznikow = ', '.join([row[0] for row in dane_doc if row[0]])
 
     prefilled = {
-        'imie_nazwisko_studenta': f'{current_user.imie} {current_user.nazwisko}' if getattr(current_user, 'imie', None) and getattr(current_user, 'nazwisko', None) else '',
-        'nr_indeksu': getattr(current_user, 'numer_albumu', '') or '',
-        'specjalnosc': getattr(current_user, 'specjalnosc', '') or '',
-        'rok_akademicki': getattr(current_user, 'rok_akademicki', '') or '',
+        'imie_nazwisko_studenta': f'{imie} {nazwisko}'.strip(),
+        'nr_indeksu': nr_indeksu,
+        'specjalnosc': specjalnosc,
+        'rok_akademicki': rok_akademicki,
         'miejsce_praktyki': miejsce_praktyki,
         'data_rozp': data_rozp,
         'data_zak': data_zak,
@@ -6004,7 +6059,7 @@ def zalacznik_7():
     if dokument_id:
         doc_row = db.session.execute(
             text(
-                "SELECT id, status FROM dokument WHERE id=:id AND typ_dokumentu_id=(SELECT id FROM typ_dokumentu WHERE kod='ZAL_7')"
+                "SELECT id, status, praktyka_id FROM dokument WHERE id=:id AND typ_dokumentu_id=(SELECT id FROM typ_dokumentu WHERE kod='ZAL_7')"
             ),
             {'id': dokument_id}
         ).fetchone()
@@ -6018,6 +6073,44 @@ def zalacznik_7():
                 {'id': dokument_id}
             ).fetchall()
             dokument_data = {row[0]: row[1] for row in dane_rows}
+
+            # Jeśli dokument jest powiązany z praktyką, pobierz dane studenta i firmy
+            try:
+                prak_id = doc_row[2] if len(doc_row) > 2 else None
+                if prak_id:
+                    stud_row = db.session.execute(
+                        text(
+                            "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu, u.specjalnosc, p.rok_akademicki, f.nazwa "
+                            "FROM praktyka p "
+                            "JOIN uzytkownik u ON p.student_id = u.id "
+                            "LEFT JOIN firma f ON p.firma_id = f.id "
+                            "WHERE p.id = :prak_id"
+                        ),
+                        {'prak_id': prak_id}
+                    ).fetchone()
+                    if stud_row:
+                        student_prefill = {
+                            'id': stud_row[0],
+                            'imie': stud_row[1] or '',
+                            'nazwisko': stud_row[2] or '',
+                            'numer_albumu': stud_row[3] or '',
+                            'specjalnosc': stud_row[4] or '',
+                        }
+                        rok_akademicki = stud_row[5] or ''
+                        miejsce_praktyki = stud_row[6] or ''
+                    else:
+                        student_prefill = None
+                        rok_akademicki = ''
+                        miejsce_praktyki = ''
+                else:
+                    student_prefill = None
+                    rok_akademicki = ''
+                    miejsce_praktyki = ''
+            except Exception:
+                current_app.logger.exception('Błąd pobierania danych studenta/firma dla ZAL_7')
+                student_prefill = None
+                rok_akademicki = ''
+                miejsce_praktyki = ''
             
             # Sprawdzenie uprawnień
             if role == 'student' and dokument['status'] in ['in_progress', 'rejected']:
@@ -6050,32 +6143,56 @@ def zalacznik_7():
             return redirect(url_for('dashboard.index'))
         flash('Wystąpił problem podczas zapisu formularza.', 'danger')
 
-    student_id = current_user.id
-    praktyka_row = db.session.execute(
-        text(
-            "SELECT p.rok_akademicki, f.nazwa AS firma_nazwa "
-            "FROM praktyka p "
-            "LEFT JOIN firma f ON p.firma_id = f.id "
-            "WHERE p.student_id = :student_id "
-            "ORDER BY p.id DESC LIMIT 1"
-        ),
-        {'student_id': student_id}
-    ).fetchone()
+    # Przygotuj prefilled: domyślnie z aktualnie zalogowanego studenta, ale jeśli podglądamy dokument, użyj powiązanego studenta
+    if dokument and 'id' in dokument:
+        if 'student_prefill' in locals() and student_prefill:
+            prefilled_student_name = f"{student_prefill['imie']} {student_prefill['nazwisko']}".strip()
+            prefilled_nr = student_prefill.get('numer_albumu', '')
+            prefilled_spec = student_prefill.get('specjalnosc', '')
+        else:
+            # fallback na dane z dokument_data lub aktualnego użytkownika
+            prefilled_student_name = dokument_data.get('imie_nazwisko_studenta') or f"{current_user.imie} {current_user.nazwisko}"
+            prefilled_nr = dokument_data.get('nr_indeksu') or current_user.numer_albumu or ''
+            prefilled_spec = dokument_data.get('specjalnosc') or current_user.specjalnosc or ''
 
-    rok_akademicki = praktyka_row[0] if praktyka_row and praktyka_row[0] else ''
-    miejsce_praktyki = praktyka_row[1] if praktyka_row and praktyka_row[1] else ''
+        prefilled = {
+            'nr_indeksu': prefilled_nr,
+            'imie_nazwisko_studenta': prefilled_student_name,
+            'specjalnosc': prefilled_spec,
+            'rok_akademicki': dokument_data.get('rok_akademicki', rok_akademicki if 'rok_akademicki' in locals() else ''),
+            'miejsce_praktyki': dokument_data.get('miejsce_praktyki', miejsce_praktyki if 'miejsce_praktyki' in locals() else ''),
+            'charakterystyka_miejsca': dokument_data.get('charakterystyka_miejsca', ''),
+            'opis_i_analiza': dokument_data.get('opis_i_analiza', ''),
+            'wiedza_umiejetnosci': dokument_data.get('wiedza_umiejetnosci', ''),
+            'data_na_koniec': dokument_data.get('data_na_koniec', date.today().isoformat()),
+        }
+    else:
+        student_id = current_user.id
+        praktyka_row = db.session.execute(
+            text(
+                "SELECT p.rok_akademicki, f.nazwa AS firma_nazwa "
+                "FROM praktyka p "
+                "LEFT JOIN firma f ON p.firma_id = f.id "
+                "WHERE p.student_id = :student_id "
+                "ORDER BY p.id DESC LIMIT 1"
+            ),
+            {'student_id': student_id}
+        ).fetchone()
 
-    prefilled = {
-        'nr_indeksu': current_user.numer_albumu or '',
-        'imie_nazwisko_studenta': f"{current_user.imie} {current_user.nazwisko}",
-        'specjalnosc': current_user.specjalnosc or '',
-        'rok_akademicki': rok_akademicki,
-        'miejsce_praktyki': miejsce_praktyki,
-        'charakterystyka_miejsca': dokument_data.get('charakterystyka_miejsca', ''),
-        'opis_i_analiza': dokument_data.get('opis_i_analiza', ''),
-        'wiedza_umiejetnosci': dokument_data.get('wiedza_umiejetnosci', ''),
-        'data_na_koniec': dokument_data.get('data_na_koniec', date.today().isoformat()),
-    }
+        rok_akademicki = praktyka_row[0] if praktyka_row and praktyka_row[0] else ''
+        miejsce_praktyki = praktyka_row[1] if praktyka_row and praktyka_row[1] else ''
+
+        prefilled = {
+            'nr_indeksu': current_user.numer_albumu or '',
+            'imie_nazwisko_studenta': f"{current_user.imie} {current_user.nazwisko}",
+            'specjalnosc': current_user.specjalnosc or '',
+            'rok_akademicki': rok_akademicki,
+            'miejsce_praktyki': miejsce_praktyki,
+            'charakterystyka_miejsca': dokument_data.get('charakterystyka_miejsca', ''),
+            'opis_i_analiza': dokument_data.get('opis_i_analiza', ''),
+            'wiedza_umiejetnosci': dokument_data.get('wiedza_umiejetnosci', ''),
+            'data_na_koniec': dokument_data.get('data_na_koniec', date.today().isoformat()),
+        }
 
     return render_template(
         'forms/zalacznik_7.html',
@@ -7640,6 +7757,43 @@ def zalacznik_9():
             ).fetchone()
             czy_zaakceptowany = akcept_row[0] if akcept_row else False
 
+            # Pobierz dodatkowe dane powiązane z dokumentem, aby poprawnie wyświetlić widok completed
+            dokument_info = db.session.execute(
+                text(
+                    "SELECT p.student_id, s.imie, s.nazwisko, s.numer_albumu, "
+                    "p.data_rozpoczecia, p.data_zakonczenia, p.opiekun_firmowy_id, "
+                    "f.nazwa AS firma_nazwa, f.miasto AS firma_miasto, "
+                    "f.osoba_upowazniona_imie_nazwisko, f.osoba_upowazniona_stanowisko "
+                    "FROM dokument d "
+                    "JOIN praktyka p ON d.praktyka_id = p.id "
+                    "LEFT JOIN uzytkownik s ON p.student_id = s.id "
+                    "LEFT JOIN firma f ON p.firma_id = f.id "
+                    "WHERE d.id = :doc_id"
+                ),
+                {'doc_id': dokument_id}
+            ).fetchone()
+
+            if dokument_info:
+                student_id, student_imie, student_nazwisko, student_numer, termin_od_val, termin_do_val, opiekun_firmowy_id, firma_nazwa_val, firma_miasto_val, osoba_upowazniona_imie_nazwisko, osoba_upowazniona_stanowisko = dokument_info
+                dokument_data['student_id'] = student_id
+                dokument_data['imie_nazwisko_studenta'] = f"{student_imie or ''} {student_nazwisko or ''}".strip()
+                dokument_data['nr_albumu'] = student_numer or dokument_data.get('nr_albumu', '')
+                dokument_data['termin_od'] = termin_od_val or dokument_data.get('termin_od', '')
+                dokument_data['termin_do'] = termin_do_val or dokument_data.get('termin_do', '')
+                dokument_data['nazwa_firmy'] = firma_nazwa_val or dokument_data.get('nazwa_firmy', '')
+                dokument_data['miejscowosc'] = firma_miasto_val or dokument_data.get('miejscowosc', '')
+                dokument_data['osoba_upowazniona'] = (
+                    f"{osoba_upowazniona_imie_nazwisko}, {osoba_upowazniona_stanowisko}".strip(', ') 
+                    if osoba_upowazniona_imie_nazwisko or osoba_upowazniona_stanowisko else dokument_data.get('osoba_upowazniona', '')
+                )
+
+                if opiekun_firmowy_id:
+                    opiekun = Uzytkownik.query.get(opiekun_firmowy_id)
+                    if opiekun:
+                        dokument_data['imie_nazwisko_opiekuna_firmowego'] = opiekun.pelne_imie or dokument_data.get('imie_nazwisko_opiekuna_firmowego', '')
+                        dokument_data['telefon_opiekuna_firmowego'] = opiekun.telefon or dokument_data.get('telefon_opiekuna_firmowego', '')
+                        dokument_data['email_opiekuna_firmowego'] = opiekun.email or dokument_data.get('email_opiekuna_firmowego', '')
+
     # Obsługa POST dla różnych akcji
     if request.method == 'POST':
         action = request.form.get('action', 'save')
@@ -7737,12 +7891,19 @@ def zalacznik_9():
 
     # Pobranie listy aktywnych studentów posortowanych po numerze albumu
     rola_student = Rola.query.filter_by(nazwa='student').first()
-    studenci = (
-        Uzytkownik.query
-        .filter_by(rola_id=rola_student.id, jest_aktywny=True)
-        .order_by(Uzytkownik.numer_albumu)
-        .all()
-    ) if rola_student else []
+    if rola_student:
+        studenci_query = Uzytkownik.query.filter_by(rola_id=rola_student.id, jest_aktywny=True)
+
+        if role == 'opiekun_firmowy':
+            assigned_student_ids = [row[0] for row in db.session.execute(
+                text("SELECT student_id FROM praktyka WHERE student_id IS NOT NULL")
+            ).fetchall()]
+            if assigned_student_ids:
+                studenci_query = studenci_query.filter(~Uzytkownik.id.in_(assigned_student_ids))
+
+        studenci = studenci_query.order_by(Uzytkownik.numer_albumu).all()
+    else:
+        studenci = []
 
     firma = getattr(current_user, 'firma', None)
     nazwa_firmy = firma.nazwa if firma else ''
@@ -7771,6 +7932,9 @@ def zalacznik_9():
         'email_opiekuna_firmowego': current_user.email or '',
         'osoba_upowazniona': osoba_upowazniona,
     }
+
+    # Użyj wartości zapisanych w dokumencie podczas odczytu, jeśli są obecne.
+    prefilled.update({k: v for k, v in dokument_data.items() if v is not None})
 
     return render_template(
         'forms/zalacznik_9.html',

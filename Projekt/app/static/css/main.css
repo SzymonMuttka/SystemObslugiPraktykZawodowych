@@ -413,6 +413,15 @@ table tbody tr:nth-child(even) {
     min-width: 600px;
 }
 
+.pytania-table {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.pytania-table table {
+    min-width: 600px;
+}
+
 /* ============================================================
    Dashboard layout
    ============================================================ */

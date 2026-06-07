@@ -116,7 +116,7 @@
         </fieldset>
 
         <div class="form-actions">
-            {% if editing_allowed %}
+            {% if editing_allowed and (status != 'rejected' or role == 'dziekanat') %}
                 <button type="submit" class="btn-primary">Zapisz załącznik 1</button>
             {% endif %}
             <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
