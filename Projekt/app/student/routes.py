@@ -3,7 +3,7 @@ import json
 
 from flask import (
     Blueprint, render_template, request,
-    redirect, url_for, flash, current_app
+    redirect, url_for, flash, current_app, send_file
 )
 from flask_login import login_required, current_user
 from sqlalchemy import text
@@ -769,6 +769,143 @@ def index():
         show_practice_selection=show_practice_selection,
         show_company_edit=show_company_edit,
     )
+
+
+@bp.route('/pobierz-dokument', methods=['GET'])
+@login_required
+def download_document():
+    """Pobierz ukończony dokument jako plik .docx."""
+    from app import db
+    from sqlalchemy import text
+    import os
+    dokument_id = request.args.get('dokument_id', type=int)
+    if not dokument_id:
+        flash('Brak identyfikatora dokumentu do pobrania.', 'danger')
+        return redirect(url_for('dashboard.index'))
+
+    doc_row = db.session.execute(
+        text("SELECT d.id, t.kod, d.status FROM dokument d JOIN typ_dokumentu t ON d.typ_dokumentu_id = t.id WHERE d.id = :doc_id"),
+        {'doc_id': dokument_id}
+    ).fetchone()
+    if not doc_row:
+        flash('Nie znaleziono dokumentu.', 'danger')
+        return redirect(url_for('dashboard.index'))
+
+    status = doc_row[2]
+    if status != 'completed':
+        flash('Dokument musi być ukończony, aby go pobrać.', 'warning')
+        return redirect(url_for('dashboard.index'))
+
+    docs_dir = os.path.normpath(os.path.join(current_app.root_path, '..', 'docs'))
+    if not os.path.exists(docs_dir):
+        try:
+            os.makedirs(docs_dir, exist_ok=True)
+        except Exception:
+            current_app.logger.exception('Nie można utworzyć katalogu docs')
+
+    filename_docx = f"{doc_row[1]}_{dokument_id}.docx"
+    filename_pdf = f"{doc_row[1]}_{dokument_id}.pdf"
+    docx_path = os.path.join(docs_dir, filename_docx)
+    pdf_path = os.path.join(docs_dir, filename_pdf)
+
+    # If PDF already exists, serve it
+    if os.path.exists(pdf_path):
+        return send_file(pdf_path, as_attachment=True)
+
+    # If DOCX exists, convert to PDF and serve
+    try:
+        if os.path.exists(docx_path):
+            try:
+                from docx2pdf import convert as docx2pdf_convert
+                docx2pdf_convert(docx_path, pdf_path)
+                if os.path.exists(pdf_path):
+                    return send_file(pdf_path, as_attachment=True)
+            except Exception:
+                current_app.logger.exception('Błąd konwersji DOCX->PDF')
+
+        # Otherwise generate DOCX from template using docxtpl
+        try:
+            from docxtpl import DocxTemplate
+        except Exception:
+            current_app.logger.exception('docxtpl nie jest zainstalowane')
+            flash('Brak biblioteki do generowania dokumentów na serwerze.', 'danger')
+            return redirect(url_for('dashboard.index'))
+
+        # load document data
+        dane = db.session.execute(
+            text("SELECT klucz, wartosc FROM dane_dokumentu WHERE dokument_id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchall()
+        dokument_data = {row[0]: row[1] for row in dane}
+
+        # get practice/student/company/opiekun info
+        info = db.session.execute(
+            text(
+                "SELECT p.student_id, s.imie, s.nazwisko, s.numer_albumu, p.data_rozpoczecia, p.data_zakonczenia, p.opiekun_firmowy_id, f.nazwa, f.miasto "
+                "FROM dokument d JOIN praktyka p ON d.praktyka_id = p.id "
+                "LEFT JOIN uzytkownik s ON p.student_id = s.id "
+                "LEFT JOIN firma f ON p.firma_id = f.id "
+                "WHERE d.id = :doc_id"
+            ),
+            {'doc_id': dokument_id}
+        ).fetchone()
+
+        context = {}
+        # basic fields from dane_dokumentu
+        context.update(dokument_data)
+
+        if info:
+            student_id, imie, nazwisko, numer_albumu, data_rozp, data_zak, opiekun_id, firma_nazwa, firma_miasto = info
+            context.setdefault('imie_nazwisko_studenta', f"{imie or ''} {nazwisko or ''}".strip())
+            context.setdefault('nr_albumu', numer_albumu or '')
+            context.setdefault('miejscowosc', firma_miasto or '')
+            context.setdefault('nazwa_firmy', firma_nazwa or '')
+            context.setdefault('termin_od', data_rozp or '')
+            context.setdefault('termin_do', data_zak or '')
+            if opiekun_id:
+                from app.models.uzytkownik import Uzytkownik
+                opiekun = Uzytkownik.query.get(opiekun_id)
+                if opiekun:
+                    context.setdefault('imie_nazwisko_opiekuna_firmowego', opiekun.pelne_imie or '')
+                    context.setdefault('telefon_opiekuna_firmowego', opiekun.telefon or '')
+                    context.setdefault('email_opiekuna_firmowego', opiekun.email or '')
+                    context.setdefault('stanowisko_opiekuna_firmowego', getattr(opiekun, 'stanowisko', '') or '')
+
+        # Render template
+        template_path = os.path.join(current_app.root_path, 'docs', 'Zal_9.docx')
+        if not os.path.exists(template_path):
+            # fallback to app-level docs path
+            template_path = os.path.join(current_app.root_path, 'docs', 'Zal_9.docx')
+
+        if not os.path.exists(template_path):
+            current_app.logger.error('Brak szablonu Zal_9.docx w app/docs')
+            flash('Szablon dokumentu nie został znaleziony na serwerze.', 'danger')
+            return redirect(url_for('dashboard.index'))
+
+        try:
+            tpl = DocxTemplate(template_path)
+            tpl.render(context)
+            tpl.save(docx_path)
+        except Exception:
+            current_app.logger.exception('Błąd generowania DOCX z szablonu')
+            flash('Wystąpił błąd podczas generowania dokumentu.', 'danger')
+            return redirect(url_for('dashboard.index'))
+
+        # Convert generated DOCX to PDF
+        try:
+            from docx2pdf import convert as docx2pdf_convert
+            docx2pdf_convert(docx_path, pdf_path)
+        except Exception:
+            current_app.logger.exception('Błąd konwersji DOCX->PDF')
+
+        if os.path.exists(pdf_path):
+            return send_file(pdf_path, as_attachment=True)
+
+    except Exception:
+        current_app.logger.exception('Błąd podczas przygotowywania pliku do pobrania')
+
+    flash('Nie udało się wygenerować pliku.', 'danger')
+    return redirect(url_for('dashboard.index'))
 
 
 @bp.route('/profil/studenta', methods=['GET', 'POST'])
@@ -7793,6 +7930,7 @@ def zalacznik_9():
                         dokument_data['imie_nazwisko_opiekuna_firmowego'] = opiekun.pelne_imie or dokument_data.get('imie_nazwisko_opiekuna_firmowego', '')
                         dokument_data['telefon_opiekuna_firmowego'] = opiekun.telefon or dokument_data.get('telefon_opiekuna_firmowego', '')
                         dokument_data['email_opiekuna_firmowego'] = opiekun.email or dokument_data.get('email_opiekuna_firmowego', '')
+                        dokument_data['stanowisko_opiekuna_firmowego'] = opiekun.stanowisko or dokument_data.get('stanowisko_opiekuna_firmowego', '')
 
     # Obsługa POST dla różnych akcji
     if request.method == 'POST':
@@ -7930,6 +8068,7 @@ def zalacznik_9():
         'imie_nazwisko_opiekuna_firmowego': current_user.pelne_imie,
         'telefon_opiekuna_firmowego': current_user.telefon or '',
         'email_opiekuna_firmowego': current_user.email or '',
+        'stanowisko_opiekuna_firmowego': getattr(current_user, 'stanowisko', '') or '',
         'osoba_upowazniona': osoba_upowazniona,
     }
 
