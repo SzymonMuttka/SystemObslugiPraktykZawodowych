@@ -229,7 +229,8 @@
                                     <a href="{{ url_for('dashboard.zalacznik_8', dokument_id=doc.id) }}" class="btn-small btn-secondary">Podgląd</a>
                                 {% endif %}
                                 {% if doc.status == 'completed' %}
-                                    <a href="{{ url_for('dashboard.download_document', dokument_id=doc.id) }}" class="btn-small btn-primary">Pobierz</a>
+                                    <a href="{{ url_for('dashboard.download_document', dokument_id=doc.id, format='docx') }}" class="btn-small btn-secondary">Pobierz DOCX</a>
+                                    <a href="{{ url_for('dashboard.download_document', dokument_id=doc.id, format='pdf') }}" class="btn-small btn-primary">Pobierz PDF</a>
                                 {% endif %}
                             </td>
                         </tr>

@@ -21,6 +21,7 @@
                         value="{{ selected_student.imie }} {{ selected_student.nazwisko }} ({{ selected_student.numer_albumu }})"
                         readonly>
                     <input type="hidden" id="student_id" name="student_id" value="{{ selected_student.id }}">
+                    <input type="hidden" name="osoba_upowazniona" value="{{ student_practice.get(selected_student.id, {}).get('osoba_upowazniona', '') or dokument_data.get('osoba_upowazniona', '') }}">
                     {% if dokument %}
                         <input type="hidden" name="dokument_id" value="{{ dokument.id }}">
                     {% endif %}
@@ -43,13 +44,16 @@
                                 data-nr-porozumienia="{{ practice.nr_porozumienia or '' }}"
                                 data-data-zawarcia="{{ practice.data_zawarcia or '' }}"
                                 data-nazwa-zakladu="{{ practice.nazwa_zakladu_pracy or '' }}"
+                                data-osoba-upowazniona="{{ practice.get('osoba_upowazniona', '') }}"
                             >
                                 {{ student.imie }} {{ student.nazwisko }} ({{ student.numer_albumu }})
                             </option>
                         {% endfor %}
                     </select>
                     <input type="hidden" id="student_id" name="student_id" value="">
+                    <input type="hidden" name="osoba_upowazniona" value="">
                 {% endif %}
+                    <input type="hidden" name="director_full_name" value="{{ director_full_name }}">
             </div>
 
             <div class="form-group">

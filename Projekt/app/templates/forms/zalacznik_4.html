@@ -20,6 +20,12 @@
                 <input type="hidden" id="student_id" name="student_id"
                     value="{{ selected_student.id if selected_student else '' }}">
                 <input type="hidden" name="dokument_id" value="{{ dokument.id if dokument else '' }}">
+                <input type="hidden" name="opiekun_uczelniany"
+                    value="{{ selected_student.opiekun_uczelniany if selected_student else '' }}">
+                <input type="hidden" name="opiekun_firmowy"
+                    value="{{ selected_student.opiekun_firmowy if selected_student else '' }}">
+                <input type="hidden" name="data_podpisu_opiekuna_firmowego"
+                    value="{{ opiekun_firmowy_podpisano }}">
             </div>
 
             <div class="form-group">
@@ -35,8 +41,9 @@
             </div>
 
             <div class="form-group">
-                <label>Ilość godzin praktyki</label>
-                <input type="text" value="960" readonly>
+                <label for="ilosc_godzin_praktyk">Ilość godzin praktyki</label>
+                <input id="ilosc_godzin_praktyk" name="ilosc_godzin_praktyk" type="text"
+                    value="{{ ilosc_godzin_praktyk }}" readonly>
             </div>
         </fieldset>
 

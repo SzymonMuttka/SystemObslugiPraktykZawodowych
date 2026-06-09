@@ -128,6 +128,9 @@
                     </tbody>
                 </table>
                 <p>Łączna liczba dni roboczych: <b id="hpz_total_days">0</b></p>
+                <input type="hidden" id="hpz_total_days_input" name="hpz_total_days" value="{{ dokument_data.get('lacznie_dni', '0') }}">
+                <input type="hidden" name="opiekun_firmowy" value="{{ opiekun_firmowy_full_name }}">
+                <input type="hidden" name="opiekun_uczelniany" value="{{ opiekun_uczelniany_full_name }}">
                 <p>Wymagana liczba dni roboczych: <b>120</b><p>
             </div>
 
@@ -203,6 +206,7 @@
 
     const hpzDniInputs = document.querySelectorAll('input[name="hpz_dni[]"]');
     const hpzTotalDays = document.getElementById('hpz_total_days');
+    const hpzTotalDaysInput = document.getElementById('hpz_total_days_input');
 
     function updateHarmonogramTotal() {
         let total = 0;
@@ -214,6 +218,9 @@
         });
         if (hpzTotalDays) {
             hpzTotalDays.textContent = total;
+        }
+        if (hpzTotalDaysInput) {
+            hpzTotalDaysInput.value = total;
         }
     }
 

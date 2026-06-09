@@ -278,8 +278,8 @@ CREATE TABLE program_harmonogram_praktyki (
 	dokument_id INTEGER NOT NULL REFERENCES dokument(id),
 	numer INTEGER NOT NULL,
 	ppz_dzial TEXT NOT NULL,
-	hpz_dzial TEXT NOT NULL,
-	hpz_dni INTEGER NOT NULL,
+	hpz_dzial TEXT,
+	hpz_dni INTEGER,
 	UNIQUE(dokument_id, numer)
 );
 
