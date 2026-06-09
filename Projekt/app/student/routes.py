@@ -874,12 +874,12 @@ def download_document():
             raise
 
     if file_format == 'docx' and os.path.exists(docx_path):
-        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
+        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_6', 'ZAL_7', 'ZAL_9', 'ZAL_2A'):
             record_document_download(dokument_id, current_user.id)
         return send_file(docx_path, as_attachment=True)
 
     if file_format == 'pdf' and os.path.exists(pdf_path):
-        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_4', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
+        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_4', 'ZAL_6', 'ZAL_7', 'ZAL_9', 'ZAL_2A'):
             record_document_download(dokument_id, current_user.id)
         return send_file(pdf_path, as_attachment=True)
 
@@ -888,7 +888,7 @@ def download_document():
             try:
                 convert_docx_to_pdf(docx_path, pdf_path)
                 if os.path.exists(pdf_path):
-                    if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
+                    if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_6', 'ZAL_7', 'ZAL_9', 'ZAL_2A'):
                         record_document_download(dokument_id, current_user.id)
                     return send_file(pdf_path, as_attachment=True)
             except Exception:
@@ -1477,6 +1477,7 @@ def download_document():
         # Render template
         template_name = (
             'Zal_9.docx' if doc_row[1] == 'ZAL_9' else
+            'Zal_7.docx' if doc_row[1] == 'ZAL_7' else
             'Zal_1.docx' if doc_row[1] == 'ZAL_1' else
             'Zal_2.docx' if doc_row[1] == 'ZAL_2' else
             'Zal_3.docx' if doc_row[1] == 'ZAL_3' else
