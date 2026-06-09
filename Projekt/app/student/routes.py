@@ -699,7 +699,6 @@ def index():
 
                         available_documents = [
                             {'label': 'Załącznik 4a', 'url': url_for('dashboard.zalacznik_4a', selected_praktyka_id=selected_practice_id), 'disabled': not (z4b == 'completed') or (z4a is not None)},
-                            {'label': 'Załącznik 7a', 'url': url_for('dashboard.zalacznik_7a', dokument_id=None), 'disabled': not (z4a == 'completed') or (z7a is not None)},
                             {'label': 'Załącznik 8', 'url': url_for('dashboard.zalacznik_8', selected_praktyka_id=selected_practice_id), 'disabled': not (z7a == 'completed') or (get_doc_status(selected_practice_id, 'ZAL_8') is not None)},
                         ]
                 elif role == 'opiekun_firmowy':
@@ -724,7 +723,6 @@ def index():
             )
             docs_rows = db.session.execute(text(docs_query), docs_params).fetchall()
         else:
-            # dla innych ról pokaż dokumenty tylko jeśli wybrano praktykę
             docs_rows = []
             if selected_practice_id:
                 docs_query = (
@@ -735,10 +733,13 @@ def index():
                     "JOIN typ_dokumentu t ON d.typ_dokumentu_id = t.id "
                     "LEFT JOIN uzytkownik oe ON d.ostatni_edytor = oe.id "
                     "WHERE d.praktyka_id = :selected_practice_id AND (d.utworzony_przez = :user_id OR EXISTS(SELECT 1 FROM udostepniony_dokument ud WHERE ud.dokument_id = d.id "
-                    "AND (ud.udostepniajacy = :user_id OR ud.adresat = :user_id OR ud.rola_id = :rola_id))) "
+                    "AND (ud.udostepniajacy = :user_id OR ud.adresat = :user_id OR ud.rola_id = :rola_id)) "
+                    "OR (t.kod = 'ZAL_7A' AND :rola_id = (SELECT id FROM role WHERE nazwa = 'czlonek_komisji'))) "
                 )
                 docs_params['selected_practice_id'] = selected_practice_id
                 docs_rows = db.session.execute(text(docs_query), docs_params).fetchall()
+            else:
+                docs_rows = []
 
         for dr in docs_rows:
             kod = dr[1] or ''
@@ -758,6 +759,7 @@ def index():
     show_create_nav = role not in ['opiekun_uczelniany', 'dyrektor']
     show_practice_selection = role in ['dziekanat', 'opiekun_firmowy', 'opiekun_uczelniany', 'dyrektor', 'czlonek_komisji']
     show_company_edit = role == 'opiekun_firmowy'
+    show_student_edit = role == 'student'
 
     return render_template(
         'dashboard/index.html',
@@ -769,6 +771,7 @@ def index():
         show_create_nav=show_create_nav,
         show_practice_selection=show_practice_selection,
         show_company_edit=show_company_edit,
+        show_student_edit=show_student_edit,
     )
 
 
@@ -852,6 +855,15 @@ def download_document():
         except Exception:
             current_app.logger.exception('Nie udało się usunąć starego pliku ZAL_6 przed regeneracją')
 
+    if doc_row[1] == 'ZAL_4A':
+        try:
+            if os.path.exists(docx_path):
+                os.remove(docx_path)
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
+        except Exception:
+            current_app.logger.exception('Nie udało się usunąć starego pliku ZAL_4A przed regeneracją')
+
     def convert_docx_to_pdf(input_path, output_path):
         try:
             from docx2pdf import convert as docx2pdf_convert
@@ -873,13 +885,13 @@ def download_document():
             current_app.logger.exception('Błąd konwersji DOCX->PDF')
             raise
 
-    if file_format == 'docx' and os.path.exists(docx_path):
-        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_6', 'ZAL_7', 'ZAL_8', 'ZAL_9', 'ZAL_2A'):
+    if file_format == 'docx' and os.path.exists(docx_path) and doc_row[1] != 'ZAL_4A':
+        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_4B', 'ZAL_6', 'ZAL_7', 'ZAL_7A', 'ZAL_8', 'ZAL_9', 'ZAL_2A'):
             record_document_download(dokument_id, current_user.id)
         return send_file(docx_path, as_attachment=True)
 
-    if file_format == 'pdf' and os.path.exists(pdf_path):
-        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_4', 'ZAL_6', 'ZAL_7', 'ZAL_8', 'ZAL_9', 'ZAL_2A'):
+    if file_format == 'pdf' and os.path.exists(pdf_path) and doc_row[1] != 'ZAL_4A':
+        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_4', 'ZAL_4B', 'ZAL_6', 'ZAL_7', 'ZAL_7A', 'ZAL_8', 'ZAL_9', 'ZAL_2A'):
             record_document_download(dokument_id, current_user.id)
         return send_file(pdf_path, as_attachment=True)
 
@@ -888,7 +900,7 @@ def download_document():
             try:
                 convert_docx_to_pdf(docx_path, pdf_path)
                 if os.path.exists(pdf_path):
-                    if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_6', 'ZAL_7', 'ZAL_8', 'ZAL_9', 'ZAL_2A'):
+                    if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_4A', 'ZAL_4B', 'ZAL_6', 'ZAL_7', 'ZAL_7A', 'ZAL_8', 'ZAL_9', 'ZAL_2A'):
                         record_document_download(dokument_id, current_user.id)
                     return send_file(pdf_path, as_attachment=True)
             except Exception:
@@ -1056,6 +1068,30 @@ def download_document():
                 'can_edit_uczelniany': False,
                 'dokument': {},
             }
+        elif doc_row[1] == 'ZAL_4A':
+            zaliczenie_na_podstawie_map = {
+                'pracy_zawodowej': 'pracy zawodowej',
+                'stazu': 'stażu',
+                'dzialalnosci_gospodarczej': 'działalności gospodarczej'
+            }
+            zaliczenie_na_podstawie_val = zaliczenie_na_podstawie_map.get(
+                dokument_data.get('zaliczenie_na_podstawie', ''),
+                dokument_data.get('zaliczenie_na_podstawie', '')
+            )
+            context = {
+                'dokument_data': dokument_data,
+                'imie_nazwisko_studenta': '',
+                'nr_indeksu': '',
+                'specjalnosc': '',
+                'rok_akademicki': '',
+                'ilosc_godzin_praktyk': dokument_data.get('ilosc_godzin_praktyk', ''),
+                'data_wyniku_komisji': dokument_data.get('data_wyniku_komisji', ''),
+                'zaliczenie_na_podstawie': zaliczenie_na_podstawie_val,
+                'zaliczenie_na_podstawie_tytul': zaliczenie_na_podstawie_val.upper() if zaliczenie_na_podstawie_val else '',
+                'czy_efekty_uzyskane': '',
+                'czy_efekt_uzyskany': {i: '' for i in range(10)},
+                'podpisujacy_komisji': '',
+            }
         elif doc_row[1] == 'ZAL_8':
             # Fetch pytanie_komisji records for this document with questions and grades
             pytanie_rows = db.session.execute(
@@ -1133,6 +1169,86 @@ def download_document():
                 'potwierdzenie_szkolenia': dokument_data.get('potwierdzenie_szkolenia', ''),
                 'student_practice': {},
             }
+        elif doc_row[1] == 'ZAL_4B':
+            # Build context for Załącznik 4b (Wniosek o zaliczenie efektów uczenia się)
+            decyzja_dyrektora = dokument_data.get('decyzja_dyrektora', '')
+            decyzja_tekst_map = {
+                'uznanie': 'Wyrażam zgodę na uznanie efektów uczenia się przewidzianych dla praktyki zawodowej.',
+                'czesciowe_uznanie': 'Wyrażam zgodę na częściowe zaliczenie efektów uczenia się przewidzianych dla praktyki zawodowej i wskazuję na konieczność dodatkowego zaliczenia n/w efektów uczenia się',
+                'nie_uznanie': 'Nie wyrażam zgody na zaliczenie efektów uczenia się przewidzianych dla praktyki zawodowej.'
+            }
+            decyzja_tekst = decyzja_tekst_map.get(decyzja_dyrektora, '')
+
+            zaliczenie_na_podstawie_map = {
+                'pracy_zawodowej': 'pracy zawodowej',
+                'stazu': 'stażu',
+                'dzialalnosci_gospodarczej': 'działalności gospodarczej'
+            }
+            zaliczenie_na_podstawie_val = zaliczenie_na_podstawie_map.get(
+                dokument_data.get('zaliczenie_na_podstawie', ''),
+                dokument_data.get('zaliczenie_na_podstawie', '')
+            )
+            context = {
+                'dokument_data': dokument_data,
+                'imie_nazwisko_studenta': '',
+                'nr_indeksu': '',
+                'nr_albumu': '',
+                'specjalnosc': '',
+                'zaliczenie_na_podstawie': zaliczenie_na_podstawie_val,
+                'zaliczenie_na_podstawie_tytul': zaliczenie_na_podstawie_val.upper() if zaliczenie_na_podstawie_val else '',
+                'uzasadnienie': dokument_data.get('uzasadnienie', ''),
+                'data_uzasadnienia': dokument_data.get('data_uzasadnienia', ''),
+                'opinia_komisji': dokument_data.get('opinia_komisji', ''),
+                'data_opinii_komisji': dokument_data.get('data_opinii_komisji', ''),
+                'decyzja_dyrektora': decyzja_dyrektora,
+                'decyzja_tekst': decyzja_tekst,
+                'efekty_do_zaliczenia': dokument_data.get('efekty_do_zaliczenia', ''),
+                'data_decyzji_dyrektora': dokument_data.get('data_decyzji_dyrektora', ''),
+                'podpisujacy_komisji': '',
+                'dyrektor_instytutu': '',
+            }
+        elif doc_row[1] == 'ZAL_7A':
+            # Build context for Załącznik 7a (Sprawozdanie z pracy zawodowej lub działalności gospodarczej)
+            # Pobierz datę z dokument_podpis - data kiedy student podpisał (dla opiekuna uczelnianego)
+            data_student = ''
+            try:
+                # Pobierz datę podpisania dla studenta
+                podpis_row = db.session.execute(
+                    text(
+                        "SELECT p.student_id, dp.podpisano "
+                        "FROM praktyka p "
+                        "JOIN dokument d ON d.praktyka_id = p.id "
+                        "LEFT JOIN dokument_podpis dp ON dp.dokument_id = d.id "
+                        "WHERE d.id = :doc_id AND d.typ_dokumentu_id = (SELECT id FROM typ_dokumentu WHERE kod='ZAL_7A') "
+                        "LIMIT 1"
+                    ),
+                    {'doc_id': dokument_id}
+                ).fetchone()
+                if podpis_row and podpis_row[1]:
+                    # Podpis znaleziony, formatuj datę
+                    podpisano_str = podpis_row[1]
+                    if isinstance(podpisano_str, str):
+                        # Jeśli to string w formacie datetime, wyciągnij tylko datę
+                        if ' ' in podpisano_str:
+                            data_student = podpisano_str.split(' ')[0]
+                        else:
+                            data_student = podpisano_str
+            except Exception:
+                current_app.logger.exception('Błąd pobierania daty z dokument_podpis dla ZAL_7A')
+            
+            context = {
+                'dokument_data': dokument_data,
+                'imie_nazwisko_studenta': '',
+                'nr_indeksu': '',
+                'specjalnosc': '',
+                'rok_akademicki': '',
+                'miejsce_odbycia_praktyki': dokument_data.get('miejsce_odbycia_praktyki', ''),
+                'charakterystyka_miejsca_pracy': dokument_data.get('charakterystyka_miejsca_pracy', ''),
+                'opis_i_analiza': dokument_data.get('opis_i_analiza', ''),
+                'wiedza_umiejetnosci': dokument_data.get('wiedza_umiejetnosci', ''),
+                'data_na_koniec': dokument_data.get('data_na_koniec', ''),
+                'data_student': data_student,
+            }
         else:
             context = {}
             # basic fields from dane_dokumentu
@@ -1171,7 +1287,34 @@ def download_document():
                 context.setdefault('termin_do', data_zak or '')
                 context.setdefault('specjalnosc', specjalnosc or '')
                 context['rok_akademicki'] = context.get('rok_akademicki') or rok_akademicki or ''
-                context.setdefault('miejsce_praktyki', firma_nazwa or '')
+
+                if doc_row[1] == 'ZAL_8':
+                    miejsce_praktyki_value = context.get('miejsce_praktyki') or dokument_data.get('miejsce_praktyki', '')
+                    try:
+                        sciezka = db.session.execute(
+                            text("SELECT sciezka FROM praktyka WHERE id = :praktyka_id"),
+                            {'praktyka_id': praktyka_id}
+                        ).scalar()
+                        if sciezka == 'alternative':
+                            alt_miejsce = db.session.execute(
+                                text(
+                                    "SELECT dd.wartosc FROM dokument d "
+                                    "JOIN dane_dokumentu dd ON dd.dokument_id = d.id "
+                                    "WHERE d.typ_dokumentu_id = 11 AND d.praktyka_id = :praktyka_id "
+                                    "AND dd.klucz = 'miejsce_odbycia_praktyki' "
+                                    "ORDER BY d.id DESC LIMIT 1"
+                                ),
+                                {'praktyka_id': praktyka_id}
+                            ).scalar()
+                            if alt_miejsce:
+                                miejsce_praktyki_value = alt_miejsce
+                    except Exception:
+                        current_app.logger.exception('Błąd pobierania miejsca praktyki dla ZAL_8 alternative')
+
+                    context.setdefault('miejsce_praktyki', miejsce_praktyki_value or firma_nazwa or '')
+                else:
+                    context.setdefault('miejsce_praktyki', firma_nazwa or '')
+
                 context.setdefault('data_rozp', data_rozp or '')
                 context.setdefault('data_zak', data_zak or '')
                 context.setdefault('liczba_dni_roboczych', liczba_dni_roboczych or '')
@@ -1344,7 +1487,42 @@ def download_document():
                         osoba_upowazniona_str = f"{osoba_imie_naz or ''}, {osoba_stan or ''}".strip(', ')
                         context.setdefault('osoba_upowazniona', osoba_upowazniona_str)
 
-            if doc_row[1] == 'ZAL_4':
+            if doc_row[1] == 'ZAL_4B':
+                context['imie_nazwisko_studenta'] = context.get('imie_nazwisko_studenta') or f"{imie or ''} {nazwisko or ''}".strip()
+                context['nr_indeksu'] = context.get('nr_indeksu') or numer_albumu or ''
+                context['nr_albumu'] = context.get('nr_albumu') or numer_albumu or ''
+                context['specjalnosc'] = context.get('specjalnosc') or specjalnosc or ''
+                
+                # Get commissioner signer name
+                komisji_signer = ''
+                if dokument_id:
+                    komisji_row = db.session.execute(
+                        text(
+                            "SELECT u.imie, u.nazwisko "
+                            "FROM dokument_podpis dp "
+                            "JOIN uzytkownik u ON dp.podpisujacy_id = u.id "
+                            "JOIN role r ON u.rola_id = r.id "
+                            "WHERE dp.dokument_id = :dokument_id AND r.nazwa = 'czlonek_komisji' "
+                            "LIMIT 1"
+                        ),
+                        {'dokument_id': dokument_id}
+                    ).fetchone()
+                    if komisji_row:
+                        komisji_signer = f"{komisji_row[0] or ''} {komisji_row[1] or ''}".strip()
+                
+                context['podpisujacy_komisji'] = komisji_signer
+                
+                # Get director name
+                dyrektor_row = db.session.execute(
+                    text(
+                        "SELECT u.imie, u.nazwisko FROM uzytkownik u "
+                        "JOIN role r ON u.rola_id = r.id "
+                        "WHERE r.nazwa = 'dyrektor' LIMIT 1"
+                    )
+                ).fetchone()
+                if dyrektor_row:
+                    context['dyrektor_instytutu'] = f"{dyrektor_row[0] or ''} {dyrektor_row[1] or ''}".strip()
+
                 # Populate efekt uczenia data for ZAL_4
                 context['imie_nazwisko_studenta'] = context.get('imie_nazwisko_studenta') or f"{imie or ''} {nazwisko or ''}".strip()
                 context['nr_albumu'] = context.get('nr_albumu') or numer_albumu or ''
@@ -1452,6 +1630,114 @@ def download_document():
                     else 'nie uzyskał/a'
                 )
 
+            if doc_row[1] == 'ZAL_4A':
+                context['imie_nazwisko_studenta'] = context.get('imie_nazwisko_studenta') or f"{imie or ''} {nazwisko or ''}".strip()
+                context['nr_indeksu'] = context.get('nr_indeksu') or dokument_data.get('nr_indeksu', '') or numer_albumu or ''
+                context['specjalnosc'] = context.get('specjalnosc') or specjalnosc or ''
+                context['rok_akademicki'] = context.get('rok_akademicki') or dokument_data.get('rok_akademicki', '') or rok_akademicki or ''
+                context['ilosc_godzin_praktyk'] = context.get('ilosc_godzin_praktyk') or dokument_data.get('ilosc_godzin_praktyk', '') or (liczba_godzin if liczba_godzin is not None else '')
+                context['data_wyniku_komisji'] = context.get('data_wyniku_komisji') or dokument_data.get('data_wyniku_komisji', '')
+
+                komisji_signer = ''
+                if dokument_id:
+                    komisji_row = db.session.execute(
+                        text(
+                            "SELECT u.imie, u.nazwisko "
+                            "FROM dokument_podpis dp "
+                            "JOIN uzytkownik u ON dp.podpisujacy_id = u.id "
+                            "JOIN role r ON u.rola_id = r.id "
+                            "WHERE dp.dokument_id = :dokument_id AND r.nazwa = 'czlonek_komisji' "
+                            "AND dp.czy_podpisany = 1 "
+                            "ORDER BY dp.id LIMIT 1"
+                        ),
+                        {'dokument_id': dokument_id}
+                    ).fetchone()
+                    if komisji_row:
+                        komisji_signer = f"{komisji_row[0] or ''} {komisji_row[1] or ''}".strip()
+                context['podpisujacy_komisji'] = komisji_signer
+
+                # Get zaliczenie_na_podstawie from ZAL_4B document for this practice
+                zaliczenie_na_podstawie_map = {
+                    'pracy_zawodowej': 'pracy zawodowej',
+                    'stazu': 'sta\u017cu',
+                    'dzialalnosci_gospodarczej': 'dzia\u0142alno\u015bci gospodarczej'
+                }
+                zaliczenie_na_podstawie_raw = ''
+                if praktyka_id:
+                    zal_4b_doc = db.session.execute(
+                        text(
+                            "SELECT d.id FROM dokument d "
+                            "JOIN typ_dokumentu td ON d.typ_dokumentu_id = td.id "
+                            "WHERE d.praktyka_id = :praktyka_id AND td.kod = 'ZAL_4B' "
+                            "LIMIT 1"
+                        ),
+                        {'praktyka_id': praktyka_id}
+                    ).scalar()
+                    if zal_4b_doc:
+                        zaliczenie_value = db.session.execute(
+                            text(
+                                "SELECT wartosc FROM dane_dokumentu "
+                                "WHERE dokument_id = :doc_id AND klucz = 'zaliczenie_na_podstawie' "
+                                "LIMIT 1"
+                            ),
+                            {'doc_id': zal_4b_doc}
+                        ).scalar()
+                        zaliczenie_na_podstawie_raw = zaliczenie_value or ''
+                
+                zaliczenie_na_podstawie_val = zaliczenie_na_podstawie_map.get(
+                    zaliczenie_na_podstawie_raw,
+                    zaliczenie_na_podstawie_raw
+                )
+                context['zaliczenie_na_podstawie'] = zaliczenie_na_podstawie_val
+                context['zaliczenie_na_podstawie_tytul'] = zaliczenie_na_podstawie_val.upper() if zaliczenie_na_podstawie_val else ''
+
+                efekt_rows = db.session.execute(
+                    text(
+                        "SELECT eu.numer, eu.opis, eud.status "
+                        "FROM efekt_uczenia_dokumentu eud "
+                        "JOIN efekt_uczenia eu ON eud.efekt_id = eu.id "
+                        "WHERE eud.dokument_id = :doc_id "
+                        "ORDER BY eu.numer"
+                    ),
+                    {'doc_id': dokument_id}
+                ).fetchall()
+
+                status_mapping = {
+                    'achieved': 'uzyskał/a',
+                    'not_achieved': 'nie uzyskał/a',
+                    'partial': 'częściowo uzyskał/a'
+                }
+                efekty_list = []
+                for index, efekt_row in enumerate(efekt_rows):
+                    status = efekt_row[2]
+                    mapped_status = status_mapping.get(status, status or '')
+                    context['czy_efekt_uzyskany'][index] = mapped_status
+                    efekty_list.append({'status': status})
+
+                context['czy_efekty_uzyskane'] = (
+                    'uzyskał/a' if efekty_list and all(e['status'] == 'achieved' for e in efekty_list)
+                    else 'nie uzyskał/a' if efekty_list else ''
+                )
+
+            if doc_row[1] == 'ZAL_7A':
+                # Populate data for ZAL_7A
+                context['imie_nazwisko_studenta'] = context.get('imie_nazwisko_studenta') or f"{imie or ''} {nazwisko or ''}".strip()
+                context['nr_indeksu'] = context.get('nr_indeksu') or dokument_data.get('nr_indeksu', '') or numer_albumu or ''
+                context['specjalnosc'] = context.get('specjalnosc') or specjalnosc or ''
+                context['rok_akademicki'] = context.get('rok_akademicki') or dokument_data.get('rok_akademicki', '') or rok_akademicki or ''
+                context['miejsce_odbycia_praktyki'] = context.get('miejsce_odbycia_praktyki') or dokument_data.get('miejsce_odbycia_praktyki', '') or firma_nazwa or ''
+                
+                # Get university supervisor name
+                opiekun_uczelniany_name = ''
+                if opiekun_uczelniany_id:
+                    opiekun_ucz_row = db.session.execute(
+                        text("SELECT imie, nazwisko FROM uzytkownik WHERE id = :id"),
+                        {'id': opiekun_uczelniany_id}
+                    ).fetchone()
+                    if opiekun_ucz_row:
+                        opiekun_uczelniany_name = f"{opiekun_ucz_row[0] or ''} {opiekun_ucz_row[1] or ''}".strip()
+                context['opiekun_uczelniany_name'] = opiekun_uczelniany_name
+
             if doc_row[1] == 'ZAL_6':
 
                 context['imie_nazwisko_studenta'] = context.get('imie_nazwisko_studenta') or f"{imie or ''} {nazwisko or ''}".strip()
@@ -1512,11 +1798,13 @@ def download_document():
             except Exception:
                 current_app.logger.exception('Błąd budowania student_practice dla szablonu')
 
-        # Render template
         template_name = (
             'Zal_9.docx' if doc_row[1] == 'ZAL_9' else
             'Zal_8.docx' if doc_row[1] == 'ZAL_8' else
+            'Zal_7a.docx' if doc_row[1] == 'ZAL_7A' else
             'Zal_7.docx' if doc_row[1] == 'ZAL_7' else
+            'Zal_4b.docx' if doc_row[1] == 'ZAL_4B' else
+            'Zal_4a.docx' if doc_row[1] == 'ZAL_4A' else
             'Zal_1.docx' if doc_row[1] == 'ZAL_1' else
             'Zal_2.docx' if doc_row[1] == 'ZAL_2' else
             'Zal_3.docx' if doc_row[1] == 'ZAL_3' else
@@ -1550,7 +1838,7 @@ def download_document():
 
         if file_format == 'docx':
             if os.path.exists(docx_path):
-                if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
+                if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_6', 'ZAL_7', 'ZAL_7A', 'ZAL_9', 'ZAL_2A'):
                     record_document_download(dokument_id, current_user.id)
                 return send_file(docx_path, as_attachment=True)
         else:
@@ -1561,7 +1849,7 @@ def download_document():
                 pass
 
             if os.path.exists(pdf_path):
-                if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_4', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
+                if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_4', 'ZAL_6', 'ZAL_7', 'ZAL_7A', 'ZAL_9', 'ZAL_2A'):
                     record_document_download(dokument_id, current_user.id)
                 return send_file(pdf_path, as_attachment=True)
 
@@ -4451,10 +4739,11 @@ def save_attachment4a_data(form_data, role='dziekanat', dokument_id=None, curren
 
         db.session.execute(
             text(
-                "UPDATE praktyka SET liczba_godzin = :liczba_godzin, zaktualizowano = datetime('now') WHERE id = :praktyka_id"
+                "UPDATE praktyka SET liczba_godzin = :liczba_godzin, liczba_dni_roboczych = :liczba_dni_roboczych, zaktualizowano = datetime('now') WHERE id = :praktyka_id"
             ),
             {
                 'liczba_godzin': int(form_data.get('ilosc_godzin_praktyk') or 0),
+                'liczba_dni_roboczych': int(form_data.get('ilosc_godzin_praktyk')/8 or 0),
                 'praktyka_id': praktyka_id
             }
         )
@@ -4666,6 +4955,7 @@ def save_attachment4a_data(form_data, role='dziekanat', dokument_id=None, curren
 def sign_and_accept_attachment4a_by_commission(dokument_id):
     from app import db
     from sqlalchemy import text
+    from datetime import datetime
 
     try:
         typ_id = db.session.execute(text("SELECT id FROM typ_dokumentu WHERE kod = 'ZAL_4A' LIMIT 1")).scalar()
@@ -4679,19 +4969,63 @@ def sign_and_accept_attachment4a_by_commission(dokument_id):
 
         praktyka_id = dokument_row[2]
 
+        result = db.session.execute(
+            text(
+                "UPDATE dokument_podpis SET czy_podpisany = 1, podpisano = :podpisano "
+                "WHERE dokument_id = :dokument_id AND podpisujacy_id = :podpisujacy_id"
+            ),
+            {
+                'dokument_id': dokument_id,
+                'podpisujacy_id': current_user.id,
+                'podpisano': datetime.now(),
+            }
+        )
+        if result.rowcount == 0:
+            db.session.execute(
+                text(
+                    "INSERT INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany, podpisano) "
+                    "VALUES (:dokument_id, :podpisujacy_id, 1, :podpisano)"
+                ),
+                {
+                    'dokument_id': dokument_id,
+                    'podpisujacy_id': current_user.id,
+                    'podpisano': datetime.now(),
+                }
+            )
+
+        result = db.session.execute(
+            text(
+                "UPDATE dokument_akceptacja SET czy_zaakceptowany = 1, zaakceptowano = :zaakceptowano "
+                "WHERE dokument_id = :dokument_id AND akceptujacy_id = :akceptujacy_id"
+            ),
+            {
+                'dokument_id': dokument_id,
+                'akceptujacy_id': current_user.id,
+                'zaakceptowano': datetime.now(),
+            }
+        )
+        if result.rowcount == 0:
+            db.session.execute(
+                text(
+                    "INSERT INTO dokument_akceptacja (dokument_id, akceptujacy_id, czy_zaakceptowany, zaakceptowano) "
+                    "VALUES (:dokument_id, :akceptujacy_id, 1, :zaakceptowano)"
+                ),
+                {
+                    'dokument_id': dokument_id,
+                    'akceptujacy_id': current_user.id,
+                    'zaakceptowano': datetime.now(),
+                }
+            )
+
         db.session.execute(
             text(
-                "UPDATE dokument SET status = 'completed', ostatni_edytor = :user_id, zaktualizowano = datetime('now') WHERE id = :dokument_id"
+                "UPDATE dokument SET status = 'completed', ostatni_edytor = :user_id, zaktualizowano = datetime('now') "
+                "WHERE id = :dokument_id"
             ),
             {'user_id': current_user.id, 'dokument_id': dokument_id}
         )
 
         update_practice_stage_from_typ(praktyka_id, typ_id)
-
-        role_rows = db.session.execute(
-            text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','czlonek_komisji','dziekanat','dyrektor','opiekun_uczelniany')")
-        ).fetchall()
-        role_ids = {row[0]: row[1] for row in role_rows}
 
         db.session.execute(
             text("UPDATE udostepniony_dokument SET moze_edytowac = 0, moze_podpisac = 0, moze_akceptowac = 0 WHERE dokument_id = :dokument_id"),
@@ -4782,6 +5116,7 @@ def zalacznik_4a():
         flash('Wystąpił problem podczas zapisu formularza.', 'danger')
         return redirect(url_for('dashboard.index'))
 
+    podpisujacy_komisji = ''
     if dokument:
         student_row = db.session.execute(
             text("SELECT u.imie, u.nazwisko, u.numer_albumu, u.specjalnosc FROM uzytkownik u WHERE u.id = :student_id"),
@@ -4801,6 +5136,19 @@ def zalacznik_4a():
             {'dokument_id': dokument['id']}
         ).fetchall()
         dokument_data = {row[0]: row[1] for row in dane_rows}
+
+        podpisujacy_komisji_row = db.session.execute(
+            text(
+                "SELECT u.imie, u.nazwisko "
+                "FROM dokument_podpis dp "
+                "JOIN uzytkownik u ON dp.podpisujacy_id = u.id "
+                "JOIN role r ON u.rola_id = r.id "
+                "WHERE dp.dokument_id = :dokument_id AND r.nazwa = 'czlonek_komisji' "
+                "LIMIT 1"
+            ),
+            {'dokument_id': dokument['id']}
+        ).fetchone()
+        podpisujacy_komisji = f"{podpisujacy_komisji_row[0]} {podpisujacy_komisji_row[1]}" if podpisujacy_komisji_row else ''
 
         efekty_doc_rows = db.session.execute(
             text(
@@ -4841,14 +5189,29 @@ def zalacznik_4a():
     can_edit = (role == 'czlonek_komisji' and dokument and dokument['status'] == 'in_progress')
     can_sign_accept = (role == 'czlonek_komisji' and dokument and dokument['status'] == 'awaiting_approval')
 
+    # Get ilosc_godzin_praktyk from praktyka table if dokument exists
+    ilosc_godzin = ''
+    if dokument and dokument.get('praktyka_id'):
+        liczba_godzin_row = db.session.execute(
+            text("SELECT liczba_godzin FROM praktyka WHERE id = :praktyka_id"),
+            {'praktyka_id': dokument['praktyka_id']}
+        ).fetchone()
+        if liczba_godzin_row and liczba_godzin_row[0] is not None:
+            ilosc_godzin = liczba_godzin_row[0]
+        else:
+            ilosc_godzin = dokument_data.get('ilosc_godzin_praktyk', '')
+    else:
+        ilosc_godzin = dokument_data.get('ilosc_godzin_praktyk', '')
+
     prefilled = {
         'dokument_id': dokument['id'] if dokument else '',
         'imie_nazwisko_studenta': f"{selected_student['imie']} {selected_student['nazwisko']}" if selected_student else '',
         'specjalnosc': selected_student['specjalnosc'] if selected_student else '',
         'student_id': selected_student['id'] if selected_student else '',
-        'ilosc_godzin_praktyk': dokument_data.get('ilosc_godzin_praktyk', ''),
+        'ilosc_godzin_praktyk': ilosc_godzin,
         'nr_indeksu': selected_student['numer_albumu'] if selected_student else '',
         'data_wyniku_komisji': dokument_data.get('data_wyniku_komisji', date.today().isoformat()),
+        'podpisujacy_komisji': podpisujacy_komisji,
         'can_create': can_create,
         'can_edit': can_edit,
         'can_sign_accept': can_sign_accept,
@@ -5143,6 +5506,7 @@ def save_attachment4b_data(form_data, role='student', dokument_id=None, current_
 
         section_fields = {
             'student': {
+                'zaliczenie_na_podstawie': form_data.get('zaliczenie_na_podstawie'),
                 'uzasadnienie': form_data.get('uzasadnienie'),
                 'data_uzasadnienia': form_data.get('data_uzasadnienia'),
             },
@@ -5297,20 +5661,21 @@ def sign_attachment4b_by_commission(dokument_id):
                 {'dokument_id': dokument_id, 'rola_id': role_ids['dyrektor']}
             )
 
-        db.session.execute(
-            text(
-                "INSERT OR IGNORE INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany) "
-                "VALUES (:dokument_id, :user_id, 1)"
-            ),
-            {'dokument_id': dokument_id, 'user_id': current_user.id}
-        )
-        db.session.execute(
+        result = db.session.execute(
             text(
                 "UPDATE dokument_podpis SET czy_podpisany = 1, podpisano = datetime('now') "
                 "WHERE dokument_id = :dokument_id AND podpisujacy_id = :user_id"
             ),
             {'dokument_id': dokument_id, 'user_id': current_user.id}
         )
+        if result.rowcount == 0:
+            db.session.execute(
+                text(
+                    "INSERT INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany, podpisano) "
+                    "VALUES (:dokument_id, :user_id, 1, datetime('now'))"
+                ),
+                {'dokument_id': dokument_id, 'user_id': current_user.id}
+            )
 
         db.session.commit()
         return True
@@ -5483,11 +5848,20 @@ def zalacznik_4b():
                 flash('Tylko członek komisji może podpisać ten dokument.', 'danger')
             elif dokument['status'] != 'awaiting_signature':
                 flash('Dokument nie jest w stanie oczekującym na podpis komisji.', 'danger')
-            elif sign_attachment4b_by_commission(dokument['id']):
-                flash('Dokument został podpisany przez komisję.', 'success')
-                return redirect(url_for('dashboard.index'))
             else:
-                flash('Nie można podpisać dokumentu.', 'danger')
+                zaliczenie = db.session.execute(
+                    text(
+                        "SELECT wartosc FROM dane_dokumentu WHERE dokument_id = :doc_id AND klucz = 'zaliczenie_na_podstawie'"
+                    ),
+                    {'doc_id': dokument['id']}
+                ).scalar()
+                if not zaliczenie:
+                    flash('Pole "Zaliczenie efektów na podstawie" musi być wypełnione przez studenta przed podpisaniem dokumentu.', 'danger')
+                elif sign_attachment4b_by_commission(dokument['id']):
+                    flash('Dokument został podpisany przez komisję.', 'success')
+                    return redirect(url_for('dashboard.index'))
+                else:
+                    flash('Nie można podpisać dokumentu.', 'danger')
 
         elif action_query == 'accept':
             if role != 'dyrektor':
@@ -5532,6 +5906,7 @@ def zalacznik_4b():
 
         form_data = {
             'opiekun_uczelniany_id': request.form.get('opiekun_uczelniany_id'),
+            'zaliczenie_na_podstawie': request.form.get('zaliczenie_na_podstawie'),
             'uzasadnienie': request.form.get('uzasadnienie'),
             'data_uzasadnienia': request.form.get('data_uzasadnienia'),
             'opinia_komisji': request.form.get('opinia_komisji'),
@@ -5541,12 +5916,18 @@ def zalacznik_4b():
             'data_decyzji_dyrektora': request.form.get('data_decyzji_dyrektora'),
         }
 
+        if role == 'student' and not form_data.get('zaliczenie_na_podstawie'):
+            flash('Pole "Zaliczenie efektów na podstawie" jest wymagane.', 'danger')
+            return redirect(url_for('dashboard.zalacznik_4b', dokument_id=dokument['id'] if dokument else None))
+
         saved = save_attachment4b_data(form_data, role=role, dokument_id=dokument['id'] if dokument else None, current_status=status)
         if saved:
             flash('Dane załącznika 4b zostały zapisane.', 'success')
             return redirect(url_for('dashboard.index'))
         flash('Wystąpił problem podczas zapisu formularza.', 'danger')
         return redirect(url_for('dashboard.index'))
+
+    podpisujacy_komisji = ''
 
     if dokument:
         student_data = db.session.execute(
@@ -5568,6 +5949,19 @@ def zalacznik_4b():
             {'praktyka_id': dokument['praktyka_id']}
         ).fetchone()
         selected_opiekun_uczelniany_id = praktyka_row[0] if praktyka_row else ''
+
+        podpisujacy_komisji_row = db.session.execute(
+            text(
+                "SELECT u.imie, u.nazwisko "
+                "FROM dokument_podpis dp "
+                "JOIN uzytkownik u ON dp.podpisujacy_id = u.id "
+                "JOIN role r ON u.rola_id = r.id "
+                "WHERE dp.dokument_id = :dokument_id AND r.nazwa = 'czlonek_komisji' "
+                "LIMIT 1"
+            ),
+            {'dokument_id': dokument['id']}
+        ).fetchone()
+        podpisujacy_komisji = f"{podpisujacy_komisji_row[0]} {podpisujacy_komisji_row[1]}" if podpisujacy_komisji_row else ''
     else:
         student_data = db.session.execute(
             text(
@@ -5592,6 +5986,18 @@ def zalacznik_4b():
     can_accept = dokument and role == 'dyrektor' and dokument['status'] == 'awaiting_approval'
     can_reject = can_accept
 
+    dyrektor_instytutu = ''
+    rola_dyrektor = Rola.query.filter_by(nazwa='dyrektor').first()
+    if rola_dyrektor:
+        dyrektor_row = (
+            Uzytkownik.query
+            .filter_by(rola_id=rola_dyrektor.id, jest_aktywny=True)
+            .order_by(Uzytkownik.nazwisko, Uzytkownik.imie)
+            .first()
+        )
+        if dyrektor_row:
+            dyrektor_instytutu = f"{dyrektor_row.imie} {dyrektor_row.nazwisko}"
+
     imie_nazwisko_studenta = ''
     nr_indeksu = ''
     specjalnosc = ''
@@ -5614,7 +6020,10 @@ def zalacznik_4b():
         'decyzja_dyrektora': dokument_data.get('decyzja_dyrektora', ''),
         'data_decyzji_dyrektora': dokument_data.get('data_decyzji_dyrektora', date.today().isoformat()),
         'efekty_do_zaliczenia': dokument_data.get('efekty_do_zaliczenia', ''),
+        'zaliczenie_na_podstawie': dokument_data.get('zaliczenie_na_podstawie', ''),
         'selected_opiekun_uczelniany_id': selected_opiekun_uczelniany_id or '',
+        'podpisujacy_komisji': podpisujacy_komisji if dokument else '',
+        'dyrektor_instytutu': dyrektor_instytutu,
         'can_save': can_save,
         'can_sign': can_sign,
         'can_accept': can_accept,
@@ -7230,71 +7639,92 @@ def save_attachment7a_data(form_data, sign=False):
                 text("UPDATE dokument SET status='awaiting_approval', ostatni_edytor=:user_id WHERE id=:doc_id"),
                 {'doc_id': dokument_id, 'user_id': student_id}
             )
+            # Dodaj wpis do tabeli dokument_podpis
+            db.session.execute(
+                text(
+                    "INSERT INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany, podpisano) "
+                    "VALUES (:doc_id, :podpisujacy_id, 1, datetime('now'))"
+                ),
+                {'doc_id': dokument_id, 'podpisujacy_id': student_id}
+            )
 
-        # Przypisz uprawnienia w udostepniony_dokument (tylko dla nowo utworzonych dokumentów)
-        if not doc_row:
-            role_rows = db.session.execute(
-                text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','dziekanat','opiekun_uczelniany','dyrektor')")
-            ).fetchall()
-            role_ids = {row[0]: row[1] for row in role_rows}
+        # Przypisz uprawnienia w udostepniony_dokument
+        role_rows = db.session.execute(
+            text("SELECT nazwa, id FROM role WHERE nazwa IN ('student','dziekanat','opiekun_uczelniany','dyrektor','czlonek_komisji')")
+        ).fetchall()
+        role_ids = {row[0]: row[1] for row in role_rows}
 
-            # Student - może podglądać, edytować, podpisywać
-            if student_id and role_ids.get('student'):
-                db.session.execute(
-                    text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 0)"
-                    ),
-                    {
-                        'udostepniajacy': student_id,
-                        'dokument_id': dokument_id,
-                        'adresat': student_id,
-                        'rola_id': role_ids['student'],
-                    }
-                )
+        # Student - może podglądać, edytować, podpisywać
+        if student_id and role_ids.get('student'):
+            db.session.execute(
+                text(
+                    "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 1, 1, 0)"
+                ),
+                {
+                    'udostepniajacy': student_id,
+                    'dokument_id': dokument_id,
+                    'adresat': student_id,
+                    'rola_id': role_ids['student'],
+                }
+            )
 
-            # Dziekanat - może tylko podglądać
-            if role_ids.get('dziekanat'):
-                db.session.execute(
-                    text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
-                    ),
-                    {
-                        'udostepniajacy': student_id,
-                        'dokument_id': dokument_id,
-                        'rola_id': role_ids['dziekanat'],
-                    }
-                )
+        # Dziekanat - może tylko podglądać
+        if role_ids.get('dziekanat'):
+            db.session.execute(
+                text(
+                    "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': student_id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dziekanat'],
+                }
+            )
 
-            # Opiekun uczelniany - może podglądać i akceptować
-            if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
-                db.session.execute(
-                    text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                        " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 1)"
-                    ),
-                    {
-                        'udostepniajacy': student_id,
-                        'dokument_id': dokument_id,
-                        'adresat': opiekun_uczelniany_id,
-                        'rola_id': role_ids['opiekun_uczelniany'],
-                    }
-                )
+        # Opiekun uczelniany - może podglądać i akceptować
+        if opiekun_uczelniany_id and role_ids.get('opiekun_uczelniany'):
+            db.session.execute(
+                text(
+                    "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, :adresat, :rola_id, 1, 0, 0, 1)"
+                ),
+                {
+                    'udostepniajacy': student_id,
+                    'dokument_id': dokument_id,
+                    'adresat': opiekun_uczelniany_id,
+                    'rola_id': role_ids['opiekun_uczelniany'],
+                }
+            )
 
-            # Dyrektor - może tylko podglądać
-            if role_ids.get('dyrektor'):
-                db.session.execute(
-                    text(
-                        "INSERT INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
-                        " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
-                    ),
-                    {
-                        'udostepniajacy': student_id,
-                        'dokument_id': dokument_id,
-                        'rola_id': role_ids['dyrektor'],
-                    }
-                )
+        # Członek komisji - może tylko podglądać
+        if role_ids.get('czlonek_komisji'):
+            db.session.execute(
+                text(
+                    "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': student_id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['czlonek_komisji'],
+                }
+            )
+
+        # Dyrektor - może tylko podglądać
+        if role_ids.get('dyrektor'):
+            db.session.execute(
+                text(
+                    "INSERT OR IGNORE INTO udostepniony_dokument (udostepniajacy, dokument_id, adresat, rola_id, moze_podgladac, moze_edytowac, moze_podpisac, moze_akceptowac)"
+                    " VALUES (:udostepniajacy, :dokument_id, NULL, :rola_id, 1, 0, 0, 0)"
+                ),
+                {
+                    'udostepniajacy': student_id,
+                    'dokument_id': dokument_id,
+                    'rola_id': role_ids['dyrektor'],
+                }
+            )
 
         db.session.commit()
         return True
@@ -7308,7 +7738,7 @@ def accept_attachment7a(dokument_id):
     """Akceptacja załącznika 7a przez opiekuna uczelnianego."""
     from app import db
     from sqlalchemy import text
-    from datetime import date
+    from datetime import date, datetime
 
     try:
         doc_row = db.session.execute(
@@ -7334,6 +7764,24 @@ def accept_attachment7a(dokument_id):
             {'doc_id': dokument_id, 'user_id': current_user.id}
         )
 
+        # Dodaj wpis do tabeli dokument_podpis
+        db.session.execute(
+            text(
+                "INSERT INTO dokument_podpis (dokument_id, podpisujacy_id, czy_podpisany, podpisano) "
+                "VALUES (:doc_id, :podpisujacy_id, 1, datetime('now'))"
+            ),
+            {'doc_id': dokument_id, 'podpisujacy_id': current_user.id}
+        )
+
+        # Dodaj wpis do tabeli dokument_akceptacja
+        db.session.execute(
+            text(
+                "INSERT INTO dokument_akceptacja (dokument_id, akceptujacy_id, czy_zaakceptowany, zaakceptowano) "
+                "VALUES (:doc_id, :akceptujacy_id, 1, datetime('now'))"
+            ),
+            {'doc_id': dokument_id, 'akceptujacy_id': current_user.id}
+        )
+
         # Ustawienie daty na koniec
         db.session.execute(
             text(
@@ -7347,6 +7795,15 @@ def accept_attachment7a(dokument_id):
         db.session.execute(
             text("UPDATE praktyka SET aktualny_etap=3 WHERE id=:praktyka_id"),
             {'praktyka_id': praktyka_id}
+        )
+
+        # Dodaj wpis do udostepniony_dokument dla czlonek_komisji (rola_id = 6)
+        db.session.execute(
+            text(
+                "INSERT INTO udostepniony_dokument (dokument_id, rola_id, adresat) "
+                "VALUES (:doc_id, 6, NULL)"
+            ),
+            {'doc_id': dokument_id}
         )
 
         db.session.commit()
@@ -7426,6 +7883,29 @@ def zalacznik_7a():
         flash('Błąd podczas odrzucenia załącznika 7a.', 'danger')
         return redirect(url_for('dashboard.index'))
 
+    if action == 'sign' and dokument_id:
+        if role != 'student':
+            flash('Tylko student może podpisać załącznik 7a.', 'danger')
+            return redirect(url_for('dashboard.index'))
+        # Pobierz istniejące dane dokumentu
+        dane_rows = db.session.execute(
+            text("SELECT klucz, wartosc FROM dane_dokumentu WHERE dokument_id=:id"),
+            {'id': dokument_id}
+        ).fetchall()
+        dokument_data = {row[0]: row[1] for row in dane_rows}
+        form_data = {
+            'miejsce_odbycia_praktyki': dokument_data.get('miejsce_odbycia_praktyki'),
+            'charakterystyka_miejsca_pracy': dokument_data.get('charakterystyka_miejsca_pracy'),
+            'opis_i_analiza': dokument_data.get('opis_i_analiza'),
+            'wiedza_umiejetnosci': dokument_data.get('wiedza_umiejetnosci'),
+            'data_na_koniec': dokument_data.get('data_na_koniec'),
+        }
+        if save_attachment7a_data(form_data, sign=True):
+            flash('Załącznik 7a został podpisany i wysłany do akceptacji.', 'success')
+            return redirect(url_for('dashboard.index'))
+        flash('Błąd podczas podpisywania załącznika 7a.', 'danger')
+        return redirect(url_for('dashboard.index'))
+
     # Pobieranie dokumentu jeśli istnieje
     dokument = None
     dokument_data = {}
@@ -7498,6 +7978,33 @@ def zalacznik_7a():
     else:
         student_row = None
 
+    praktyka_id = dokument['praktyka_id'] if dokument else None
+    opiekun_uczelniany_name = ''
+    
+    if praktyka_id:
+        opiekun_row = db.session.execute(
+            text(
+                "SELECT u.imie, u.nazwisko FROM praktyka p "
+                "JOIN uzytkownik u ON p.opiekun_uczelniany_id = u.id "
+                "WHERE p.id = :praktyka_id"
+            ),
+            {'praktyka_id': praktyka_id}
+        ).fetchone()
+        if opiekun_row:
+            opiekun_uczelniany_name = f"{opiekun_row[0]} {opiekun_row[1]}"
+    elif student_id:
+        # If no dokument, try to find opiekun from student's latest practice
+        opiekun_row = db.session.execute(
+            text(
+                "SELECT u.imie, u.nazwisko FROM praktyka p "
+                "JOIN uzytkownik u ON p.opiekun_uczelniany_id = u.id "
+                "WHERE p.student_id = :student_id AND p.sciezka = 'alternative' ORDER BY p.id DESC LIMIT 1"
+            ),
+            {'student_id': student_id}
+        ).fetchone()
+        if opiekun_row:
+            opiekun_uczelniany_name = f"{opiekun_row[0]} {opiekun_row[1]}"
+
     praktyka_row = db.session.execute(
         text(
             "SELECT p.rok_akademicki FROM praktyka p WHERE p.student_id = :student_id ORDER BY p.id DESC LIMIT 1"
@@ -7512,6 +8019,7 @@ def zalacznik_7a():
         'imie_nazwisko_studenta': f"{student_row[0]} {student_row[1]}" if student_row else '',
         'specjalnosc': student_row[3] if student_row else '',
         'rok_akademicki': rok_akademicki,
+        'opiekun_uczelniany_name': opiekun_uczelniany_name,
         'miejsce_odbycia_praktyki': dokument_data.get('miejsce_odbycia_praktyki', ''),
         'charakterystyka_miejsca_pracy': dokument_data.get('charakterystyka_miejsca_pracy', ''),
         'opis_i_analiza': dokument_data.get('opis_i_analiza', ''),
@@ -7719,7 +8227,7 @@ def save_attachment8_data(form_data):
         dane_keys = [
             'imie_nazwisko_1', 'funkcja_1', 'imie_nazwisko_2', 'funkcja_2',
             'imie_nazwisko_3', 'funkcja_3', 'imie_nazwisko_4', 'funkcja_4',
-            'data_zaliczenia', 'ocena_za_mini_zadania_e', 'ocena_koncowa'
+            'data_zaliczenia', 'ocena_za_mini_zadania_e', 'ocena_koncowa', 'miejsce_praktyki'
         ]
         for key in dane_keys:
             value = form_data.get(key, '')
@@ -7966,7 +8474,7 @@ def zalacznik_8():
     if selected_practice_id:
         student_row = db.session.execute(
             text(
-                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu, f.nazwa, p.liczba_dni_roboczych "
+                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu, f.nazwa, p.liczba_dni_roboczych, p.sciezka "
                 "FROM praktyka p "
                 "JOIN uzytkownik u ON p.student_id = u.id "
                 "LEFT JOIN firma f ON p.firma_id = f.id "
@@ -7975,13 +8483,34 @@ def zalacznik_8():
             {'praktyka_id': selected_practice_id}
         ).fetchone()
         if student_row:
+            # Ustal miejsce praktyki na podstawie scieżki
+            miejsce_praktyki = student_row[4] or ''
+            sciezka = student_row[6] or ''
+            
+            # Jeśli scieżka to 'alternative', pobierz z ZAL_7A (typ_dokumentu_id=11)
+            if sciezka == 'alternative':
+                zal7a_row = db.session.execute(
+                    text(
+                        "SELECT dd.wartosc FROM dokument d "
+                        "JOIN dane_dokumentu dd ON dd.dokument_id = d.id "
+                        "WHERE d.typ_dokumentu_id = 11 AND d.praktyka_id = :praktyka_id "
+                        "AND dd.klucz = 'miejsce_odbycia_praktyki' "
+                        "ORDER BY d.id DESC LIMIT 1"
+                    ),
+                    {'praktyka_id': selected_practice_id}
+                ).fetchone()
+                if zal7a_row:
+                    miejsce_praktyki = zal7a_row[0] or ''
+
+            
             selected_student = {
                 'id': student_row[0],
                 'imie': student_row[1] or '',
                 'nazwisko': student_row[2] or '',
                 'numer_albumu': student_row[3] or '',
-                'miejsce_praktyki': student_row[4] or '',
+                'miejsce_praktyki': miejsce_praktyki,
                 'liczba_dni_roboczych': student_row[5] if student_row[5] is not None else '',
+                'sciezka': sciezka,
             }
         # Pobierz opiekuna uczelnianego z wybranej praktyki (jeśli istnieje)
         op_row = db.session.execute(
@@ -8083,20 +8612,41 @@ def zalacznik_8():
             }
             selected_practice_id = dokument['praktyka_id']
             student_row = db.session.execute(text(
-                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu, f.nazwa, p.liczba_dni_roboczych "
+                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu, f.nazwa, p.liczba_dni_roboczych, p.sciezka "
                 "FROM praktyka p "
                 "JOIN uzytkownik u ON p.student_id = u.id "
                 "LEFT JOIN firma f ON p.firma_id = f.id "
                 "WHERE p.id = :praktyka_id"
             ), {'praktyka_id': selected_practice_id}).fetchone()
             if student_row:
+                # Ustal miejsce praktyki na podstawie scieżki
+                miejsce_praktyki = student_row[4] or ''
+                sciezka = student_row[6] or ''
+                
+                # Jeśli scieżka to 'alternative', pobierz z ZAL_7A (typ_dokumentu_id=11)
+                if sciezka == 'alternative':
+                    zal7a_row = db.session.execute(
+                        text(
+                            "SELECT dd.wartosc FROM dokument d "
+                            "JOIN dane_dokumentu dd ON dd.dokument_id = d.id "
+                            "WHERE d.typ_dokumentu_id = 11 AND d.praktyka_id = :praktyka_id "
+                            "AND dd.klucz = 'miejsce_odbycia_praktyki' "
+                            "ORDER BY d.id DESC LIMIT 1"
+                        ),
+                        {'praktyka_id': selected_practice_id}
+                    ).fetchone()
+                    if zal7a_row:
+                        miejsce_praktyki = zal7a_row[0] or ''
+
+                
                 selected_student = {
                     'id': student_row[0],
                     'imie': student_row[1] or '',
                     'nazwisko': student_row[2] or '',
                     'numer_albumu': student_row[3] or '',
-                    'miejsce_praktyki': student_row[4] or '',
+                    'miejsce_praktyki': miejsce_praktyki,
                     'liczba_dni_roboczych': student_row[5] if student_row[5] is not None else '',
+                    'sciezka': sciezka,
                 }
 
             dane_rows = db.session.execute(text(
@@ -8104,6 +8654,11 @@ def zalacznik_8():
             ), {'doc_id': dokument_id}).fetchall()
             for key, value in dane_rows:
                 prefilled[key] = value or ''
+            
+            # WAŻNE: Dla scieżki 'alternative', pobierz miejsce_praktyki z ZAL_7A ZAMIAST ze starej bazy
+            # To musi być PO pobieraniu danych z dane_dokumentu aby je przesłonić
+            if selected_student and selected_student.get('sciezka') == 'alternative':
+                prefilled['miejsce_praktyki'] = selected_student.get('miejsce_praktyki', '')
 
             pytania_rows = db.session.execute(text(
                 "SELECT numer_pytania, tresc_pytania, wartosc_oceny FROM pytanie_komisji WHERE dokument_id = :doc_id"
@@ -8166,7 +8721,7 @@ def zalacznik_8():
     if selected_practice_id:
         student_row = db.session.execute(
             text(
-                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu, f.nazwa, p.liczba_dni_roboczych "
+                "SELECT u.id, u.imie, u.nazwisko, u.numer_albumu, f.nazwa, p.liczba_dni_roboczych, p.sciezka "
                 "FROM praktyka p "
                 "JOIN uzytkownik u ON p.student_id = u.id "
                 "LEFT JOIN firma f ON p.firma_id = f.id "
@@ -8174,12 +8729,31 @@ def zalacznik_8():
             ), {'praktyka_id': selected_practice_id}
         ).fetchone()
         if student_row:
+            # Ustal miejsce praktyki na podstawie scieżki
+            miejsce_praktyki = student_row[4] or ''
+            sciezka = student_row[6] or ''
+            
+            # Jeśli scieżka to 'alternative', pobierz z ZAL_7A (typ_dokumentu_id=11)
+            if sciezka == 'alternative':
+                zal7a_row = db.session.execute(
+                    text(
+                        "SELECT dd.wartosc FROM dokument d "
+                        "JOIN dane_dokumentu dd ON dd.dokument_id = d.id "
+                        "WHERE d.typ_dokumentu_id = 11 AND d.praktyka_id = :praktyka_id "
+                        "AND dd.klucz = 'miejsce_odbycia_praktyki' "
+                        "ORDER BY d.id DESC LIMIT 1"
+                    ),
+                    {'praktyka_id': selected_practice_id}
+                ).fetchone()
+                if zal7a_row:
+                    miejsce_praktyki = zal7a_row[0] or ''
+            
             selected_student = {
                 'id': student_row[0],
                 'imie': student_row[1] or '',
                 'nazwisko': student_row[2] or '',
                 'numer_albumu': student_row[3] or '',
-                'miejsce_praktyki': student_row[4] or '',
+                'miejsce_praktyki': miejsce_praktyki,
                 'liczba_dni_roboczych': student_row[5] if student_row[5] is not None else '',
             }
         op_row = db.session.execute(

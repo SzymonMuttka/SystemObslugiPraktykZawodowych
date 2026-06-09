@@ -40,6 +40,8 @@
                     value="{{ ilosc_godzin_praktyk }}"
                     {% if role != 'czlonek_komisji' or is_completed %}readonly{% endif %}
                     min="0">
+                <input type="hidden" name="podpisujacy_komisji"
+                    value="{{ podpisujacy_komisji if podpisujacy_komisji else '' }}">
             </div>
         </fieldset>
 

@@ -12,6 +12,8 @@
     <form method="post" class="document-form">
         {% if dokument_id %}
         <input type="hidden" name="dokument_id" value="{{ dokument_id }}">
+        <input type="hidden" name="podpisujacy_komisji" value="{{ podpisujacy_komisji }}">
+        <input type="hidden" name="dyrektor_instytutu" value="{{ dyrektor_instytutu }}">
         {% endif %}
 
         <fieldset class="form-section">
@@ -36,6 +38,17 @@
 
         <fieldset class="form-section">
             <legend>Wypełniane przez studenta</legend>
+
+            <div class="form-group">
+                <label for="zaliczenie_na_podstawie">Zaliczenie efektów na podstawie</label>
+                <select id="zaliczenie_na_podstawie" name="zaliczenie_na_podstawie" required
+                    {% if role != 'student' %}disabled{% endif %}>
+                    <option value="">— wybierz podstawę zaliczenia —</option>
+                    <option value="pracy_zawodowej" {% if zaliczenie_na_podstawie == 'pracy_zawodowej' %}selected{% endif %}>pracy zawodowej</option>
+                    <option value="stazu" {% if zaliczenie_na_podstawie == 'stazu' %}selected{% endif %}>stażu</option>
+                    <option value="dzialalnosci_gospodarczej" {% if zaliczenie_na_podstawie == 'dzialalnosci_gospodarczej' %}selected{% endif %}>działalności gospodarczej</option>
+                </select>
+            </div>
 
             <div class="form-group">
                 <label for="opiekun_uczelniany_id">Opiekun uczelniany</label>
@@ -92,7 +105,6 @@
                     <option value="">Wybierz</option>
                     <option value="uznanie" {% if decyzja_dyrektora == 'uznanie' %}selected{% endif %}>Uznanie</option>
                     <option value="czesciowe_uznanie" {% if decyzja_dyrektora == 'czesciowe_uznanie' %}selected{% endif %}>Częściowe uznanie</option>
-                    <option value="koniecznosc_zaliczenia" {% if decyzja_dyrektora == 'koniecznosc_zaliczenia' %}selected{% endif %}>Konieczność zaliczenia dodatkowych efektów</option>
                     <option value="nie_uznanie" {% if decyzja_dyrektora == 'nie_uznanie' %}selected{% endif %}>Nie uznanie</option>
                 </select>
             </div>
@@ -100,7 +112,7 @@
             <div class="form-group">
                 <label for="efekty_do_zaliczenia">Dodatkowe efekty uczenia się do zaliczenia</label>
                 <textarea id="efekty_do_zaliczenia" name="efekty_do_zaliczenia" rows="4"
-                    {% if role != 'dyrektor' or status == 'completed' %}readonly{% endif %}>{{ efekty_do_zaliczenia }}</textarea>
+                    {% if role != 'dyrektor' or status == 'completed' or decyzja_dyrektora != 'czesciowe_uznanie' %}readonly{% endif %}>{{ efekty_do_zaliczenia }}</textarea>
             </div>
 
             <div class="form-group">
@@ -122,8 +134,35 @@
             <a href="{{ url_for('dashboard.zalacznik_4b', dokument_id=dokument_id, action='accept') }}" class="btn-primary">Akceptuj jako dyrektor</a>
             <a href="{{ url_for('dashboard.zalacznik_4b', dokument_id=dokument_id, action='reject') }}" class="btn-danger">Odrzuć jako dyrektor</a>
             {% endif %}
+            {% if status == 'completed' and dokument_id %}
+            <a href="{{ url_for('dashboard.download_document', dokument_id=dokument_id, format='docx') }}" class="btn-secondary">Pobierz DOCX</a>
+            <a href="{{ url_for('dashboard.download_document', dokument_id=dokument_id, format='pdf') }}" class="btn-primary">Pobierz PDF</a>
+            {% endif %}
             <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
         </div>
     </form>
 </div>
+{% if role == 'dyrektor' %}
+<script>
+    const decyzjaDyrektora = document.getElementById('decyzja_dyrektora');
+    const efektyDoZaliczenia = document.getElementById('efekty_do_zaliczenia');
+    const dokumentCompleted = {{ 'true' if status == 'completed' else 'false' }};
+
+    function updateEfektyDoZaliczenia() {
+        if (!decyzjaDyrektora || !efektyDoZaliczenia) {
+            return;
+        }
+        if (!dokumentCompleted && decyzjaDyrektora.value === 'czesciowe_uznanie') {
+            efektyDoZaliczenia.removeAttribute('readonly');
+        } else {
+            efektyDoZaliczenia.setAttribute('readonly', 'readonly');
+        }
+    }
+
+    if (decyzjaDyrektora) {
+        decyzjaDyrektora.addEventListener('change', updateEfektyDoZaliczenia);
+        updateEfektyDoZaliczenia();
+    }
+</script>
+{% endif %}
 {% endblock %}

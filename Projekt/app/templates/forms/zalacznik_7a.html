@@ -10,6 +10,7 @@
     </div>
 
     <form method="post" class="document-form">
+        <input type="hidden" name="opiekun_uczelniany_name" value="{{ opiekun_uczelniany_name }}">
         <fieldset class="form-section">
             <legend>Dane studenta (prefilled)</legend>
 
@@ -80,6 +81,10 @@
             {% else %}
                 <p class="info">Dokument został zapisany. Możesz go teraz jedynie podglądać.</p>
                 <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Powrót</a>
+            {% endif %}
+            {% if dokument and dokument.status == 'completed' %}
+                <a href="{{ url_for('dashboard.download_document', dokument_id=dokument.id, format='docx') }}" class="btn-secondary">Pobierz DOCX</a>
+                <a href="{{ url_for('dashboard.download_document', dokument_id=dokument.id, format='pdf') }}" class="btn-primary">Pobierz PDF</a>
             {% endif %}
         </div>
     </form>
