@@ -874,12 +874,12 @@ def download_document():
             raise
 
     if file_format == 'docx' and os.path.exists(docx_path):
-        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
+        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
             record_document_download(dokument_id, current_user.id)
         return send_file(docx_path, as_attachment=True)
 
     if file_format == 'pdf' and os.path.exists(pdf_path):
-        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
+        if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_4', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
             record_document_download(dokument_id, current_user.id)
         return send_file(pdf_path, as_attachment=True)
 
@@ -888,7 +888,7 @@ def download_document():
             try:
                 convert_docx_to_pdf(docx_path, pdf_path)
                 if os.path.exists(pdf_path):
-                    if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_6', 'ZAL_9'):
+                    if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
                         record_document_download(dokument_id, current_user.id)
                     return send_file(pdf_path, as_attachment=True)
             except Exception:
@@ -921,7 +921,7 @@ def download_document():
         # get practice/student/company/opiekun info
         info = db.session.execute(
             text(
-                "SELECT p.id, p.student_id, s.imie, s.nazwisko, s.numer_albumu, s.forma_studiow, s.specjalnosc, p.data_rozpoczecia, p.data_zakonczenia, p.rok_akademicki, p.opiekun_firmowy_id, p.opiekun_uczelniany_id, f.nazwa, f.miasto, f.osoba_upowazniona_imie_nazwisko, f.osoba_upowazniona_stanowisko "
+                "SELECT p.id, p.student_id, s.imie, s.nazwisko, s.numer_albumu, s.forma_studiow, s.specjalnosc, p.liczba_godzin, p.data_rozpoczecia, p.data_zakonczenia, p.rok_akademicki, p.opiekun_firmowy_id, p.opiekun_uczelniany_id, f.nazwa, f.miasto, f.osoba_upowazniona_imie_nazwisko, f.osoba_upowazniona_stanowisko "
                 "FROM dokument d JOIN praktyka p ON d.praktyka_id = p.id "
                 "LEFT JOIN uzytkownik s ON p.student_id = s.id "
                 "LEFT JOIN firma f ON p.firma_id = f.id "
@@ -1023,6 +1023,39 @@ def download_document():
                 'opiekun_firmowy': dokument_data.get('opiekun_firmowy', ''),
                 'wpisy': [],
             }
+        elif doc_row[1] == 'ZAL_4':
+            # Build context for Załącznik 4 (Efekty uczenia się)
+            context = {
+                'dokument_data': dokument_data,
+                'role': '',
+                'imie_nazwisko_studenta': '',
+                'nr_indeksu': '',
+                'nr_albumu': '',
+                'specjalnosc': '',
+                'rok_akademicki': '',
+                'ilosc_godzin_praktyk': '',
+                'czy_efekt_uzyskany': {},
+                'selected_student': {
+                    'id': '',
+                    'imie': '',
+                    'nazwisko': '',
+                    'numer_albumu': '',
+                    'forma_studiow': '',
+                    'specjalnosc': '',
+                    'firma_nazwa': '',
+                    'termin_od': '',
+                    'termin_do': '',
+                    'opiekun_uczelniany': '',
+                    'opiekun_firmowy': '',
+                },
+                'efekty': [],
+                'opinia_opiekuna_uczelnianego': '',
+                'opiekun_firmowy_podpisano': '',
+                'data_opinii': '',
+                'can_edit_firmowy': False,
+                'can_edit_uczelniany': False,
+                'dokument': {},
+            }
         elif doc_row[1] == 'ZAL_3':
             # Build context for Załącznik 3 (Karta praktyki zawodowej)
             director = db.session.execute(
@@ -1069,7 +1102,7 @@ def download_document():
             context.update(dokument_data)
 
         if info:
-            praktyka_id, student_id, imie, nazwisko, numer_albumu, forma_studiow, specjalnosc, data_rozp, data_zak, rok_akademicki, opiekun_id, opiekun_uczelniany_id, firma_nazwa, firma_miasto, osoba_imie_naz, osoba_stan = info
+            praktyka_id, student_id, imie, nazwisko, numer_albumu, forma_studiow, specjalnosc, liczba_godzin, data_rozp, data_zak, rok_akademicki, opiekun_id, opiekun_uczelniany_id, firma_nazwa, firma_miasto, osoba_imie_naz, osoba_stan = info
             if doc_row[1] == 'ZAL_1':
                 context['student'] = {
                     'imie': imie or '',
@@ -1273,7 +1306,116 @@ def download_document():
                         osoba_upowazniona_str = f"{osoba_imie_naz or ''}, {osoba_stan or ''}".strip(', ')
                         context.setdefault('osoba_upowazniona', osoba_upowazniona_str)
 
+            if doc_row[1] == 'ZAL_4':
+                # Populate efekt uczenia data for ZAL_4
+                context['imie_nazwisko_studenta'] = context.get('imie_nazwisko_studenta') or f"{imie or ''} {nazwisko or ''}".strip()
+                context['nr_albumu'] = context.get('nr_albumu') or numer_albumu or ''
+                context['nr_indeksu'] = context.get('nr_indeksu') or numer_albumu or ''
+                context['specjalnosc'] = context.get('specjalnosc') or specjalnosc or ''
+                context['rok_akademicki'] = context.get('rok_akademicki') or rok_akademicki or ''
+                
+                # Populate selected_student for ZAL_4
+                student_id_str = str(student_id) if student_id is not None else ''
+                
+                # Get opiekun info
+                opiekun_uczelniany_name = ''
+                opiekun_firmowy_name = ''
+                if opiekun_uczelniany_id:
+                    opiekun_ucz_row = db.session.execute(
+                        text("SELECT imie, nazwisko FROM uzytkownik WHERE id = :id"),
+                        {'id': opiekun_uczelniany_id}
+                    ).fetchone()
+                    if opiekun_ucz_row:
+                        opiekun_uczelniany_name = f"{opiekun_ucz_row[0] or ''} {opiekun_ucz_row[1] or ''}".strip()
+                
+                if opiekun_id:
+                    opiekun_row = db.session.execute(
+                        text("SELECT imie, nazwisko FROM uzytkownik WHERE id = :id"),
+                        {'id': opiekun_id}
+                    ).fetchone()
+                    if opiekun_row:
+                        opiekun_firmowy_name = f"{opiekun_row[0] or ''} {opiekun_row[1] or ''}".strip()
+                
+                context['selected_student'] = {
+                    'id': student_id_str,
+                    'imie': imie or '',
+                    'nazwisko': nazwisko or '',
+                    'numer_albumu': numer_albumu or '',
+                    'forma_studiow': forma_studiow or '',
+                    'specjalnosc': specjalnosc or '',
+                    'firma_nazwa': firma_nazwa or '',
+                    'termin_od': data_rozp or '',
+                    'termin_do': data_zak or '',
+                    'opiekun_uczelniany': opiekun_uczelniany_name,
+                    'opiekun_firmowy': opiekun_firmowy_name,
+                    'opiekun_firmowy_id': opiekun_id or '',
+                    'opiekun_uczelniany_id': opiekun_uczelniany_id or '',
+                }
+                
+                # Add additional fields from dokument_data
+                context['ilosc_godzin_praktyk'] = dokument_data.get('ilosc_godzin_praktyk', '') or (liczba_godzin if liczba_godzin is not None else '')
+                context['opinia_opiekuna_uczelnianego'] = dokument_data.get('opinia_opiekuna_uczelnianego', '')
+                
+                # Get opiekun_firmowy_podpisano from dokument_podpis table
+                opiekun_podpisano = ''
+                if dokument_id and opiekun_id:
+                    podpis_row = db.session.execute(
+                        text(
+                            "SELECT podpisano FROM dokument_podpis "
+                            "WHERE dokument_id = :doc_id AND podpisujacy_id = :opiekun_id "
+                            "ORDER BY id DESC LIMIT 1"
+                        ),
+                        {'doc_id': dokument_id, 'opiekun_id': opiekun_id}
+                    ).fetchone()
+                    if podpis_row and podpis_row[0]:
+                        # Extract only date part (YYYY-MM-DD HH:MM:SS -> YYYY-MM-DD)
+                        opiekun_podpisano = str(podpis_row[0]).split(' ')[0]
+                
+                context['opiekun_firmowy_podpisano'] = opiekun_podpisano
+                
+                context['data_opinii'] = dokument_data.get('data_opinii', '')
+                context['dokument'] = {'id': dokument_id} if dokument_id else {}
+
+                # Get learning outcomes (efekty uczenia) with their statuses
+                efekt_rows = db.session.execute(
+                    text(
+                        "SELECT eu.numer, eu.opis, eud.status "
+                        "FROM efekt_uczenia_dokumentu eud "
+                        "JOIN efekt_uczenia eu ON eud.efekt_id = eu.id "
+                        "WHERE eud.dokument_id = :doc_id "
+                        "ORDER BY eu.numer"
+                    ),
+                    {'doc_id': dokument_id}
+                ).fetchall()
+                
+                # Map statuses to Polish text
+                status_mapping = {
+                    'achieved': 'uzyskał/a',
+                    'not_achieved': 'nie uzyskał/a',
+                    'partial': 'częściowo uzyskał/a'
+                }
+                
+                efekty_list = []
+                for index, efekt_row in enumerate(efekt_rows):
+                    numer = efekt_row[0]
+                    opis = efekt_row[1]
+                    status = efekt_row[2]
+                    mapped_status = status_mapping.get(status, status or '')
+                    # Use 0-based index for czy_efekt_uzyskany array
+                    context['czy_efekt_uzyskany'][index] = mapped_status
+                    efekty_list.append({
+                        'numer': numer,
+                        'opis': opis,
+                        'status': status
+                    })
+                context['efekty'] = efekty_list
+                context['czy_efekty_uzyskane'] = (
+                    'uzyskał/a' if efekty_list and all(e['status'] == 'achieved' for e in efekty_list)
+                    else 'nie uzyskał/a'
+                )
+
             if doc_row[1] == 'ZAL_6':
+
                 context['imie_nazwisko_studenta'] = context.get('imie_nazwisko_studenta') or f"{imie or ''} {nazwisko or ''}".strip()
                 context['nr_indeksu'] = context.get('nr_indeksu') or dokument_data.get('nr_indeksu', '') or numer_albumu or ''
                 context['nr_albumu'] = context.get('nr_albumu') or numer_albumu or ''
@@ -1338,6 +1480,7 @@ def download_document():
             'Zal_1.docx' if doc_row[1] == 'ZAL_1' else
             'Zal_2.docx' if doc_row[1] == 'ZAL_2' else
             'Zal_3.docx' if doc_row[1] == 'ZAL_3' else
+            'Zal_4.docx' if doc_row[1] == 'ZAL_4' else
             'Zal_6.docx' if doc_row[1] == 'ZAL_6' else
             'Zal_2a.docx' if doc_row[1] == 'ZAL_2A' else
             None
@@ -1367,7 +1510,7 @@ def download_document():
 
         if file_format == 'docx':
             if os.path.exists(docx_path):
-                if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
+                if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_3', 'ZAL_4', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
                     record_document_download(dokument_id, current_user.id)
                 return send_file(docx_path, as_attachment=True)
         else:
@@ -1378,7 +1521,7 @@ def download_document():
                 pass
 
             if os.path.exists(pdf_path):
-                if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
+                if doc_row[1] in ('ZAL_1', 'ZAL_2', 'ZAL_4', 'ZAL_6', 'ZAL_9', 'ZAL_2A'):
                     record_document_download(dokument_id, current_user.id)
                 return send_file(pdf_path, as_attachment=True)
 

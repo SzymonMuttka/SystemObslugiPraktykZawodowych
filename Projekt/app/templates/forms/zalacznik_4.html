@@ -22,8 +22,12 @@
                 <input type="hidden" name="dokument_id" value="{{ dokument.id if dokument else '' }}">
                 <input type="hidden" name="opiekun_uczelniany"
                     value="{{ selected_student.opiekun_uczelniany if selected_student else '' }}">
+                <input type="hidden" name="opiekun_uczelniany_id"
+                    value="{{ selected_student.opiekun_uczelniany_id if selected_student else '' }}">
                 <input type="hidden" name="opiekun_firmowy"
                     value="{{ selected_student.opiekun_firmowy if selected_student else '' }}">
+                <input type="hidden" name="opiekun_firmowy_id"
+                    value="{{ selected_student.opiekun_firmowy_id if selected_student else '' }}">
                 <input type="hidden" name="data_podpisu_opiekuna_firmowego"
                     value="{{ opiekun_firmowy_podpisano }}">
             </div>
