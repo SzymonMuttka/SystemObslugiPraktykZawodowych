@@ -136,18 +136,6 @@ CREATE TABLE dokument_pobranie (
 );
 
 -- ============================================================
--- ZALEŻNOŚCI MIĘDZY DOKUMENTAMI
--- ============================================================
-
-CREATE TABLE zaleznosc_dokumentow (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    typ_dokumentu_id INTEGER NOT NULL REFERENCES typ_dokumentu(id),
-    wymaga_typu_id INTEGER NOT NULL REFERENCES typ_dokumentu(id),
-    wymagany_status TEXT NOT NULL DEFAULT 'completed'
-    -- 'created', 'completed'
-);
-
--- ============================================================
 -- DANE DOKUMENTÓW
 -- (wartości pól specyficznych dla danego dokumentu
 --  nieobsługiwanych przez dedykowane tabele)
@@ -163,62 +151,6 @@ CREATE TABLE dane_dokumentu (
     wypelnione_przez INTEGER REFERENCES uzytkownik(id),
     wypelniono TEXT DEFAULT (datetime('now')),
     UNIQUE(dokument_id, klucz)
-);
-
--- ============================================================
--- PODPISY
--- ============================================================
-
-
-
--- ============================================================
--- HISTORIA DOKUMENTU
--- ============================================================
-
-CREATE TABLE historia_dokumentu (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dokument_id INTEGER NOT NULL REFERENCES dokument(id),
-    uzytkownik_id INTEGER NOT NULL REFERENCES uzytkownik(id),
-    akcja TEXT NOT NULL,
-    -- 'created', 'edited', 'signed', 'returned',
-    -- 'stage_changed', 'completed', 'archived', 'deleted'
-    stary_status TEXT,
-    nowy_status TEXT,
-    stary_etap INTEGER,
-    nowy_etap INTEGER,
-    komentarz TEXT,
-    utworzono TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
--- ============================================================
--- PLIKI
--- ============================================================
-
-CREATE TABLE plik_dokumentu (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dokument_id INTEGER NOT NULL REFERENCES dokument(id),
-    typ_pliku TEXT NOT NULL,
-    -- 'docx' / 'pdf'
-    sciezka_pliku TEXT NOT NULL,
-    rozmiar_pliku INTEGER,
-    wygenerowano_przez INTEGER REFERENCES uzytkownik(id),
-    wygenerowano TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
--- ============================================================
--- ZAŁĄCZNIKI DO DOKUMENTÓW
--- ============================================================
-
-CREATE TABLE zalacznik_dokumentu (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dokument_id INTEGER NOT NULL REFERENCES dokument(id),
-    przeslany_przez INTEGER NOT NULL REFERENCES uzytkownik(id),
-    nazwa_pliku TEXT NOT NULL,
-    sciezka_pliku TEXT NOT NULL,
-    rozmiar_pliku INTEGER,
-    opis TEXT,
-    przeslano TEXT NOT NULL DEFAULT (datetime('now')),
-    jest_usuniety INTEGER NOT NULL DEFAULT 0
 );
 
 -- ============================================================
@@ -284,24 +216,6 @@ CREATE TABLE program_harmonogram_praktyki (
 );
 
 -- ============================================================
--- OCENY (ZAL_3 i ZAL_8)
--- ============================================================
-
-CREATE TABLE ocena_dokumentu (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dokument_id INTEGER NOT NULL REFERENCES dokument(id),
-    typ_oceny TEXT NOT NULL,
-    -- ZAL_3: 'parametric_company', 'descriptive_company',
-    --        'parametric_university', 'descriptive_university',
-    --        'report'
-    -- ZAL_8: 'E', 'S', 'U', 'Z', 'K'
-    wartosc_oceny TEXT,
-    ocenione_przez INTEGER REFERENCES uzytkownik(id),
-    oceniono TEXT,
-    UNIQUE(dokument_id, typ_oceny)
-);
-
--- ============================================================
 -- PYTANIA KOMISJI (ZAL_8)
 -- ============================================================
 
@@ -344,19 +258,6 @@ CREATE TABLE ankieta_dane (
 	forma_studiow TEXT,
 	semestr INTEGER,
 	liczba_godzin INTEGER
-)
-
--- ============================================================
--- SKŁAD KOMISJI (ZAL_8)
--- ============================================================
-
-CREATE TABLE czlonek_komisji (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dokument_id INTEGER NOT NULL REFERENCES dokument(id),
-    uzytkownik_id INTEGER NOT NULL REFERENCES uzytkownik(id),
-    rola_w_komisji TEXT NOT NULL,
-    -- 'przewodniczacy', 'opiekun_uczelniany', 'czlonek'
-    UNIQUE(dokument_id, uzytkownik_id)
 );
 
 -- ============================================================
@@ -366,11 +267,8 @@ CREATE TABLE czlonek_komisji (
 CREATE INDEX idx_dokument_praktyka ON dokument(praktyka_id);
 CREATE INDEX idx_dokument_typ ON dokument(typ_dokumentu_id);
 CREATE INDEX idx_dokument_status ON dokument(status);
-CREATE INDEX idx_historia_dokument ON historia_dokumentu(dokument_id);
-CREATE INDEX idx_historia_uzytkownik ON historia_dokumentu(uzytkownik_id);
 CREATE INDEX idx_wpis_dziennika_dokument ON wpis_dziennika(dokument_id);
 CREATE INDEX idx_dostep_uzytkownik ON dostep_do_dokumentu(uzytkownik_id);
-CREATE INDEX idx_podpis_dokument ON podpis_dokumentu(dokument_id);
 CREATE INDEX idx_praktyka_student ON praktyka(student_id);
 CREATE INDEX idx_praktyka_firma ON praktyka(firma_id);
 CREATE INDEX idx_uzytkownik_rola ON uzytkownik(rola_id);
