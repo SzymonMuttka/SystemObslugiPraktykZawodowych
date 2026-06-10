@@ -6,13 +6,12 @@
 <div class="form-page">
     <div class="form-header">
         <h2>Załącznik 7a: Sprawozdanie z pracy zawodowej lub działalności gospodarczej</h2>
-        <p>Formularz wypełniany przez studenta. Opiekun uczelniany podgląda i zatwierdza/odrzuca dokument.</p>
     </div>
 
     <form method="post" class="document-form">
         <input type="hidden" name="opiekun_uczelniany_name" value="{{ opiekun_uczelniany_name }}">
         <fieldset class="form-section">
-            <legend>Dane studenta (prefilled)</legend>
+            <legend>Dane studenta</legend>
 
             <div class="form-group">
                 <label>Imię i nazwisko studenta</label>
@@ -35,7 +34,7 @@
                     <input type="text" value="{{ rok_akademicki }}" readonly>
                 </div>
                 <div class="form-group">
-                    <label for="miejsce_odbycia_praktyki">Miejsce odbycia praktyki/pracy</label>
+                    <label for="miejsce_odbycia_praktyki">Miejsce odbycia praktyki / pracy</label>
                     <input id="miejsce_odbycia_praktyki" name="miejsce_odbycia_praktyki" type="text"
                         value="{{ miejsce_odbycia_praktyki }}"
                         {% if not can_edit and role != 'opiekun_uczelniany' %}readonly{% elif role == 'opiekun_uczelniany' %}readonly{% endif %}>
@@ -79,7 +78,6 @@
                 <a href="{{ url_for('dashboard.zalacznik_7a', dokument_id=dokument.id, action='reject') }}" class="btn-danger" onclick="return confirm('Czy na pewno chcesz odrzucić załącznik 7a?')">Odrzuć</a>
                 <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Powrót</a>
             {% else %}
-                <p class="info">Dokument został zapisany. Możesz go teraz jedynie podglądać.</p>
                 <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Powrót</a>
             {% endif %}
             {% if dokument and dokument.status == 'completed' %}

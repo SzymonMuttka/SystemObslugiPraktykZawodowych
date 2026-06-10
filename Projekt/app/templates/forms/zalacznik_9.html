@@ -6,27 +6,12 @@
 <div class="form-page">
     <div class="form-header">
         <h2>Załącznik 9: Oświadczenie instytucji w sprawie przyjęcia studenta</h2>
-        <p>Formularz dostępny do przeglądu dla studentów, administracji i opiekunów uczelnianych; edytowalny tylko przez opiekuna firmowego.</p>
-        {% if dokument and status %}
-        <div class="status-badge status-{{ status }}">
-            Status: 
-            {% if status == 'in_progress' %}
-                <span>Do uzupełnienia</span>
-            {% elif status == 'awaiting_approval' %}
-                <span>Oczekuje na zatwierdzenie</span>
-            {% elif status == 'completed' %}
-                <span>Zatwierdzony</span>
-            {% elif status == 'rejected' %}
-                <span>Odrzucony</span>
-            {% endif %}
-        </div>
-        {% endif %}
     </div>
 
     <!-- Jeśli dokument jest ukończony, pokazuj read-only view -->
     {% if dokument and status == 'completed' %}
     <div class="view-only-mode">
-        <p><strong>Dokument został zatwierdzony i jest niedostępny do edycji.</strong></p>
+        
     </div>
 
     <div class="form-data-display">
@@ -44,7 +29,7 @@
             </div>
         </fieldset>
 
-        <fieldset class="form-section">
+        <fieldset class="form-section" style="margin-top: 20px;">
             <legend>Dane instytucji / opiekuna firmowego</legend>
             <div class="form-row">
                 <div class="form-group">
@@ -100,9 +85,9 @@
 
         <div class="form-actions">
             {% if role == 'dziekanat' %}
-                <p><strong>Dokument został zatwierdzony.</strong></p>
+                
             {% endif %}
-            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Powrót do dashboardu</a>
+            <a href="{{ dashboard_index_url }}" class="btn-secondary">Powrót do dashboardu</a>
         </div>
     </div>
 
@@ -111,6 +96,9 @@
     <form method="post" class="document-form" id="attachment9-form">
         {% if dokument %}
             <input type="hidden" name="dokument_id" value="{{ dokument.id }}">
+        {% endif %}
+        {% if selected_practice_id %}
+            <input type="hidden" name="selected_praktyka_id" value="{{ selected_practice_id }}">
         {% endif %}
         <fieldset class="form-section">
             <legend>Dane studenta</legend>
@@ -143,7 +131,7 @@
         </fieldset>
 
         <fieldset class="form-section">
-            <legend>Dane instytucji / opiekuna firmowego</legend>
+            <legend>Dane instytucji i opiekuna firmowego</legend>
 
             <div class="form-row">
                 <div class="form-group">
@@ -237,7 +225,7 @@
                 <button type="submit" name="action" value="reject" class="btn-danger">Odrzuć załącznik 9</button>
             {% endif %}
 
-            <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
+            <a href="{{ dashboard_index_url }}" class="btn-secondary">Anuluj</a>
         </div>
     </form>
     {% endif %}

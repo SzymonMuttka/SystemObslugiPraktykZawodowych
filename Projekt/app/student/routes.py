@@ -545,6 +545,7 @@ def index():
 
     role = current_user.rola.nazwa
     selected_practice_id = request.args.get('selected_praktyka_id', type=int)
+    practice_status = request.args.get('practice_status', 'all', type=str)
     practice_rows = []
     selected_practice = None
     available_documents = []
@@ -637,6 +638,9 @@ def index():
             "WHERE p.id IN (SELECT MAX(id) FROM praktyka GROUP BY student_id)"
         )
         params = {}
+        if practice_status and practice_status != 'all':
+            query += ' AND p.status = :practice_status'
+            params['practice_status'] = practice_status
         if role == 'opiekun_firmowy':
             query += ' AND p.opiekun_firmowy_id = :user_id'
             params['user_id'] = current_user.id
@@ -766,6 +770,7 @@ def index():
         uzytkownik=current_user,
         practice_rows=practice_rows,
         selected_practice=selected_practice,
+        practice_status=practice_status,
         available_documents=available_documents,
         my_documents=my_documents,
         show_create_nav=show_create_nav,
@@ -773,6 +778,67 @@ def index():
         show_company_edit=show_company_edit,
         show_student_edit=show_student_edit,
     )
+
+
+@bp.route('/dashboard/aktywuj-konta', methods=['GET', 'POST'])
+@login_required
+def activate_accounts():
+    """Wyświetla listę kont nieaktywnych i pozwala dziekanatowi aktywować lub odrzucać je."""
+    if current_user.rola.nazwa != 'dziekanat':
+        flash('Tylko dziekanat może zarządzać kontami.', 'danger')
+        return redirect(url_for('dashboard.index'))
+
+    from app import db
+
+    if request.method == 'POST':
+        user_id = request.form.get('user_id', type=int)
+        action = request.form.get('action', '')
+
+        if not user_id or action not in ['activate', 'reject']:
+            flash('Nieprawidłowe dane akcji.', 'danger')
+            return redirect(url_for('dashboard.activate_accounts'))
+
+        if action == 'activate':
+            db.session.execute(
+                text(
+                    'UPDATE uzytkownik '
+                    'SET wymaga_zatwierdzenia = 0, jest_aktywny = 1 '
+                    'WHERE id = :user_id AND wymaga_zatwierdzenia = 1'
+                ),
+                {'user_id': user_id}
+            )
+            db.session.commit()
+            flash('Konto zostało aktywowane.', 'success')
+        else:
+            db.session.execute(
+                text('DELETE FROM uzytkownik WHERE id = :user_id AND wymaga_zatwierdzenia = 1'),
+                {'user_id': user_id}
+            )
+            db.session.commit()
+            flash('Konto zostało usunięte.', 'success')
+
+        return redirect(url_for('dashboard.activate_accounts'))
+
+    rows = db.session.execute(text(
+        'SELECT u.id, u.imie, u.nazwisko, u.email, r.nazwa '
+        'FROM uzytkownik u '
+        'JOIN role r ON u.rola_id = r.id '
+        'WHERE u.wymaga_zatwierdzenia = 1 '
+        'ORDER BY u.imie, u.nazwisko'
+    )).fetchall()
+
+    inactive_users = [
+        {
+            'id': row[0],
+            'imie': row[1],
+            'nazwisko': row[2],
+            'email': row[3],
+            'rola': row[4],
+        }
+        for row in rows
+    ]
+
+    return render_template('dashboard/activate_accounts.html', inactive_users=inactive_users)
 
 
 def record_document_download(dokument_id, pobierajacy_id):
@@ -9211,8 +9277,10 @@ def zalacznik_9():
     from app.models.uzytkownik import Uzytkownik, Rola
 
     role = current_user.rola.nazwa
-    # Pobierz dokument_id z GET lub POST
+    # Pobierz dokument_id i selected_practice_id z GET lub POST
     dokument_id = request.args.get('dokument_id', type=int) or request.form.get('dokument_id', type=int)
+    selected_practice_id = request.args.get('selected_praktyka_id', type=int) or request.form.get('selected_praktyka_id', type=int)
+    dashboard_index_url = url_for('dashboard.index', selected_praktyka_id=selected_practice_id) if selected_practice_id else url_for('dashboard.index')
     action_query = request.args.get('action')  # Akcja z query string (np. sign, accept, reject)
     dokument = None
     dokument_data = {}
@@ -9227,7 +9295,7 @@ def zalacznik_9():
                 flash('Tylko opiekun firmowy może podpisać załącznik 9.', 'danger')
             elif sign_attachment9(dokument_id):
                 flash('Załącznik 9 został podpisany.', 'success')
-                return redirect(url_for('dashboard.index'))
+                return redirect(dashboard_index_url)
             else:
                 flash('Nie można podpisać tego dokumentu.', 'danger')
 
@@ -9236,7 +9304,7 @@ def zalacznik_9():
                 flash('Tylko dziekanat może zaakceptować załącznik 9.', 'danger')
             elif accept_attachment9(dokument_id):
                 flash('Załącznik 9 został zaakceptowany.', 'success')
-                return redirect(url_for('dashboard.index'))
+                return redirect(dashboard_index_url)
             else:
                 flash('Nie można zaakceptować tego dokumentu.', 'danger')
 
@@ -9245,80 +9313,77 @@ def zalacznik_9():
                 flash('Tylko dziekanat może odrzucić załącznik 9.', 'danger')
             elif reject_attachment9(dokument_id):
                 flash('Załącznik 9 został odrzucony.', 'success')
-                return redirect(url_for('dashboard.index'))
+                return redirect(dashboard_index_url)
             else:
                 flash('Nie można odrzucić tego dokumentu.', 'danger')
 
-    # Jeśli edytujemy istniejący dokument
-    if dokument_id:
-        doc_row = db.session.execute(
-            text("SELECT id, status FROM dokument WHERE id = :doc_id AND typ_dokumentu_id = (SELECT id FROM typ_dokumentu WHERE kod='ZAL_9')"),
+    doc_row = db.session.execute(
+        text("SELECT id, status FROM dokument WHERE id = :doc_id AND typ_dokumentu_id = (SELECT id FROM typ_dokumentu WHERE kod='ZAL_9')"),
+        {'doc_id': dokument_id}
+    ).fetchone()
+
+    if doc_row:
+        dokument = {'id': doc_row[0], 'status': doc_row[1]}
+        status = doc_row[1]
+
+        # Pobierz dane dokumentu
+        dane = db.session.execute(
+            text("SELECT klucz, wartosc FROM dane_dokumentu WHERE dokument_id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchall()
+        dokument_data = {row[0]: row[1] for row in dane}
+
+        # Sprawdź podpis
+        podpis_row = db.session.execute(
+            text("SELECT czy_podpisany FROM dokument_podpis WHERE dokument_id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchone()
+        czy_podpisany = podpis_row[0] if podpis_row else False
+
+        # Sprawdź akceptację
+        akcept_row = db.session.execute(
+            text("SELECT czy_zaakceptowany FROM dokument_akceptacja WHERE dokument_id = :doc_id"),
+            {'doc_id': dokument_id}
+        ).fetchone()
+        czy_zaakceptowany = akcept_row[0] if akcept_row else False
+
+        # Pobierz dodatkowe dane powiązane z dokumentem, aby poprawnie wyświetlić widok completed
+        dokument_info = db.session.execute(
+            text(
+                "SELECT p.student_id, s.imie, s.nazwisko, s.numer_albumu, "
+                "p.data_rozpoczecia, p.data_zakonczenia, p.opiekun_firmowy_id, "
+                "f.nazwa AS firma_nazwa, f.miasto AS firma_miasto, "
+                "f.osoba_upowazniona_imie_nazwisko, f.osoba_upowazniona_stanowisko "
+                "FROM dokument d "
+                "JOIN praktyka p ON d.praktyka_id = p.id "
+                "LEFT JOIN uzytkownik s ON p.student_id = s.id "
+                "LEFT JOIN firma f ON p.firma_id = f.id "
+                "WHERE d.id = :doc_id"
+            ),
             {'doc_id': dokument_id}
         ).fetchone()
 
-        if doc_row:
-            dokument = {'id': doc_row[0], 'status': doc_row[1]}
-            status = doc_row[1]
+        if dokument_info:
+            student_id, student_imie, student_nazwisko, student_numer, termin_od_val, termin_do_val, opiekun_firmowy_id, firma_nazwa_val, firma_miasto_val, osoba_upowazniona_imie_nazwisko, osoba_upowazniona_stanowisko = dokument_info
+            dokument_data['student_id'] = student_id
+            dokument_data['imie_nazwisko_studenta'] = f"{student_imie or ''} {student_nazwisko or ''}".strip()
+            dokument_data['nr_albumu'] = student_numer or dokument_data.get('nr_albumu', '')
+            dokument_data['termin_od'] = termin_od_val or dokument_data.get('termin_od', '')
+            dokument_data['termin_do'] = termin_do_val or dokument_data.get('termin_do', '')
+            dokument_data['nazwa_firmy'] = firma_nazwa_val or dokument_data.get('nazwa_firmy', '')
+            dokument_data['miejscowosc'] = firma_miasto_val or dokument_data.get('miejscowosc', '')
+            dokument_data['osoba_upowazniona'] = (
+                f"{osoba_upowazniona_imie_nazwisko}, {osoba_upowazniona_stanowisko}".strip(', ') 
+                if osoba_upowazniona_imie_nazwisko or osoba_upowazniona_stanowisko else dokument_data.get('osoba_upowazniona', '')
+            )
 
-            # Pobierz dane dokumentu
-            dane = db.session.execute(
-                text("SELECT klucz, wartosc FROM dane_dokumentu WHERE dokument_id = :doc_id"),
-                {'doc_id': dokument_id}
-            ).fetchall()
-            dokument_data = {row[0]: row[1] for row in dane}
-
-            # Sprawdź podpis
-            podpis_row = db.session.execute(
-                text("SELECT czy_podpisany FROM dokument_podpis WHERE dokument_id = :doc_id"),
-                {'doc_id': dokument_id}
-            ).fetchone()
-            czy_podpisany = podpis_row[0] if podpis_row else False
-
-            # Sprawdź akceptację
-            akcept_row = db.session.execute(
-                text("SELECT czy_zaakceptowany FROM dokument_akceptacja WHERE dokument_id = :doc_id"),
-                {'doc_id': dokument_id}
-            ).fetchone()
-            czy_zaakceptowany = akcept_row[0] if akcept_row else False
-
-            # Pobierz dodatkowe dane powiązane z dokumentem, aby poprawnie wyświetlić widok completed
-            dokument_info = db.session.execute(
-                text(
-                    "SELECT p.student_id, s.imie, s.nazwisko, s.numer_albumu, "
-                    "p.data_rozpoczecia, p.data_zakonczenia, p.opiekun_firmowy_id, "
-                    "f.nazwa AS firma_nazwa, f.miasto AS firma_miasto, "
-                    "f.osoba_upowazniona_imie_nazwisko, f.osoba_upowazniona_stanowisko "
-                    "FROM dokument d "
-                    "JOIN praktyka p ON d.praktyka_id = p.id "
-                    "LEFT JOIN uzytkownik s ON p.student_id = s.id "
-                    "LEFT JOIN firma f ON p.firma_id = f.id "
-                    "WHERE d.id = :doc_id"
-                ),
-                {'doc_id': dokument_id}
-            ).fetchone()
-
-            if dokument_info:
-                student_id, student_imie, student_nazwisko, student_numer, termin_od_val, termin_do_val, opiekun_firmowy_id, firma_nazwa_val, firma_miasto_val, osoba_upowazniona_imie_nazwisko, osoba_upowazniona_stanowisko = dokument_info
-                dokument_data['student_id'] = student_id
-                dokument_data['imie_nazwisko_studenta'] = f"{student_imie or ''} {student_nazwisko or ''}".strip()
-                dokument_data['nr_albumu'] = student_numer or dokument_data.get('nr_albumu', '')
-                dokument_data['termin_od'] = termin_od_val or dokument_data.get('termin_od', '')
-                dokument_data['termin_do'] = termin_do_val or dokument_data.get('termin_do', '')
-                dokument_data['nazwa_firmy'] = firma_nazwa_val or dokument_data.get('nazwa_firmy', '')
-                dokument_data['miejscowosc'] = firma_miasto_val or dokument_data.get('miejscowosc', '')
-                dokument_data['osoba_upowazniona'] = (
-                    f"{osoba_upowazniona_imie_nazwisko}, {osoba_upowazniona_stanowisko}".strip(', ') 
-                    if osoba_upowazniona_imie_nazwisko or osoba_upowazniona_stanowisko else dokument_data.get('osoba_upowazniona', '')
-                )
-
-                if opiekun_firmowy_id:
-                    opiekun = Uzytkownik.query.get(opiekun_firmowy_id)
-                    if opiekun:
-                        dokument_data['imie_nazwisko_opiekuna_firmowego'] = opiekun.pelne_imie or dokument_data.get('imie_nazwisko_opiekuna_firmowego', '')
-                        dokument_data['telefon_opiekuna_firmowego'] = opiekun.telefon or dokument_data.get('telefon_opiekuna_firmowego', '')
-                        dokument_data['email_opiekuna_firmowego'] = opiekun.email or dokument_data.get('email_opiekuna_firmowego', '')
-                        dokument_data['stanowisko_opiekuna_firmowego'] = opiekun.stanowisko or dokument_data.get('stanowisko_opiekuna_firmowego', '')
-
+            if opiekun_firmowy_id:
+                opiekun = Uzytkownik.query.get(opiekun_firmowy_id)
+                if opiekun:
+                    dokument_data['imie_nazwisko_opiekuna_firmowego'] = opiekun.pelne_imie or dokument_data.get('imie_nazwisko_opiekuna_firmowego', '')
+                    dokument_data['telefon_opiekuna_firmowego'] = opiekun.telefon or dokument_data.get('telefon_opiekuna_firmowego', '')
+                    dokument_data['email_opiekuna_firmowego'] = opiekun.email or dokument_data.get('email_opiekuna_firmowego', '')
+                    dokument_data['stanowisko_opiekuna_firmowego'] = opiekun.stanowisko or dokument_data.get('stanowisko_opiekuna_firmowego', '')
     # Obsługa POST dla różnych akcji
     if request.method == 'POST':
         action = request.form.get('action', 'save')
@@ -9328,7 +9393,7 @@ def zalacznik_9():
                 flash('Tylko opiekun firmowy może podpisać załącznik 9.', 'danger')
             elif sign_attachment9(dokument_id):
                 flash('Załącznik 9 został podpisany.', 'success')
-                return redirect(url_for('dashboard.index'))
+                return redirect(dashboard_index_url)
             else:
                 flash('Nie można podpisać tego dokumentu.', 'danger')
 
@@ -9337,7 +9402,7 @@ def zalacznik_9():
                 flash('Tylko dziekanat może zaakceptować załącznik 9.', 'danger')
             elif accept_attachment9(dokument_id):
                 flash('Załącznik 9 został zaakceptowany.', 'success')
-                return redirect(url_for('dashboard.index'))
+                return redirect(dashboard_index_url)
             else:
                 flash('Nie można zaakceptować tego dokumentu.', 'danger')
 
@@ -9346,14 +9411,14 @@ def zalacznik_9():
                 flash('Tylko dziekanat może odrzucić załącznik 9.', 'danger')
             elif reject_attachment9(dokument_id):
                 flash('Załącznik 9 został odrzucony.', 'success')
-                return redirect(url_for('dashboard.index'))
+                return redirect(dashboard_index_url)
             else:
                 flash('Nie można odrzucić tego dokumentu.', 'danger')
 
         elif action == 'save':
             if role != 'opiekun_firmowy':
                 flash('Tylko opiekun firmowy może zapisać załącznik 9.', 'danger')
-                return redirect(url_for('dashboard.index'))
+                return redirect(dashboard_index_url)
 
             form_data = {
                 'student_id': request.form.get('student_id'),
@@ -9371,14 +9436,14 @@ def zalacznik_9():
 
             if save_attachment9_data(form_data):
                 flash('Dane załącznika 9 zostały zapisane.', 'success')
-                return redirect(url_for('dashboard.index'))
+                return redirect(dashboard_index_url)
             else:
                 flash('Wystąpił problem podczas zapisu formularza.', 'danger')
 
         elif action == 'save_and_sign':
             if role != 'opiekun_firmowy':
                 flash('Tylko opiekun firmowy może zapisać i podpisać załącznik 9.', 'danger')
-                return redirect(url_for('dashboard.index'))
+                return redirect(dashboard_index_url)
 
             form_data = {
                 'student_id': request.form.get('student_id'),
@@ -9411,7 +9476,7 @@ def zalacznik_9():
                     new_doc_id = doc_row[0] if doc_row else None
                     if new_doc_id and sign_attachment9(new_doc_id):
                         flash('Załącznik 9 został zapisany i podpisany.', 'success')
-                        return redirect(url_for('dashboard.index'))
+                        return redirect(dashboard_index_url)
             flash('Wystąpił problem podczas zapisu i podpisu formularza.', 'danger')
 
     # Pobranie listy aktywnych studentów posortowanych po numerze albumu
@@ -9470,6 +9535,8 @@ def zalacznik_9():
         status=status,
         czy_podpisany=czy_podpisany,
         czy_zaakceptowany=czy_zaakceptowany,
+        selected_practice_id=selected_practice_id,
+        dashboard_index_url=dashboard_index_url,
         **prefilled
     )
 

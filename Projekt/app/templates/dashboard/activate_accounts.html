@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Aktywacja kont{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h2>Aktywacja kont</h2>
+    </div>
+
+    <div class="dashboard-layout">
+        <main class="dashboard-main">
+            <section class="dashboard-section">
+                <h3>Konta do aktywowania</h3>
+                {% if inactive_users %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Imię</th>
+                            <th>Nazwisko</th>
+                            <th>Email</th>
+                            <th>Rola</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in inactive_users %}
+                        <tr>
+                            <td>{{ user.imie }}</td>
+                            <td>{{ user.nazwisko }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.rola | replace('_', ' ') | title }}</td>
+                            <td class="actions-cell">
+                                <form method="post" style="display:inline-block; margin-right:0.5rem;">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <button type="submit" name="action" value="activate" class="btn-small btn-primary">Akceptuj</button>
+                                </form>
+                                <form method="post" style="display:inline-block;">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <button type="submit" name="action" value="reject" class="btn-small btn-secondary" onclick="return confirm('Czy na pewno chcesz odrzucić to konto?')">Odrzuć</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>Brak kont oczekujących na aktywację.</p>
+                {% endif %}
+            </section>
+
+            <div class="dashboard-action">
+                <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Powrót do dashboardu</a>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

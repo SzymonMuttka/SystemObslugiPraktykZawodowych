@@ -6,7 +6,6 @@
 <div class="form-page">
     <div class="form-header">
         <h2>Załącznik 8: Protokół zaliczenia praktyki zawodowej</h2>
-        <p>Formularz z rolami ograniczonymi do dziekanatu, opiekuna uczelnianego i komisji.</p>
     </div>
 
     <form method="post" class="document-form">
@@ -54,7 +53,7 @@
         </fieldset>
 
         <fieldset class="form-section">
-            <legend>Dane prefilled z załącznika 3</legend>
+            <legend>Dane z załącznika 3</legend>
             <div class="form-row">
                 <div class="form-group">
                     <label>Ocena U*</label>
@@ -74,7 +73,7 @@
                 <input id="data_zaliczenia" name="data_zaliczenia" type="date"
                     value="{{ data_zaliczenia }}"
                         {% if not can_edit %}readonly{% endif %}>
-                <table>
+                <table style="margin-top: 30px; margin-bottom: 30px;">
                     <thead>
                         <tr>
                             <th colspan="2">Skład komisji</th>
@@ -115,7 +114,7 @@
 
             <div class="form-group">
                 <div class="pytania-table">
-                <table>
+                <table style="margin-bottom: 30px;">
                     <thead>
                         <tr>
                             <th>Lp.</th>

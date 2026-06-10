@@ -259,6 +259,20 @@
             {% if show_practice_selection %}
             <section class="dashboard-section">
                 <h3>Wybierz praktykę</h3>
+                <form method="get" class="practice-filter-form">
+                    <div class="form-group">
+                        <label for="practice_status">Filtruj praktyki:</label>
+                        <select id="practice_status" name="practice_status" onchange="this.form.submit()">
+                            <option value="all" {% if practice_status == 'all' %}selected{% endif %}>Wszystkie</option>
+                            <option value="active" {% if practice_status == 'active' %}selected{% endif %}>Aktywne</option>
+                            <option value="completed" {% if practice_status == 'completed' %}selected{% endif %}>Zakończone</option>
+                            <option value="pending" {% if practice_status == 'pending' %}selected{% endif %}>Oczekujące</option>
+                        </select>
+                    </div>
+                    {% if selected_practice %}
+                        <input type="hidden" name="selected_praktyka_id" value="{{ selected_practice.id }}">
+                    {% endif %}
+                </form>
                 {% if practice_rows %}
                 <table class="table">
                     <thead>
@@ -289,7 +303,7 @@
                             {% elif practice.status == 'rejected' %}
                                 <td>odrzucona</td>
                             {% endif %}
-                            <td><a href="{{ url_for('dashboard.index', selected_praktyka_id=practice.id) }}">Wybierz</a></td>
+                            <td><a href="{{ url_for('dashboard.index', selected_praktyka_id=practice.id, practice_status=practice_status) }}" class="btn-small btn-primary">Wybierz</a></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -309,6 +323,12 @@
             {% if show_company_edit %}
             <div class="dashboard-action">
                 <a href="{{ url_for('dashboard.profil_firmy') }}" class="btn-primary">Edytuj dane swojej firmy</a>
+            </div>
+            {% endif %}
+
+            {% if uzytkownik.rola.nazwa == 'dziekanat' %}
+            <div class="dashboard-action">
+                <a href="{{ url_for('dashboard.activate_accounts') }}" class="btn-primary">Aktywuj konta</a>
             </div>
             {% endif %}
         </main>

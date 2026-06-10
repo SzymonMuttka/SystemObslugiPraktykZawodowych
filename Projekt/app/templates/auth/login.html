@@ -53,7 +53,6 @@
                 </div>
 
                 <div class="social-login">
-                    <p>Zaloguj się przez Microsoft</p>
                     <a href="{{ url_for('auth.microsoft_login') }}" class="btn-microsoft">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" width="20" height="20">
                             <path fill="#f35325" d="M1 1h10v10H1z"/>
@@ -68,12 +67,8 @@
 
             <div class="login-footer">
                 <p>
-                    <a href="{{ url_for('auth.register') }}">Rejestracja testowa</a>
-                </p>
-                <p>
-                    Dostęp mają wyłącznie użytkownicy z domeną
-                    <strong>@ans-elblag.pl</strong> oraz
-                    <strong>@student.ans-elblag.pl</strong>
+                    <p>Nie masz konta? Zarejestruj się tutaj</p>
+                    <a href="{{ url_for('auth.register') }}" class="btn-secondary">Rejestracja</a>
                 </p>
             </div>
         </div>

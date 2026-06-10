@@ -12,7 +12,7 @@
     {% if dokument %}
     <div class="document-preview">
         <h3>Podgląd dokumentu</h3>
-        <fieldset class="form-section">
+        <fieldset class="form-section" style="margin-top: 20px;">
             <legend>Dane studenta</legend>
             <div class="form-group">
                 {% if selected_student %}
@@ -23,13 +23,13 @@
             </div>
         </fieldset>
 
-        <fieldset class="form-section">
+        <fieldset class="form-section" style="margin-top: 20px;">
             <legend>Program praktyki</legend>
             <p><b>A. Etap pierwszy - rozpoczęcie praktyki</b></p>
             <p>1) Czynności organizacyjne, szkolenie BHP i ppoż.</p>
             <p>2) Zapoznanie się z zakresem działania zakładu pracy (rodzaj usług, produkcja, struktura organizacyjna itp.) ze szczególnym uwzględnieniem stanowisk informatycznych.</p>
             <p>3) Zapoznanie z projektami realizowanymi przez firmę, środkami produkcji, aplikacjami użytkowymi, stosowanymi technologiami informatycznymi z podkreśleniem wytwórczych narzędzi softwareowych i sieci komputerowych.</p>
-            <p><b>B. Etap drugi</b></p>
+            <p style="margin-top: 20px;"><b>B. Etap drugi</b></p>
             <p>1) Praca na ostatecznym stanowisku pracy, wykonywanie prac i projektów informatycznych tak aby osiągnąć poniższe, wymagane programem studiów, efekty uczenia się:</p>
             <p>a) ma wiedzę na temat sposobu realizacji zadań inżynierskich dotyczących informatyki z zachowaniem standardów i norm technicznych;</p>
             <p>b) zna technologie, narzędzia, metody, techniki oraz sprzęt stosowane w informatyce;</p>
@@ -44,7 +44,7 @@
             <p>k) dostrzega w praktyce tempo deaktualizacji  wiedzy informatycznej  oraz skutki działalności informatyków szczególnie te ekonomiczne i społeczne.</p>
             <p>2) Opcjonalnie formułowanie przez zakład pracy tematu pracy dyplomowej i precyzowanie zakresu pracy dyplomowej; rozpoczęcie realizacji pracy dyplomowej pod nadzorem opiekuna pracy ze strony uczelni oraz konsultanta ze strony zakładu pracy.</p>
             <p>3) Planowany czas realizacji praktyki: 6 miesięcy tj. 120 dni (960 godz.).</p>
-            <p><b>C. Etap trzeci - zakończenie praktyki</b></p>
+            <p style="margin-top: 20px;"><b>C. Etap trzeci - zakończenie praktyki</b></p>
             <p>1) W trakcie praktyki student prowadzi „Dzienniczek praktyki”. Wpisy w dzienniczku powinny być potwierdzone przez zakładowego opiekuna praktyki.</p>
             <p>2) Na „Karcie praktyki zawodowej” kierownik zakładu pracy potwierdza odbycie praktyki a opiekun zakładowy wystawia ocenę parametryczną i w formie opisowej.</p>
             <p>3) Opiekun  ze strony zakładu pracy na odpowiednim druku „Potwierdzenie efektów uczenia się” potwierdza osiągnięcie przez praktykanta wymienionych powyżej efektów uczenia się.</p>
@@ -59,7 +59,7 @@
     </div>
     {% else %}
     <form method="post" class="document-form">
-        <fieldset class="form-section">
+        <fieldset class="form-section" style="margin-top: 20px;">
             <legend>Dane studenta</legend>
             <div class="form-group">
                 <label for="student_id">Imię i nazwisko studenta</label>
@@ -80,13 +80,13 @@
                 <input type="hidden" name="opiekun_firmowy" value="{{ opiekun_firmowy_full_name }}">
             </div>
             <div class="form-group">
-                <fieldset class="form-section">
+                <fieldset class="form-section" style="margin-top: 20px;">
                     <legend>Program praktyki</legend>
                     <p><b>A. Etap pierwszy - rozpoczęcie praktyki</b></p>
                     <p>1) Czynności organizacyjne, szkolenie BHP i ppoż.</p>
                     <p>2) Zapoznanie się z zakresem działania zakładu pracy (rodzaj usług, produkcja, struktura organizacyjna itp.) ze szczególnym uwzględnieniem stanowisk informatycznych.</p>
                     <p>3) Zapoznanie z projektami realizowanymi przez firmę, środkami produkcji, aplikacjami użytkowymi, stosowanymi technologiami informatycznymi z podkreśleniem wytwórczych narzędzi softwareowych i sieci komputerowych.</p>
-                    <p><b>B. Etap drugi</b></p>
+                    <p style="margin-top: 20px;"><b>B. Etap drugi</b></p>
                     <p>1) Praca na ostatecznym stanowisku pracy, wykonywanie prac i projektów informatycznych tak aby osiągnąć poniższe, wymagane programem studiów, efekty uczenia się:</p>
                     <p>a) ma wiedzę na temat sposobu realizacji zadań inżynierskich dotyczących informatyki z zachowaniem standardów i norm technicznych;</p>
                     <p>b) zna technologie, narzędzia, metody, techniki oraz sprzęt stosowane w informatyce;</p>
@@ -101,7 +101,7 @@
                     <p>k) dostrzega w praktyce tempo deaktualizacji  wiedzy informatycznej  oraz skutki działalności informatyków szczególnie te ekonomiczne i społeczne.</p>
                     <p>2) Opcjonalnie formułowanie przez zakład pracy tematu pracy dyplomowej i precyzowanie zakresu pracy dyplomowej; rozpoczęcie realizacji pracy dyplomowej pod nadzorem opiekuna pracy ze strony uczelni oraz konsultanta ze strony zakładu pracy.</p>
                     <p>3) Planowany czas realizacji praktyki: 6 miesięcy tj. 120 dni (960 godz.).</p>
-                    <p><b>C. Etap trzeci - zakończenie praktyki</b></p>
+                    <p style="margin-top: 20px;"><b>C. Etap trzeci - zakończenie praktyki</b></p>
                     <p>1) W trakcie praktyki student prowadzi „Dzienniczek praktyki”. Wpisy w dzienniczku powinny być potwierdzone przez zakładowego opiekuna praktyki.</p>
                     <p>2) Na „Karcie praktyki zawodowej” kierownik zakładu pracy potwierdza odbycie praktyki a opiekun zakładowy wystawia ocenę parametryczną i w formie opisowej.</p>
                     <p>3) Opiekun  ze strony zakładu pracy na odpowiednim druku „Potwierdzenie efektów uczenia się” potwierdza osiągnięcie przez praktykanta wymienionych powyżej efektów uczenia się.</p>

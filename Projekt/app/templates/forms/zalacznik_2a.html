@@ -6,7 +6,6 @@
 <div class="form-page">
     <div class="form-header">
         <h2>Załącznik 2a: Program i harmonogram praktyki zawodowej</h2>
-        <p>Zapis pól zgodnie z przypisanymi rolami.</p>
     </div>
 
     <form method="post" class="document-form">
@@ -14,7 +13,7 @@
             <input type="hidden" name="dokument_id" value="{{ dokument.id }}">
         {% endif %}
         <fieldset class="form-section">
-            <legend>Dane studenta (prefilled)</legend>
+            <legend>Dane studenta</legend>
 
             <div class="form-group">
                 <label for="student_select">Imię i nazwisko studenta</label>
@@ -84,7 +83,7 @@
         <fieldset class="form-section">
             <legend>Dane uzupełniane przez opiekuna firmowego</legend>
 
-            <h4>Program praktyki zawodowej</h4>
+            <h4 style="margin-bottom: 5px;">Program praktyki zawodowej</h4>
             <div class="program-table">
                 <table>
                     <thead>
@@ -107,7 +106,7 @@
                 </table>
             </div>
 
-            <h4>Harmonogram praktyki zawodowej</h4>
+            <h4 style="margin-top: 35px; margin-bottom: 5px;">Harmonogram praktyki zawodowej</h4>
             <div class="harmonogram-table">
                 <table>
                     <thead>
@@ -127,11 +126,11 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <p>Łączna liczba dni roboczych: <b id="hpz_total_days">0</b></p>
+                <p style="margin-top: 15px;">Łączna liczba dni roboczych: <b id="hpz_total_days">0</b></p>
                 <input type="hidden" id="hpz_total_days_input" name="hpz_total_days" value="{{ dokument_data.get('lacznie_dni', '0') }}">
                 <input type="hidden" name="opiekun_firmowy" value="{{ opiekun_firmowy_full_name }}">
                 <input type="hidden" name="opiekun_uczelniany" value="{{ opiekun_uczelniany_full_name }}">
-                <p>Wymagana liczba dni roboczych: <b>120</b><p>
+                <p style="margin-bottom: 15px;">Wymagana liczba dni roboczych: <b>120</b><p>
             </div>
 
             <div class="form-group">

@@ -45,7 +45,7 @@ class Uzytkownik(UserMixin, db.Model):
     firma = db.relationship('Firma', back_populates='uzytkownicy')
 
     jest_aktywny = db.Column(db.Boolean, default=True)
-    wymaga_zatwierdzenia = db.Column(db.Boolean, default=False)
+    wymaga_zatwierdzenia = db.Column(db.Boolean, default=True)
 
     utworzono = db.Column(
         db.DateTime, nullable=False,

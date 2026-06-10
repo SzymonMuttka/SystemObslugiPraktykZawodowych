@@ -35,7 +35,7 @@ CREATE TABLE uzytkownik (
     telefon TEXT,
     stanowisko TEXT,
     firma_id INTEGER REFERENCES firma(id),
-    jest_aktywny INTEGER NOT NULL DEFAULT 1,
+    jest_aktywny INTEGER NOT NULL DEFAULT 0,
     utworzono TEXT NOT NULL DEFAULT (datetime('now')),
     zaktualizowano TEXT NOT NULL DEFAULT (datetime('now')),
 	auth_provider TEXT DEFAULT 'microsoft',

@@ -172,10 +172,10 @@ def callback():
             blad='Brak dostępu. Twoja domena email nie jest autoryzowana.'
         )
 
-    if not uzytkownik.jest_aktywny:
+    if uzytkownik.wymaga_zatwierdzenia:
         return render_template(
             'auth/login.html',
-            blad='Twoje konto oczekuje na zatwierdzenie przez administratora.'
+            blad='Twoje konto nie jest jeszcze aktywowane. Skontaktuj się z administratorem.'
         )
 
     # Zalogowanie użytkownika przez Flask-Login
@@ -214,8 +214,11 @@ def login():
             flash('Nieprawidłowy email lub hasło.', 'danger')
             return render_template('auth/login.html', email=email)
 
-        if not uzytkownik.jest_aktywny:
-            flash('Twoje konto oczekuje na aktywację.', 'danger')
+        if uzytkownik.wymaga_zatwierdzenia:
+            flash(
+                'Twoje konto nie jest jeszcze aktywowane. Skontaktuj się z administratorem.',
+                'danger'
+            )
             return render_template('auth/login.html', email=email)
 
         login_user(uzytkownik)
@@ -265,8 +268,8 @@ def register():
             haslo_hash=generate_password_hash(password),
             auth_provider='local',
             rola_id=rola.id,
-            wymaga_zatwierdzenia=False,
-            jest_aktywny=True
+            wymaga_zatwierdzenia=True,
+            jest_aktywny=False
         )
         db.session.add(nowy_uzytkownik)
         db.session.commit()
@@ -282,16 +285,19 @@ def register():
 def logout():
     """Wylogowuje użytkownika i czyści sesję."""
     email = current_user.email
+    auth_provider = current_user.auth_provider
     logout_user()
     session.clear()
 
     current_app.logger.info(f"Wylogowano użytkownika: {email}")
 
-    # Przekierowanie do strony wylogowania Microsoft
-    tenant = current_app.config['MICROSOFT_TENANT_ID']
-    post_logout = url_for('auth.login', _external=True)
-    ms_logout_url = (
-        f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/logout"
-        f"?post_logout_redirect_uri={post_logout}"
-    )
-    return redirect(ms_logout_url)
+    if auth_provider == 'microsoft':
+        tenant = current_app.config['MICROSOFT_TENANT_ID']
+        post_logout = url_for('auth.login', _external=True)
+        ms_logout_url = (
+            f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/logout"
+            f"?post_logout_redirect_uri={post_logout}"
+        )
+        return redirect(ms_logout_url)
+
+    return redirect(url_for('auth.login'))
