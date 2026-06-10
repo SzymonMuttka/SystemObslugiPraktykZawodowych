@@ -96,8 +96,8 @@ def _znajdz_lub_utworz_uzytkownika(dane_ms):
         auth_provider='microsoft',
         external_id=external_id,
         rola_id=rola.id,
-        wymaga_zatwierdzenia=wymaga_zatwierdzenia,
-        jest_aktywny=not wymaga_zatwierdzenia
+        wymaga_zatwierdzenia=1,
+        jest_aktywny=1
     )
 
     db.session.add(nowy_uzytkownik)
@@ -135,48 +135,40 @@ def callback():
         blad = request.args.get('error')
         opis = request.args.get('error_description', '')
         current_app.logger.error(f"Błąd callback Microsoft: {blad} - {opis}")
-        return render_template(
-            'auth/login.html',
-            blad='Logowanie nie powiodło się. Spróbuj ponownie.'
-        )
+        flash('Logowanie nie powiodło się. Spróbuj ponownie.', 'danger')
+        return redirect(url_for('auth.login'))
 
     kod = request.args.get('code')
     if not kod:
-        return render_template(
-            'auth/login.html',
-            blad='Brak kodu autoryzacji. Spróbuj ponownie.'
-        )
+        flash('Brak kodu autoryzacji. Spróbuj ponownie.', 'danger')
+        return redirect(url_for('auth.login'))
 
     # Wymiana kodu na token
     token = pobierz_token_z_kodu(kod)
     if not token:
-        return render_template(
-            'auth/login.html',
-            blad='Nie udało się pobrać tokenu. Spróbuj ponownie.'
-        )
+        flash('Nie udało się pobrać tokenu. Spróbuj ponownie.', 'danger')
+        return redirect(url_for('auth.login'))
 
     # Pobranie danych użytkownika z Microsoft Graph
     dane_ms = pobierz_dane_uzytkownika(token)
     if not dane_ms:
-        return render_template(
-            'auth/login.html',
-            blad='Nie udało się pobrać danych użytkownika.'
-        )
+        flash('Nie udało się pobrać danych użytkownika.', 'danger')
+        return redirect(url_for('auth.login'))
 
     # Znajdź lub utwórz użytkownika
     uzytkownik, czy_nowy = _znajdz_lub_utworz_uzytkownika(dane_ms)
 
     if uzytkownik is None:
-        return render_template(
-            'auth/login.html',
-            blad='Brak dostępu. Twoja domena email nie jest autoryzowana.'
-        )
+        flash('Brak dostępu. Twoja domena email nie jest autoryzowana.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    if czy_nowy:
+        flash('Konto zostało utworzone. Zaloguj się.', 'success')
+        return redirect(url_for('auth.login'))
 
     if uzytkownik.wymaga_zatwierdzenia:
-        return render_template(
-            'auth/login.html',
-            blad='Twoje konto nie jest jeszcze aktywowane. Skontaktuj się z administratorem.'
-        )
+        flash('Twoje konto nie jest jeszcze aktywowane. Skontaktuj się z administratorem.', 'danger')
+        return redirect(url_for('auth.login'))
 
     # Zalogowanie użytkownika przez Flask-Login
     login_user(uzytkownik)

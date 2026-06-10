@@ -221,7 +221,7 @@
                 <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
             {% elif dokument and uczelniany_can_edit %}
                 <button type="submit" class="btn-primary">Zapisz zmiany</button>
-                <a href="{{ url_for('dashboard.zalacznik_3', dokument_id=dokument.id, action='sign_accept') }}" class="btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować ten dokument?')">Podpisz i zaakceptuj</a>
+                <a href="{{ url_for('dashboard.zalacznik_3', dokument_id=dokument.id, action='sign_accept') }}" class="btn-primary" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować ten dokument?')">Podpisz i zaakceptuj</a>
                 <a href="{{ url_for('dashboard.index') }}" class="btn-secondary">Anuluj</a>
             {% else %}
                 <p class="info">Dokument został zapisany. Możesz go teraz jedynie podglądać.</p>

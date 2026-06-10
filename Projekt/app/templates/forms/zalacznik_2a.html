@@ -152,8 +152,8 @@
                     {% if current_user.rola.nazwa == 'student' %}
                         <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=dokument.id, action='sign') }}" class="btn-primary" onclick="return confirm('Czy na pewno chcesz podpisać dokument?')">Podpisz</a>
                     {% elif current_user.rola.nazwa in ['opiekun_uczelniany','opiekun_firmowy'] %}
-                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=dokument.id, action='sign') }}" class="btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować dokument?')">Podpisz i zaakceptuj</a>
-                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=dokument.id, action='reject') }}" class="btn-danger" onclick="return confirm('Czy na pewno chcesz odrzucić dokument?')">Odrzuć</a>
+                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=dokument.id, action='sign') }}" class="btn-primary" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować dokument?')">Podpisz i zaakceptuj</a>
+                        <a href="{{ url_for('dashboard.zalacznik_2a', dokument_id=dokument.id, action='reject') }}" class="btn-primary" onclick="return confirm('Czy na pewno chcesz odrzucić dokument?')">Odrzuć</a>
                     {% endif %}
                 {% endif %}
             {% else %}

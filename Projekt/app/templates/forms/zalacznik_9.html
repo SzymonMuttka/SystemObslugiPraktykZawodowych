@@ -214,15 +214,15 @@
 
                 <!-- Przycisk "Zapisz i podpisz" - tylko dla nowych dokumentów -->
                 {% if not dokument %}
-                    <button type="submit" name="action" value="save_and_sign" class="btn-success">Zapisz i podpisz załącznik 9</button>
+                    <button type="submit" name="action" value="save_and_sign" class="btn-primary">Zapisz i podpisz załącznik 9</button>
                 {% endif %}
             {% endif %}
 
             {% if role == 'dziekanat' and dokument and status == 'awaiting_approval' %}
                 <!-- Przycisk zaakceptowania -->
-                <button type="submit" name="action" value="accept" class="btn-success">Zaakceptuj załącznik 9</button>
+                <button type="submit" name="action" value="accept" class="btn-primary">Zaakceptuj załącznik 9</button>
                 <!-- Przycisk odrzucenia -->
-                <button type="submit" name="action" value="reject" class="btn-danger">Odrzuć załącznik 9</button>
+                <button type="submit" name="action" value="reject" class="btn-primary">Odrzuć załącznik 9</button>
             {% endif %}
 
             <a href="{{ dashboard_index_url }}" class="btn-secondary">Anuluj</a>

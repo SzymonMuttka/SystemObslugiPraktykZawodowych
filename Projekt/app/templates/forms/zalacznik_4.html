@@ -99,10 +99,10 @@
                 <button type="submit" class="btn-primary">Utwórz załącznik 4</button>
             {% elif dokument and can_edit_firmowy %}
                 <button type="submit" class="btn-primary">Zapisz zmiany</button>
-                <a href="{{ url_for('dashboard.zalacznik_4', dokument_id=dokument.id, action='sign_accept') }}" class="btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować ten dokument?')">Podpisz i zaakceptuj</a>
+                <a href="{{ url_for('dashboard.zalacznik_4', dokument_id=dokument.id, action='sign_accept') }}" class="btn-primary" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować ten dokument?')">Podpisz i zaakceptuj</a>
             {% elif dokument and can_edit_uczelniany %}
                 <button type="submit" class="btn-primary">Zapisz zmiany</button>
-                <a href="{{ url_for('dashboard.zalacznik_4', dokument_id=dokument.id, action='sign_accept') }}" class="btn-success" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować ten dokument?')">Podpisz i zaakceptuj</a>
+                <a href="{{ url_for('dashboard.zalacznik_4', dokument_id=dokument.id, action='sign_accept') }}" class="btn-primary" onclick="return confirm('Czy na pewno chcesz podpisać i zaakceptować ten dokument?')">Podpisz i zaakceptuj</a>
             {% else %}
                 <p class="info">Dokument został zapisany. Możesz go teraz jedynie podglądać.</p>
             {% endif %}

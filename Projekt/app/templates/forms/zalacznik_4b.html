@@ -127,11 +127,11 @@
             <button type="submit" class="btn-primary">Zapisz załącznik 4b</button>
             {% endif %}
             {% if can_sign and dokument_id %}
-            <a href="{{ url_for('dashboard.zalacznik_4b', dokument_id=dokument_id, action='sign') }}" class="btn-primary">Podpisz jako komisja</a>
+            <a href="{{ url_for('dashboard.zalacznik_4b', dokument_id=dokument_id, action='sign') }}" class="btn-primary">Podpisz załącznik 4b</a>
             {% endif %}
             {% if can_accept and dokument_id %}
-            <a href="{{ url_for('dashboard.zalacznik_4b', dokument_id=dokument_id, action='accept') }}" class="btn-primary">Akceptuj jako dyrektor</a>
-            <a href="{{ url_for('dashboard.zalacznik_4b', dokument_id=dokument_id, action='reject') }}" class="btn-danger">Odrzuć jako dyrektor</a>
+            <a href="{{ url_for('dashboard.zalacznik_4b', dokument_id=dokument_id, action='accept') }}" class="btn-primary">Akceptuj załącznik 4b</a>
+            <a href="{{ url_for('dashboard.zalacznik_4b', dokument_id=dokument_id, action='reject') }}" class="btn-primary">Odrzuć załącznik 4b</a>
             {% endif %}
             {% if status == 'completed' and dokument_id %}
             <a href="{{ url_for('dashboard.download_document', dokument_id=dokument_id, format='docx') }}" class="btn-secondary">Pobierz DOCX</a>
